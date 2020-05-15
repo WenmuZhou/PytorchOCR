@@ -1,35 +1,12 @@
-# copyright (c) 2020 PaddlePaddle Authors. All Rights Reserve.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import paddle.fluid as fluid
-from paddle.fluid.initializer import MSRA
-from paddle.fluid.param_attr import ParamAttr
+from collections import OrderedDict
 
-__all__ = [
-    'MobileNetV3', 'MobileNetV3_small_x0_35', 'MobileNetV3_small_x0_5',
-    'MobileNetV3_small_x0_75', 'MobileNetV3_small_x1_0',
-    'MobileNetV3_small_x1_25', 'MobileNetV3_large_x0_35',
-    'MobileNetV3_large_x0_5', 'MobileNetV3_large_x0_75',
-    'MobileNetV3_large_x1_0', 'MobileNetV3_large_x1_25'
-]
-
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
+import torch
 
 
 class HSwish(nn.Module):
@@ -38,10 +15,11 @@ class HSwish(nn.Module):
         return out
 
 
-class Conv_BN_ACT(nn.Module):
+class ConvBNACT(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, num_groups=1, act=None):
         super().__init__()
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=num_groups,
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
+                              stride=stride, padding=padding, groups=num_groups,
                               bias=False)
         self.bn = nn.BatchNorm2d(out_channels)
         if act == 'relu':
@@ -51,6 +29,18 @@ class Conv_BN_ACT(nn.Module):
         elif act is None:
             self.act = None
 
+    def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
+        to_load_state_dict = OrderedDict()
+        if _3rd_name == 'paddle':
+            to_load_state_dict['conv.weight'] = torch.Tensor(_state[f'{_name_prefix}_weights'])
+            to_load_state_dict['bn.weight'] = torch.Tensor(_state[f'{_name_prefix}_bn_scale'])
+            to_load_state_dict['bn.bias'] = torch.Tensor(_state[f'{_name_prefix}_bn_offset'])
+            to_load_state_dict['bn.running_mean'] = torch.Tensor(_state[f'{_name_prefix}_bn_mean'])
+            to_load_state_dict['bn.running_var'] = torch.Tensor(_state[f'{_name_prefix}_bn_variance'])
+            self.load_state_dict(to_load_state_dict)
+        else:
+            pass
+
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
@@ -59,20 +49,34 @@ class Conv_BN_ACT(nn.Module):
         return x
 
 
-class Residual_Unit(nn.Module):
+class ResidualUnit(nn.Module):
     def __init__(self, num_in_filter, num_mid_filter, num_out_filter, stride, kernel_size, act=None, use_se=False):
         super().__init__()
-        self.conv0 = Conv_BN_ACT(in_channels=num_in_filter, out_channels=num_mid_filter, kernel_size=1, stride=1, padding=0, act=act)
+        self.conv0 = ConvBNACT(in_channels=num_in_filter, out_channels=num_mid_filter, kernel_size=1, stride=1,
+                               padding=0, act=act)
 
-        self.conv1 = Conv_BN_ACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size, stride=stride,
-                                 padding=int((kernel_size - 1) // 2), act=act, num_groups=num_mid_filter)
+        self.conv1 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size,
+                               stride=stride,
+                               padding=int((kernel_size - 1) // 2), act=act, num_groups=num_mid_filter)
         if use_se:
             self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
         else:
             self.se = None
 
-        self.conv2 = Conv_BN_ACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1, padding=0)
+        self.conv2 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1,
+                               padding=0)
         self.not_add = num_in_filter != num_out_filter or stride != 1
+
+    def load_3rd_state_dict(self, _3rd_name, _state, _convolution_index):
+        if _3rd_name == 'paddle':
+            self.conv0.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_expand')
+            self.conv1.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_depthwise')
+            if self.se is not None:
+                self.se.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_se')
+            self.conv2.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_linear')
+        else:
+            pass
+        pass
 
     def forward(self, x):
         y = self.conv0(x)
@@ -94,6 +98,17 @@ class SEBlock(nn.Module):
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels=num_mid_filter, kernel_size=1, out_channels=out_channels, bias=True)
         self.relu2 = HSwish()
+
+    def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
+        to_load_state_dict = OrderedDict()
+        if _3rd_name == 'paddle':
+            to_load_state_dict['conv1.weight'] = torch.Tensor(_state[f'{_name_prefix}_1_weights'])
+            to_load_state_dict['conv2.weight'] = torch.Tensor(_state[f'{_name_prefix}_2_weights'])
+            to_load_state_dict['conv1.bias'] = torch.Tensor(_state[f'{_name_prefix}_1_offset'])
+            to_load_state_dict['conv2.bias'] = torch.Tensor(_state[f'{_name_prefix}_2_offset'])
+            self.load_state_dict(to_load_state_dict)
+        else:
+            pass
 
     def forward(self, x):
         attn = self.pool(x)
@@ -153,7 +168,8 @@ class MobileNetV3(nn.Module):
                                       "_model] is not implemented!")
 
         supported_scale = [0.35, 0.5, 0.75, 1.0, 1.25]
-        assert self.scale in supported_scale, "supported scale are {} but input scale is {}".format(supported_scale, self.scale)
+        assert self.scale in supported_scale, "supported scale are {} but input scale is {}".format(supported_scale,
+                                                                                                    self.scale)
 
         scale = self.scale
         inplanes = self.inplanes
@@ -161,35 +177,35 @@ class MobileNetV3(nn.Module):
         cls_ch_squeeze = self.cls_ch_squeeze
         cls_ch_expand = self.cls_ch_expand
         # conv1
-        self.conv1 = Conv_BN_ACT(in_channels=in_channels,
-                                 out_channels=self.make_divisible(inplanes * scale),
-                                 kernel_size=3,
-                                 stride=2,
-                                 padding=1,
-                                 num_groups=1,
-                                 act='hard_swish')
+        self.conv1 = ConvBNACT(in_channels=in_channels,
+                               out_channels=self.make_divisible(inplanes * scale),
+                               kernel_size=3,
+                               stride=2,
+                               padding=1,
+                               num_groups=1,
+                               act='hard_swish')
         i = 0
         inplanes = self.make_divisible(inplanes * scale)
         block_list = []
         for layer_cfg in cfg:
-            block = Residual_Unit(num_in_filter=inplanes,
-                                  num_mid_filter=self.make_divisible(scale * layer_cfg[1]),
-                                  num_out_filter=self.make_divisible(scale * layer_cfg[2]),
-                                  act=layer_cfg[4],
-                                  stride=layer_cfg[5],
-                                  kernel_size=layer_cfg[0],
-                                  use_se=layer_cfg[3])
+            block = ResidualUnit(num_in_filter=inplanes,
+                                 num_mid_filter=self.make_divisible(scale * layer_cfg[1]),
+                                 num_out_filter=self.make_divisible(scale * layer_cfg[2]),
+                                 act=layer_cfg[4],
+                                 stride=layer_cfg[5],
+                                 kernel_size=layer_cfg[0],
+                                 use_se=layer_cfg[3])
             block_list.append(block)
             inplanes = self.make_divisible(scale * layer_cfg[2])
 
         self.block_list = nn.Sequential(*block_list)
-        self.conv2 = Conv_BN_ACT(in_channels=inplanes,
-                                 out_channels=self.make_divisible(scale * cls_ch_squeeze),
-                                 kernel_size=1,
-                                 stride=1,
-                                 padding=0,
-                                 num_groups=1,
-                                 act='hard_swish')
+        self.conv2 = ConvBNACT(in_channels=inplanes,
+                               out_channels=self.make_divisible(scale * cls_ch_squeeze),
+                               kernel_size=1,
+                               stride=1,
+                               padding=0,
+                               num_groups=1,
+                               act='hard_swish')
 
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
@@ -201,18 +217,18 @@ class MobileNetV3(nn.Module):
             new_v += divisor
         return new_v
 
+    def load_3rd_state_dict(self, _3rd_name, _state):
+        if _3rd_name == 'paddle':
+            self.conv1.load_3rd_state_dict(_3rd_name, _state, 'conv1')
+            for m_block_index, m_block in enumerate(self.block_list, 2):
+                m_block.load_3rd_state_dict(_3rd_name, _state, m_block_index)
+            self.conv2.load_3rd_state_dict(_3rd_name, _state, 'conv_last')
+        else:
+            pass
+
     def forward(self, x):
         x = self.conv1(x)
         x = self.block_list(x)
         x = self.conv2(x)
         x = self.pool(x)
         return x
-
-
-if __name__ == '__main__':
-    import torch
-
-    x = torch.zeros(1, 3, 32, 320)
-    model = MobileNetV3(3)
-    y = model(x)
-    print(y.shape)
