@@ -9,9 +9,9 @@ from __future__ import print_function
 from torch import nn
 
 
-class EncoderWithReshape(object):
+class DecoderWithReshape(object):
     def __init__(self, **kwargs):
-        super(EncoderWithReshape, self).__init__()
+        super().__init__()
 
     def __call__(self, x):
         B, C, H, W = x.shape
@@ -36,9 +36,9 @@ class BidirectionalLSTM(nn.Module):
         return x
 
 
-class EncoderWithRNN(nn.Module):
+class DecoderWithRNN(nn.Module):
     def __init__(self, **kwargs):
-        super(EncoderWithRNN, self).__init__()
+        super().__init__()
         in_channels = kwargs['in_channels']
         rnn_hidden_size = kwargs.get('hidden_size', 96)
         self.lstm1 = BidirectionalLSTM(in_channels, rnn_hidden_size, fc_out=rnn_hidden_size * 4)
@@ -50,11 +50,11 @@ class EncoderWithRNN(nn.Module):
         return x
 
 
-class SequenceEncoder(nn.Module):
+class SequenceDecoder(nn.Module):
     def __init__(self, in_channels, **kwargs):
-        super(SequenceEncoder, self).__init__()
+        super().__init__()
         encoder_type = kwargs.get('type', 'rnn')
-        decoder_dict = {'rnn': EncoderWithRNN, 'None': EncoderWithReshape}
+        decoder_dict = {'rnn': DecoderWithRNN, 'None': DecoderWithReshape}
         assert encoder_type in decoder_dict, "Unsupport encoder_type:%s" % self.encoder_type
         kwargs['in_channels'] = in_channels
         self.decoder = decoder_dict[encoder_type](**kwargs)
@@ -68,6 +68,6 @@ if __name__ == '__main__':
 
     x = torch.zeros(1, 480, 1, 80)
     d = {'type': 'rnn'}
-    model = SequenceEncoder(480, **d)
+    model = SequenceDecoder(480, **d)
     y = model(x)
     print(y.shape)
