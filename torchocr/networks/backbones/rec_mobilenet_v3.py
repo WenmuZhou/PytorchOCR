@@ -208,6 +208,7 @@ class MobileNetV3(nn.Module):
                                act='hard_swish')
 
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.out_channels = self.make_divisible(scale * cls_ch_squeeze)
 
     def make_divisible(self, v, divisor=8, min_value=None):
         if min_value is None:
