@@ -19,7 +19,6 @@ class RECModel(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)
-        print(x.shape)
         x = self.neck(x)
         x = self.head(x)
         return x
