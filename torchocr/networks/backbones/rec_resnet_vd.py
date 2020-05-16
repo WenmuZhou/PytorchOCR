@@ -103,35 +103,17 @@ class ResNet(nn.Module):
 
         num_filters = [64, 128, 256, 512]
         if is_3x3 == False:
-            self.conv1 = ConvBNACT(in_channels=in_channels,
-                                   out_channels=64,
-                                   kernel_size=7,
-                                   stride=1,
-                                   padding=3,
-                                   act='relu')
+            self.conv1 = ConvBNACT(in_channels=in_channels, out_channels=64, kernel_size=7, stride=1, padding=3, act='relu')
         else:
-            self.conv1 = ConvBNACT(in_channels=in_channels,
-                                   out_channels=32,
-                                   kernel_size=3,
-                                   stride=1,
-                                   padding=1,
-                                   act='relu')
-            self.conv2 = ConvBNACT(in_channels=32,
-                                   out_channels=32,
-                                   kernel_size=3,
-                                   stride=1,
-                                   act='relu',
-                                   padding=1)
-            self.conv3 = ConvBNACT(in_channels=32,
-                                   out_channels=64,
-                                   kernel_size=3,
-                                   stride=1,
-                                   act='relu',
-                                   padding=1)
+            self.conv1 = nn.Sequential(
+                ConvBNACT(in_channels=in_channels, out_channels=32, kernel_size=3, stride=1, padding=1, act='relu'),
+                ConvBNACT(in_channels=32, out_channels=32, kernel_size=3, stride=1, act='relu', padding=1),
+                ConvBNACT(in_channels=32, out_channels=64, kernel_size=3, stride=1, act='relu', padding=1)
+            )
 
         self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        self.stages = []
+        self.stages = nn.ModuleList()
         in_ch = 64
         for block in range(len(depth)):
             block_list = []
@@ -143,13 +125,11 @@ class ResNet(nn.Module):
                 block_list.append(block_class(in_channels=in_ch, out_channels=num_filters[block], stride=stride, if_first=block == i == 0))
                 in_ch = num_filters[block]
             self.stages.append(nn.Sequential(*block_list))
-
+        self.out_channels = in_ch
         self.out = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
         x = self.pool1(x)
         for stage in self.stages:
             x = stage(x)
