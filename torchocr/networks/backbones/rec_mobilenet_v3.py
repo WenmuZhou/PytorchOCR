@@ -16,10 +16,10 @@ class HSwish(nn.Module):
 
 
 class ConvBNACT(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, num_groups=1, act=None):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, groups=1, act=None):
         super().__init__()
         self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                              stride=stride, padding=padding, groups=num_groups,
+                              stride=stride, padding=padding, groups=groups,
                               bias=False)
         self.bn = nn.BatchNorm2d(out_channels)
         if act == 'relu':
@@ -57,7 +57,7 @@ class ResidualUnit(nn.Module):
 
         self.conv1 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size,
                                stride=stride,
-                               padding=int((kernel_size - 1) // 2), act=act, num_groups=num_mid_filter)
+                               padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
             self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
         else:
@@ -182,7 +182,7 @@ class MobileNetV3(nn.Module):
                                kernel_size=3,
                                stride=2,
                                padding=1,
-                               num_groups=1,
+                               groups=1,
                                act='hard_swish')
         i = 0
         inplanes = self.make_divisible(inplanes * scale)
@@ -204,7 +204,7 @@ class MobileNetV3(nn.Module):
                                kernel_size=1,
                                stride=1,
                                padding=0,
-                               num_groups=1,
+                               groups=1,
                                act='hard_swish')
 
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
