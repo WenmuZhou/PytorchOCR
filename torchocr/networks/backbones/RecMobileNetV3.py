@@ -15,6 +15,19 @@ class HSwish(nn.Module):
         return out
 
 
+class HardSigmoid(nn.Module):
+    def __init__(self, slope=.2, offset=.5):
+        super().__init__()
+        self.slope = slope
+        self.offset = offset
+
+    def forward(self, x):
+        x = (self.slope * x) + self.offset
+        x = F.threshold(-x, -1, -1)
+        x = F.threshold(-x, 0, 0)
+        return x
+
+
 class ConvBNACT(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, num_groups=1, act=None):
         super().__init__()
@@ -97,7 +110,7 @@ class SEBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=num_mid_filter, kernel_size=1, bias=True)
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels=num_mid_filter, kernel_size=1, out_channels=out_channels, bias=True)
-        self.relu2 = HSwish()
+        self.relu2 = HardSigmoid()
 
     def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
         to_load_state_dict = OrderedDict()
