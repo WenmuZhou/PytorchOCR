@@ -6,8 +6,6 @@ import torch
 from torch import nn
 from torchocr.networks.CommonModules import HSwish, HardSigmoid
 
-__all__ = ['MobileNetV3']
-
 
 class ConvBNACT(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, groups=1, act=None):
@@ -200,7 +198,8 @@ class MobileNetV3(nn.Module):
             block_list.append(block)
             inplanes = self.make_divisible(scale * layer_cfg[2])
             i += 1
-        conv = ConvBNACT(
+        self.stages.append(nn.Sequential(*block_list))
+        self.conv2 = ConvBNACT(
             in_channels=inplanes,
             out_channels=self.make_divisible(scale * cls_ch_squeeze),
             kernel_size=1,
@@ -208,8 +207,6 @@ class MobileNetV3(nn.Module):
             padding=0,
             groups=1,
             act='hard_swish')
-        block_list.append(conv)
-        self.stages.append(nn.Sequential(*block_list))
 
     def make_divisible(self, v, divisor=8, min_value=None):
         if min_value is None:
@@ -219,19 +216,23 @@ class MobileNetV3(nn.Module):
             new_v += divisor
         return new_v
 
+    def load_3rd_state_dict(self, _3rd_name, _state):
+        if _3rd_name == 'paddle':
+            self.conv1.load_3rd_state_dict(_3rd_name, _state, 'conv1')
+            m_block_index = 2
+            for m_stage in self.stages:
+                for m_block in m_stage:
+                    m_block.load_3rd_state_dict(_3rd_name, _state, m_block_index)
+                    m_block_index += 1
+            self.conv2.load_3rd_state_dict(_3rd_name, _state, 'conv_last')
+        else:
+            pass
+
     def forward(self, x):
         x = self.conv1(x)
         out = []
         for stage in self.stages:
             x = stage(x)
             out.append(x)
+        out[-1] = self.conv2(out[-1])
         return out
-
-
-if __name__ == '__main__':
-    x = torch.zeros(1, 3, 640, 640)
-    model = MobileNetV3(3)
-    y = model(x)
-    for i in y:
-        print(i.shape)
-    torch.save(model.state_dict(),'1.pth')
