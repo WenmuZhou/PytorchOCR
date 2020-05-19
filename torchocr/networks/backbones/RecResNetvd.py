@@ -132,6 +132,8 @@ class BasicBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
         self.relu = nn.ReLU()
+        self.output_channels = in_channels
+
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
@@ -162,8 +164,9 @@ class BottleneckBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
         self.relu = nn.ReLU()
+        self.output_channels = in_channels*4
 
-    def load_3rd_state(self, _3rd_name, _state):
+    def load_3rd_state_dict(self, _3rd_name, _state):
         self.conv0.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2a')
         self.conv1.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2b')
         self.conv2.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2c')
@@ -222,9 +225,10 @@ class ResNet(nn.Module):
                     stride = (2, 1)
                 else:
                     stride = (1, 1)
-                block_list.append(block_class(in_channels=in_ch, out_channels=num_filters[block_index], stride=stride,
+                block_list.append(block_class(in_channels=in_ch, out_channels=num_filters[block_index],
+                                              stride=stride,
                                               if_first=block_index == i == 0, name=conv_name))
-                in_ch = num_filters[block_index]
+                in_ch = block_list[-1].output_channels
             self.stages.append(nn.Sequential(*block_list))
         self.out_channels = in_ch
         self.out = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)

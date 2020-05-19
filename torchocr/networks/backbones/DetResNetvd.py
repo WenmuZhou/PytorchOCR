@@ -1,17 +1,3 @@
-# copyright (c) 2020 PaddlePaddle Authors. All Rights Reserve.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,8 +7,6 @@ import torch
 from torch import nn
 
 from torchocr.networks.CommonModules import HSwish
-
-__all__ = ["ResNet"]
 
 
 class ConvBNACT(nn.Module):
@@ -145,12 +129,13 @@ class BottleneckBlock(nn.Module):
         self.conv1 = ConvBNACT(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=stride,
                                padding=1, groups=1, act='relu')
         self.conv2 = ConvBNACT(in_channels=out_channels, out_channels=out_channels * 4, kernel_size=1, stride=1,
-                               padding=1, groups=1, act=None)
+                               padding=0, groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
         self.relu = nn.ReLU()
+        self.output_channels = in_channels*4
 
-    def load_3rd_state(self, _3rd_name, _state):
+    def load_3rd_state_dict(self, _3rd_name, _state):
         self.conv0.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2a')
         self.conv1.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2b')
         self.conv2.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2c')
@@ -177,6 +162,7 @@ class BasicBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
         self.relu = nn.ReLU()
+        self.output_channels = in_channels
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
@@ -237,11 +223,22 @@ class ResNet(nn.Module):
                         conv_name = "res" + str(block_index + 2) + chr(97 + i)
                 else:
                     conv_name = f'res{str(block_index + 2)}{chr(97 + i)}'
-                block_list.append(block_class(in_channels=in_ch, out_channels=num_filters[block_index], stride=2 if i == 0 and block_index != 0 else 1,
+                block_list.append(block_class(in_channels=in_ch, out_channels=num_filters[block_index],
+                                              stride=2 if i == 0 and block_index != 0 else 1,
                                               if_first=block_index == i == 0, name=conv_name))
-                in_ch = num_filters[block_index]
+                in_ch = block_list[-1].output_channels
             self.stages.append(nn.Sequential(*block_list))
         self.out_channels = in_ch
+
+    def load_3rd_state_dict(self, _3rd_name, _state):
+        if _3rd_name == 'paddle':
+            for m_conv_index, m_conv in enumerate(self.conv1, 1):
+                m_conv.load_3rd_state_dict(_3rd_name, _state, f'conv1_{m_conv_index}')
+            for m_stage in self.stages:
+                for m_block in m_stage:
+                    m_block.load_3rd_state_dict(_3rd_name, _state)
+        else:
+            pass
 
     def forward(self, x):
         x = self.conv1(x)
@@ -251,12 +248,3 @@ class ResNet(nn.Module):
             x = stage(x)
             out.append(x)
         return out
-
-
-if __name__ == '__main__':
-    x = torch.zeros(1, 3, 640, 640)
-    model = ResNet(3,34)
-    y = model(x)
-    for i in y:
-        print(i.shape)
-    torch.save(model.state_dict(),'1.pth')
