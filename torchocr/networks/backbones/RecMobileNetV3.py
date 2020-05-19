@@ -4,28 +4,10 @@ from __future__ import print_function
 
 from collections import OrderedDict
 
-import torch.nn.functional as F
-from torch import nn
 import torch
+from torch import nn
 
-
-class HSwish(nn.Module):
-    def forward(self, x):
-        out = x * F.relu6(x + 3, inplace=True) / 6
-        return out
-
-
-class HardSigmoid(nn.Module):
-    def __init__(self, slope=.2, offset=.5):
-        super().__init__()
-        self.slope = slope
-        self.offset = offset
-
-    def forward(self, x):
-        x = (self.slope * x) + self.offset
-        x = F.threshold(-x, -1, -1)
-        x = F.threshold(-x, 0, 0)
-        return x
+from torchocr.networks.CommonModules import HSwish, HardSigmoid
 
 
 class ConvBNACT(nn.Module):
@@ -97,7 +79,7 @@ class ResidualUnit(nn.Module):
         if self.se is not None:
             y = self.se(y)
         y = self.conv2(y)
-        if self.not_add == False:
+        if not self.not_add:
             y = x + y
         return y
 
@@ -197,7 +179,6 @@ class MobileNetV3(nn.Module):
                                padding=1,
                                groups=1,
                                act='hard_swish')
-        i = 0
         inplanes = self.make_divisible(inplanes * scale)
         block_list = []
         for layer_cfg in cfg:
