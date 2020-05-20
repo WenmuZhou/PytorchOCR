@@ -4,7 +4,7 @@ from typing import Dict
 from collections import OrderedDict
 
 import torch.nn as nn
-from torchocr.networks.fpn.FPN import FeaturePyramidNetwork, LastLevelMaxPool
+from torchocr.networks.necks.FPN import FeaturePyramidNetwork, LastLevelMaxPool
 
 from torchvision.ops import misc as misc_nn_ops
 
