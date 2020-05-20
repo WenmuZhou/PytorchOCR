@@ -4,15 +4,10 @@ from __future__ import print_function
 
 from collections import OrderedDict
 
-import torch.nn.functional as F
-from torch import nn
 import torch
+from torch import nn
 
-
-class HSwish(nn.Module):
-    def forward(self, x):
-        out = x * F.relu6(x + 3, inplace=True) / 6
-        return out
+from torchocr.networks.CommonModules import HSwish, HardSigmoid
 
 
 class ConvBNACT(nn.Module):
@@ -84,7 +79,7 @@ class ResidualUnit(nn.Module):
         if self.se is not None:
             y = self.se(y)
         y = self.conv2(y)
-        if self.not_add == False:
+        if not self.not_add:
             y = x + y
         return y
 
@@ -97,7 +92,7 @@ class SEBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=num_mid_filter, kernel_size=1, bias=True)
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels=num_mid_filter, kernel_size=1, out_channels=out_channels, bias=True)
-        self.relu2 = HSwish()
+        self.relu2 = HardSigmoid()
 
     def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
         to_load_state_dict = OrderedDict()
@@ -184,7 +179,6 @@ class MobileNetV3(nn.Module):
                                padding=1,
                                groups=1,
                                act='hard_swish')
-        i = 0
         inplanes = self.make_divisible(inplanes * scale)
         block_list = []
         for layer_cfg in cfg:
