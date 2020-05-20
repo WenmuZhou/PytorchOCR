@@ -28,12 +28,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-class AttrDict(dict):
+class CfgNode(dict):
     IMMUTABLE = '__immutable__'
 
     def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__[AttrDict.IMMUTABLE] = False
+        super(CfgNode, self).__init__(*args, **kwargs)
+        self.__dict__[CfgNode.IMMUTABLE] = False
 
     def __getattr__(self, name):
         if name in self.__dict__:
@@ -44,7 +44,7 @@ class AttrDict(dict):
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        if not self.__dict__[AttrDict.IMMUTABLE]:
+        if not self.__dict__[CfgNode.IMMUTABLE]:
             if name in self.__dict__:
                 self.__dict__[name] = value
             else:
@@ -59,28 +59,28 @@ class AttrDict(dict):
         """Set immutability to is_immutable and recursively apply the setting
         to all nested AttrDicts.
         """
-        self.__dict__[AttrDict.IMMUTABLE] = is_immutable
+        self.__dict__[CfgNode.IMMUTABLE] = is_immutable
         # Recursively set immutable state
         for v in self.__dict__.values():
-            if isinstance(v, AttrDict):
+            if isinstance(v, CfgNode):
                 v.immutable(is_immutable)
         for v in self.values():
-            if isinstance(v, AttrDict):
+            if isinstance(v, CfgNode):
                 v.immutable(is_immutable)
 
     def is_immutable(self):
-        return self.__dict__[AttrDict.IMMUTABLE]
+        return self.__dict__[CfgNode.IMMUTABLE]
 
 
-crnn_config = AttrDict(
+crnn_config = CfgNode(
     model='mbv3',
     num_classes=21,
-    train=AttrDict(
+    train=CfgNode(
         datasets=('coco_train', 'voc_2007_train')
     )
 )
 
-east_config = AttrDict(
+east_config = CfgNode(
     backbone='mbv3',
     fpn=['stage1', 'stage2']
 )
