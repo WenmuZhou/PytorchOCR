@@ -8,7 +8,7 @@ from torchocr.networks.fpn.FPN import FeaturePyramidNetwork, LastLevelMaxPool
 
 from torchvision.ops import misc as misc_nn_ops
 
-from torchocr.networks.backbones.rec_resnet_vd import ResNet50_vd as resnet
+from torchocr.networks.backbones.DetResNetvd import ResNet as resnet
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
