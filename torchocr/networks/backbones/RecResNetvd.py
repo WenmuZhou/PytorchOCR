@@ -90,7 +90,7 @@ class ConvBNACTWithPool(nn.Module):
 class ShortCut(nn.Module):
     def __init__(self, in_channels, out_channels, stride, name, if_first=False):
         super().__init__()
-        assert name is not None,'shortcut must have name'
+        assert name is not None, 'shortcut must have name'
 
         self.name = name
         if in_channels != out_channels or stride[0] != 1:
@@ -122,7 +122,7 @@ class ShortCut(nn.Module):
 class BasicBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride, if_first, name):
         super().__init__()
-        assert name is not None,'block must have name'
+        assert name is not None, 'block must have name'
         self.name = name
 
         self.conv0 = ConvBNACT(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=stride,
@@ -132,8 +132,7 @@ class BasicBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
         self.relu = nn.ReLU()
-        self.output_channels = in_channels
-
+        self.output_channels = out_channels
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
@@ -153,18 +152,18 @@ class BasicBlock(nn.Module):
 class BottleneckBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride, if_first, name):
         super().__init__()
-        assert name is not None,'bottleneck must have name'
+        assert name is not None, 'bottleneck must have name'
         self.name = name
         self.conv0 = ConvBNACT(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0,
                                groups=1, act='relu')
         self.conv1 = ConvBNACT(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=stride,
                                padding=1, groups=1, act='relu')
         self.conv2 = ConvBNACT(in_channels=out_channels, out_channels=out_channels * 4, kernel_size=1, stride=1,
-                               padding=1, groups=1, act=None)
+                               padding=0, groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
         self.relu = nn.ReLU()
-        self.output_channels = in_channels*4
+        self.output_channels = out_channels * 4
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         self.conv0.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2a')
