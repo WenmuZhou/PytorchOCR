@@ -133,7 +133,7 @@ class BottleneckBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
         self.relu = nn.ReLU()
-        self.output_channels = in_channels*4
+        self.output_channels = out_channels * 4
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         self.conv0.load_3rd_state_dict(_3rd_name, _state, f'{self.name}_branch2a')
@@ -162,7 +162,7 @@ class BasicBlock(nn.Module):
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
         self.relu = nn.ReLU()
-        self.output_channels = in_channels
+        self.output_channels = out_channels
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
