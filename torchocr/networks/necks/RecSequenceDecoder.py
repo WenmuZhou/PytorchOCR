@@ -13,10 +13,10 @@ import torch
 
 
 class DecoderWithRNN(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, in_channels, **kwargs):
         super().__init__()
-        in_channels = kwargs['in_channels']
         rnn_hidden_size = kwargs.get('hidden_size', 96)
+        self.out_channels = rnn_hidden_size * 2
         self.layers = 2
         self.lstm = nn.LSTM(in_channels, rnn_hidden_size, bidirectional=True, batch_first=True, num_layers=self.layers)
 
@@ -42,23 +42,24 @@ class DecoderWithRNN(nn.Module):
         return x
 
 
-class SequenceDecoder(nn.Module):
+class Reshape(nn.Module):
     def __init__(self, in_channels, **kwargs):
         super().__init__()
-        decoder_type = kwargs.get('type', 'rnn')
-        decoder_dict = {'rnn': DecoderWithRNN, 'none': None}
-        assert decoder_type in decoder_dict, "Unsupport encoder_type:%s" % decoder_type
-        kwargs['in_channels'] = in_channels
-        if decoder_type != 'none':
-            self.decoder = decoder_dict[decoder_type](**kwargs)
-        else:
-            self.decoder = None
+        self.out_channels = in_channels
 
-    def reshape(self, x):
+    def forward(self, x):
         B, C, H, W = x.shape
         x = x.reshape(B, C, H * W)
         x = x.permute((0, 2, 1))  # (NTC)(batch, width, channel)s
         return x
+
+
+class SequenceDecoder(nn.Module):
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        self.reshape = Reshape(in_channels)
+        self.decoder = DecoderWithRNN(in_channels, **kwargs)
+        self.out_channels = self.decoder.out_channels
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if self.decoder:
@@ -66,6 +67,5 @@ class SequenceDecoder(nn.Module):
 
     def forward(self, x):
         x = self.reshape(x)
-        if self.decoder:
-            return self.decoder(x)
+        x = self.decoder(x)
         return x
