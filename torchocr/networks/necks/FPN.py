@@ -128,7 +128,6 @@ class LastLevelMaxPool(ExtraFPNBlock):
     Applies a max_pool2d on top of the last feature map
     """
     def forward(self, x, y, names):
-        # type: (List[Tensor], List[Tensor], List[str])
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names
