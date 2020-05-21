@@ -9,7 +9,7 @@ from tqdm import tqdm
 from torchvision import transforms
 import cv2
 import numpy as np
-from torchocr.networks.architectures.RecModels import *
+from torchocr.networks.architectures.RecModel import *
 from torchocr.networks.architectures.DetModels import *
 from utils import StrLabelConverter
 
