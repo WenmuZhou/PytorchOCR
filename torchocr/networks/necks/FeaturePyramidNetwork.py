@@ -10,6 +10,7 @@ class FeaturePyramidNetwork(nn.Module):
         super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
+        self.out_channels = out_channels
         for in_channels in in_channels:
             if in_channels == 0:
                 raise ValueError("in_channels=0 is currently not supported")
@@ -105,4 +106,3 @@ class LastLevelP6P7(ExtraFPNBlock):
         p.extend([p6, p7])
         names.extend(["p6", "p7"])
         return p, names
-
