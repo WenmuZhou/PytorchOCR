@@ -170,7 +170,6 @@ class MobileNetV3(nn.Module):
         inplanes = self.inplanes
         cfg = self.cfg
         cls_ch_squeeze = self.cls_ch_squeeze
-        cls_ch_expand = self.cls_ch_expand
         # conv1
         self.conv1 = ConvBNACT(in_channels=in_channels,
                                out_channels=self.make_divisible(inplanes * scale),
