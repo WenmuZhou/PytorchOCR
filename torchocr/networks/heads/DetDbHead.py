@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import torch
-import paddle.fluid as fluid
 from torch import nn
 
 
@@ -20,6 +19,9 @@ class Head(nn.Module):
             nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2),
             nn.Sigmoid()
         )
+
+    def load_3rd_state_dict(self, _3rd_name, _state):
+        pass
 
     def forward(self, x):
         return self.out(x)
@@ -42,6 +44,9 @@ class DBHead(nn.Module):
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
 
+    def load_3rd_state_dict(self, _3rd_name, _state):
+        pass
+
     def forward(self, x):
         shrink_maps = self.binarize(x)
         if not self.training:
@@ -50,13 +55,3 @@ class DBHead(nn.Module):
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = torch.cat((shrink_maps, threshold_maps, binary_maps), dim=1)
         return y
-
-if __name__ == '__main__':
-    x = torch.zeros(1,256,160,160)
-    model = DBHead(256)
-    model.eval()
-    y = model(x)
-    print(y.shape)
-    from torchocr.postprocess.DBPostProcess import DBPostProcess
-    p = DBPostProcess()
-    b,c = p(y,[(640,640)])
