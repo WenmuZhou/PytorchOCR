@@ -8,11 +8,33 @@ resume_from = None
 ckpt_dir = ""
 use_cuda = True
 device = 'cuda:0'
-train_options = {
+
+# ####################rec_train_options 参数说明##########################
+# 识别训练参数
+# base_lr：初始学习率
+# fine_tune_stage:
+#     if you want to freeze some stage, and tune the other stages.
+#     ['backbone', 'neck', 'head'], 所有参数都参与调优
+#     ['backbone'], 只调优backbone部分的参数
+#     后续更新： 1、添加bn层freeze的代码
+# optimizer 和 optimizer_step:
+#     优化器的配置， 成对
+#     example1： 'optimizer'：['SGD'], 'optimizer_step':[],表示一直用SGD优化器
+#     example2:  'optimizer':['SGD', 'Adam'], 'optimizer_step':[160]， 表示前[0,160)个epoch使用SGD优化器，
+#                [160,~]采用Adam优化器
+# lr_scheduler和lr_scheduler_info：
+#     学习率scheduler的设置
+###
+rec_train_options = {
         'base_lr': 1.0,
         'batch_size': 64,
         'epochs': 200,
-        'weight_decay': 1e-8,
+        'weight_decay': 1e-4,
+        'fine_tune_stage': ['backbone', 'neck', 'head'],
+        'optimizer': ['SGD', 'Adam', 'Radam', 'ASGD'],
+        'optimizer_step': [140, 160, 180],
+        'lr_scheduler': 'ReduceLROnPlateau',
+        'lr_scheduler_info': [],
 }
 
 SEED = 927
