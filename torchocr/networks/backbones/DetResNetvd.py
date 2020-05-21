@@ -209,6 +209,7 @@ class ResNet(nn.Module):
         self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         self.stages = nn.ModuleList()
+        self.out_channels = []
         in_ch = 64
         for block_index in range(len(depth)):
             block_list = []
@@ -227,8 +228,8 @@ class ResNet(nn.Module):
                                               stride=2 if i == 0 and block_index != 0 else 1,
                                               if_first=block_index == i == 0, name=conv_name))
                 in_ch = block_list[-1].output_channels
+            self.out_channels.append(in_ch)
             self.stages.append(nn.Sequential(*block_list))
-        self.out_channels = in_ch
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':

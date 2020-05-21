@@ -184,8 +184,10 @@ class MobileNetV3(nn.Module):
         inplanes = self.make_divisible(inplanes * scale)
         self.stages = nn.ModuleList()
         block_list = []
+        self.out_channels = []
         for layer_cfg in cfg:
             if layer_cfg[5] == 2 and i > 2:
+                self.out_channels.append(inplanes)
                 self.stages.append(nn.Sequential(*block_list))
                 block_list = []
             block = ResidualUnit(num_in_filter=inplanes,
@@ -207,6 +209,7 @@ class MobileNetV3(nn.Module):
             padding=0,
             groups=1,
             act='hard_swish')
+        self.out_channels.append(self.make_divisible(scale * cls_ch_squeeze))
 
     def make_divisible(self, v, divisor=8, min_value=None):
         if min_value is None:
