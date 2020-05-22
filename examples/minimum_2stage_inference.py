@@ -10,7 +10,7 @@ from torchvision import transforms
 import cv2
 import numpy as np
 from torchocr.networks.architectures.RecModel import *
-from torchocr.networks.architectures.DetModels import *
+from torchocr.networks.architectures.DetModel import *
 from utils import StrLabelConverter
 
 default_font_for_annotate = ImageFont.truetype('./田氏颜体大字库2.0.ttf', 20)
