@@ -1,0 +1,12 @@
+numpy==1.18.4
+Pillow==6.2.2
+tqdm==4.46.0
+opencv-python==4.2.0.34
+addict==2.2.1
+termcolor==1.1.0
+pyclipper==1.1.0.post3
+shapely==1.7.0
+pytorch==1.4.0
+torchvision==0.5.0
+
+

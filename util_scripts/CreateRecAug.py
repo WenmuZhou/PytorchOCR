@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 #coding:utf-8
-import sys
-# reload(sys)
-# sys.setdefaultencoding("utf-8")
-import os, sys, shutil, math, random, json, multiprocessing, threading
-from PIL import Image, ImageDraw, ImageFont, ImageChops
+
 import cv2
+import abc
+import random
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps,ImageDraw
-# import 
-import abc
-# import trans_utils
+
 
 def cv2pil(image):
     assert isinstance(image, np.ndarray), 'input image type is not cv2'
