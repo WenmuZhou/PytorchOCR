@@ -2,9 +2,9 @@
 # @Time    : 2020/5/19 21:44
 # @Author  : xiangjing
 
-import importlib
+
 import os
-import pickle
+
 import random
 
 import numpy as np
@@ -14,6 +14,9 @@ from torch.optim import SGD
 
 from tools.rec_train_config import *
 from utils import weight_init
+from torchocr.networks.architectures.RecModel import RecModel
+from dataset.ICDAR15_REC_Dataset import ICDAR15_Rec_Dataset
+from torch.nn import CTCLoss
 
 
 def set_random_seed(seed, use_cuda=True, deterministic=False):
@@ -37,14 +40,15 @@ def set_random_seed(seed, use_cuda=True, deterministic=False):
             torch.backends.cudnn.benchmark = False
 
 
-def get_architecture(arch_name, **kwargs):
+def get_architecture(arch_config):
     """
     get architecture model class
     """
-    assert arch_name in {'CRNNMBV3', 'CRNNRes34'}, f'{arch_name} is not developed yet!'
-    module = importlib.import_module(f'torchocr.networks.architectures.RecModels')
-    arch_model = getattr(module, arch_name)
-    return arch_model(**kwargs)
+    # assert arch_name in {'CRNNMBV3', 'CRNNRes34'}, f'{arch_name} is not developed yet!'
+    # module = importlib.import_module(f'torchocr.networks.architectures.RecModel')
+    # arch_model = getattr(module, arch_name)
+    # return arch_model(**kwargs)
+    return RecModel(arch_config)
 
 
 def load_model(_model, resume_from, to_use_device, third_name=None):
@@ -74,7 +78,7 @@ def get_optimizers(params):
     优化器
     Returns:
     """
-    return SGD(params, lr=rec_train_options['base_lr'], weight_decay=rec_train_options['weight_decay']),
+    return [SGD(params, lr=rec_train_options['base_lr'], weight_decay=rec_train_options['weight_decay'])]
 
 
 def get_lrs(optimizer, type='LambdaLR', **kwargs):
@@ -116,10 +120,12 @@ def get_fine_tune_params(net):
     Returns: 需要优化的参数
     """
     params = []
-    for stage in rec_train_options['rec_train_options']:
+    for stage in rec_train_options['fine_tune_stage']:
         attr = getattr(net, stage, None)
-        params.append(attr.parameters())
-    return params
+        for element in attr.parameters():
+            yield element
+    #     params.append(attr.parameters())
+    # return params
 
 
 def data_loader():
@@ -127,8 +133,8 @@ def data_loader():
     数据加载，还不完善，需要修改
     :return:
     """
-    train_set = None
-    test_set = None
+    train_set = ICDAR15_Rec_Dataset()
+    test_set = ICDAR15_Rec_Dataset()
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=rec_train_options['batch_size'],
                                                shuffle=True,
                                                num_workers=4, pin_memory=True)
@@ -136,6 +142,48 @@ def data_loader():
                                               shuffle=False, num_workers=4,
                                               pin_memory=True)
     return train_loader, test_loader
+
+
+def decode(preds):
+    pred = []
+    for i in range(len(preds)):
+        if preds[i] != 0 and ((i == 0) or (i != 0 and preds[i] != preds[i - 1])):
+            pred.append(int(preds[i]))
+    return pred
+
+
+def evaluate(net, val_loader, loss_func, max_iter=50):
+    logger.info('start val')
+    net.eval()
+    totalloss = 0.0
+    k = 0
+    correct_num = 0
+    total_num = 0
+    val_iter = iter(val_loader)
+    max_iter = min(max_iter, len(val_loader))
+    for i in range(max_iter):
+        k = k + 1
+        (data, label) = val_iter.next()
+        labels = torch.IntTensor([])
+        for j in range(label.size(0)):
+            labels = torch.cat((labels, label[j]), 0)
+        if torch.cuda.is_available and use_cuda:
+            data = data.cuda()
+        output = net(data)
+        output_size = torch.IntTensor([output.size(0)] * int(output.size(1)))
+        label_size = torch.IntTensor([label.size(1)] * int(label.size(0)))
+        loss = loss_func(output, labels, output_size, label_size) / label.size(0)
+        totalloss += float(loss)
+        pred_label = output.max(2)[1]
+        pred_label = pred_label.transpose(1, 0).contiguous().view(-1)
+        pred = decode(pred_label)
+        total_num += len(pred)
+        for x, y in zip(pred, labels):
+            if int(x) == int(y):
+                correct_num += 1
+    accuracy = correct_num / float(total_num) * 100
+    evaluate_loss = totalloss / k
+    logger.info('evaluate loss : %.3f , accuary : %.3f%%' % (evaluate_loss, accuracy))
 
 
 def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_device):
@@ -154,72 +202,53 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
     os.makedirs(ckpt_dir, exist_ok=True)
     logger.info('==> Training...')
     net.train()  # train mode
-    best_acc = 0.0
-    best_epoch = None
-    err_dict = {}
-    for t in range(rec_train_options['epochs']):  # traverse each epoch
-        epoch_loss = []
-        num_correct = 0
-        num_total = 0
-        for rect_info in train_loader:  # traverse each batch in the epoch
+
+    loss_total = 0.0
+    print_interval = rec_train_options['print_interval']
+    val_interval = rec_train_options['val_interval']
+    num_in_print = 0
+    k = 0
+    for epoch in range(rec_train_options['epochs']):  # traverse each epoch
+
+        for i, (data, label) in enumerate(train_loader):  # traverse each batch in the epoch
+            k = k + 1
+            num_in_print = num_in_print + 1
             # put training data, label to device
-            for rect in rect_info:
-                pass
+            if torch.cuda.is_available and use_cuda:
+                data = data.to(to_use_device)
+                loss_func = loss_func.cuda()
 
-        #     data, label = data.to(to_use_device), label.to(to_use_device)
-        #     # clear the grad
-        #     solver.zero_grad()
-        #     # forword calculation
-        #     output = net.forward(data)
-        #     # calculate each attribute loss
-        #     label = label.long()
-        #     loss_rec = loss_func(output[:, :3], label[:, 0])
-        #
-        #     # statistics of each epoch loss
-        #     epoch_loss.append(loss_rec)
-        #
-        #     # statistics of sample number
-        #     num_total += label.size(0)
-        #
-        #     # statistics of accuracy
-        #     # pred = get_predict(output)
-        #     # label = label.cpu().long()
-        #     # num_correct += count_correct(pred, label)
-        #
-        #     # backward calculation according to loss
-        #     loss_rec.backward()
-        #     solver.step()
-        # print(solver.state_dict()['param_groups'][0]['lr'])
-        #
-        # # calculate training accuray
-        # train_acc = 100.0 * float(num_correct) / float(num_total)
+            labels = torch.IntTensor([])
+            for j in range(label.size(0)):
+                labels = torch.cat((labels, label[j]), 0)
 
-        # calculate accuracy of test set every epoch
-        # eval_acc = evaluate_accuracy(net, eval_loader, is_draw=False)
+            # forword calculation
+            output = net.forward(data)
+            output_size = torch.IntTensor([output.size(0)] * int(output.size(1)))
+            label_size = torch.IntTensor([label.size(1)] * int(label.size(0)))
+            # calculate  loss
+            loss = loss_func(output, labels, output_size, label_size) / label.size(0)
+            loss_total += float(loss)
+            if k % print_interval == 0:
+                # display
+                logger.info("[%d/%d] || [%d/%d] || Loss:%.3f" % (
+                    epoch, rec_train_options['epochs'], i + 1, len(train_loader), loss_total / num_in_print))
+                loss_total = 0.0
+                num_in_print = 0
 
-        # schedule the learning rate according to test acc
-        # scheduler.step(test_acc)
+            # clear the grad
+            solver.zero_grad()
 
-    #     # 保存精度最好的epoch
-    #     if eval_acc > best_acc:
-    #         best_acc = eval_acc
-    #         best_epoch = t + 1
-    #
-    #         # dump model to disk
-    #         model_save_name = 'epoch_' + \
-    #                           str(t + latest_model_id + 1) + '.pth'
-    #         torch.save(net.state_dict(),
-    #                    os.path.join(paths['ckpt_dir'], model_save_name))
-    #         logger.info('<= {} saved.'.format(model_save_name))
-    #     logger.info('\t%d \t%4.3f \t\t%4.2f%% \t\t%4.2f%%' %
-    #                 (t + 1, sum(epoch_loss) / len(epoch_loss), train_acc, test_acc))
-    #
-    #     err_dict_path = './err_dict.pkl'
-    #     pickle.dump(err_dict, open(err_dict_path, 'wb'))
-    #     print('=> err_dict dumped @ %s' % err_dict_path)
-    #     err_dict = {}  # reset err dict
-    #
-    # logger.info('=> Best at epoch %d, test accuaray %f' % (best_epoch, best_acc))
+            loss.backward()
+            solver.step()
+            if k % val_interval == 0:
+                # val
+                evaluate(net, eval_loader, loss_func)
+                net.train()  # train mode
+        # 保存ckpt
+        if epoch % rec_train_options['ckpt_save_epoch'] ==0:
+            torch.save(net.state_dict(),
+                       os.path.join(ckpt_dir, 'epoch_'+str(epoch)+'.pth'))
 
 
 def main():
@@ -229,7 +258,7 @@ def main():
     set_random_seed(SEED, use_cuda, deterministic=True)
 
     # ===> build network
-    net = get_architecture(architecture, **architecture_config)
+    net = get_architecture(arc_config)
 
     # ===> 模型初始化
     net.apply(weight_init)
@@ -246,16 +275,16 @@ def main():
     params = get_fine_tune_params(net)
     # ===> solver and lr scheduler
     solver = get_optimizers(params)
-    scheduler = get_lrs(solver, rec_train_options['lr_scheduler'])
+    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'])
 
     # ===> loss function
-    loss_func = None
+    loss_func = CTCLoss()
 
     # ===> data loader
     train_loader, eval_loader = data_loader()
 
     # ===> train
-    train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_device)
+    train(net, solver[0], scheduler, loss_func, train_loader, eval_loader, to_use_device)
 
 
 if __name__ == '__main__':
