@@ -26,30 +26,49 @@ device = 'cuda:0'
 #     学习率scheduler的设置
 ###
 rec_train_options = {
-        'base_lr': 1.0,
-        'batch_size': 64,
-        'epochs': 200,
-        'weight_decay': 1e-4,
-        'fine_tune_stage': ['backbone', 'neck', 'head'],
-        'optimizer': ['SGD', 'Adam', 'Radam', 'ASGD'],
-        'optimizer_step': [140, 160, 180],
-        'lr_scheduler': 'ReduceLROnPlateau',
-        'lr_scheduler_info': [],
+    'base_lr': 0.01,
+    'batch_size': 2,
+    'epochs': 200,
+    'weight_decay': 1e-4,
+    'fine_tune_stage': ['backbone', 'neck', 'head'],
+    # 'optimizer': ['SGD', 'Adam', 'Radam', 'ASGD'],
+    # 'optimizer_step': [140, 160, 180],
+    'optimizer': ['Adam'],
+    'optimizer_step': [],
+    'lr_scheduler': 'ReduceLROnPlateau',
+    'lr_scheduler_info': [],
+    'print_interval': 200, # step为单位
+    'val_interval': 1000, # step为单位
+    'ckpt_save_epoch':4,  # epoch为单位
 }
 
 SEED = 927
+
+
 # if autoscale_lr:
 #     # apply the linear scaling rule (https://arxiv.org/abs/1706.02677)
 #     optimizer['lr'] = optimizer['lr'] * len(gpu_ids) / 8
 # autoscale_lr = True
 
-# for model
-architecture = 'CRNNRes34'
-architecture_config = {
-    'in_channels': 3,
-    'labels': 1000
-}
 
+# for model
+
+class ArcConfig:
+    def __init__(self):
+        self.neck = {"type": 'PPaddleRNN'}
+        self.backbone = {"type": "ResNet", 'layers': 34}
+        self.head = {"type": "CTC", 'n_class': 27}
+        self.in_channels = 3,
+        self.labels = 1000
+
+
+arc_config = ArcConfig()
+#
+# architecture = 'CRNNRes34'
+# architecture_config = {
+#     'in_channels': 3,
+#     'labels': 1000
+# }
 
 # for dataset
 
