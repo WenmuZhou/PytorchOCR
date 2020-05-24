@@ -2,18 +2,20 @@
 # @Time    : 2020/5/19 21:44
 # @Author  : xiangjing
 
+# 日志
+from utils import Logger
+logger = Logger()
 
 # for train
 resume_from = None
 ckpt_dir = ""
-use_cuda = True
 device = 'cuda:0'
 
 # ####################rec_train_options 参数说明##########################
 # 识别训练参数
 # base_lr：初始学习率
 # fine_tune_stage:
-#     if you want to freeze some stage, and tune the other stages.
+#     if you want to freeze some stage, and tune the others.
 #     ['backbone', 'neck', 'head'], 所有参数都参与调优
 #     ['backbone'], 只调优backbone部分的参数
 #     后续更新： 1、添加bn层freeze的代码
@@ -24,6 +26,9 @@ device = 'cuda:0'
 #                [160,~]采用Adam优化器
 # lr_scheduler和lr_scheduler_info：
 #     学习率scheduler的设置
+# ckpt_save_type作用是选择模型保存的方式
+#      HighestAcc：只保存在验证集上精度最高的模型（还是在训练集上loss最小）
+#      FixedEpochStep： 按一定间隔保存模型
 ###
 rec_train_options = {
     'base_lr': 0.01,
@@ -39,7 +44,8 @@ rec_train_options = {
     'lr_scheduler_info': [],
     'print_interval': 200, # step为单位
     'val_interval': 1000, # step为单位
-    'ckpt_save_epoch':4,  # epoch为单位
+    'ckpt_save_type': 'HighestAcc', # 'FixedEpochStep'
+    'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
 
 SEED = 927
@@ -70,30 +76,8 @@ arc_config = ArcConfig()
 #     'labels': 1000
 # }
 
+
 # for dataset
+# ##lable文件
+label_file = ''
 
-
-# 其他
-information_verbose = False
-use_loguru = False
-if use_loguru:
-    from loguru import logger
-    import sys
-
-    logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-else:
-    # 自用简易logger
-    from functools import partial
-    import termcolor
-
-
-    class Logger:
-        def __init__(self):
-            keywords = ['debug', 'info', 'error']
-            background_colors = ['yellow', 'grey', 'white']
-            foreground_colors = ['on_red', 'on_green', 'on_grey']
-            for m_keyword, m_background_color, m_foreground in zip(keywords, background_colors, foreground_colors):
-                self.__setattr__(m_keyword, partial(termcolor.cprint, color=m_background_color, on_color=m_foreground))
-
-
-    logger = Logger()
