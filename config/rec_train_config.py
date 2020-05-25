@@ -2,15 +2,6 @@
 # @Time    : 2020/5/19 21:44
 # @Author  : xiangjing
 
-# 日志
-from utils import Logger
-logger = Logger()
-
-# for train
-resume_from = None
-ckpt_dir = ""
-device = 'cuda:0'
-
 # ####################rec_train_options 参数说明##########################
 # 识别训练参数
 # base_lr：初始学习率
@@ -31,6 +22,10 @@ device = 'cuda:0'
 #      FixedEpochStep： 按一定间隔保存模型
 ###
 rec_train_options = {
+    # for train
+    'resume_from': None,
+    'checkpoint_save_dir': "",
+    'device': 'cuda:0',
     'base_lr': 0.01,
     'batch_size': 2,
     'epochs': 200,
@@ -58,17 +53,25 @@ SEED = 927
 
 
 # for model
+# 建议都为dict
+model = {
+    'type': "RecModel",
+    'neck_dict': {"type": 'PPaddleRNN'},
+    'backbone_dict': {"type": "ResNet", 'layers': 34},
+    'head_dict': {"type": "CTC", 'n_class': 27},
+    'in_channels': 3,
+    'labels': 1000
+}
+# class ArcConfig:
+#     def __init__(self):
+#         self.neck = {"type": 'PPaddleRNN'}
+#         self.backbone = {"type": "ResNet", 'layers': 34}
+#         self.head = {"type": "CTC", 'n_class': 27}
+#         self.in_channels = 3,
+#         self.labels = 1000
 
-class ArcConfig:
-    def __init__(self):
-        self.neck = {"type": 'PPaddleRNN'}
-        self.backbone = {"type": "ResNet", 'layers': 34}
-        self.head = {"type": "CTC", 'n_class': 27}
-        self.in_channels = 3,
-        self.labels = 1000
 
-
-arc_config = ArcConfig()
+# arc_config = ArcConfig()
 #
 # architecture = 'CRNNRes34'
 # architecture_config = {
@@ -76,8 +79,15 @@ arc_config = ArcConfig()
 #     'labels': 1000
 # }
 
-
+loss = {
+    'type': 'CTCLoss',
+}
 # for dataset
 # ##lable文件
-label_file = ''
+dataset = {
+    'type': 'ICDAR15_REC_Dataset',
+    'label_file': '',
+
+}
+
 
