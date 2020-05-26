@@ -9,11 +9,13 @@ from tqdm import tqdm
 from torchvision import transforms
 import cv2
 import numpy as np
+import scipy
 from torchocr.networks.architectures.RecModel import *
 from torchocr.networks.architectures.DetModel import *
 from utils import StrLabelConverter
 
 default_font_for_annotate = ImageFont.truetype('./田氏颜体大字库2.0.ttf', 20)
+
 
 def get_data(_to_eval_directory, _to_eval_file, _transform):
     """
@@ -140,12 +142,87 @@ def polygon_rectify_to_rectangle(_img, _polygon):
     pass
 
 
-def polygon_to_rectangle_basic(_img, _polygon):
+def extract_rectangle_with_correct_aspect_ratio(_img, _four_corner_points):
+    """
+    从图中抠出特定区域的四边形，并按照正确的长宽比进行变换
+    :param _img:    整张图
+    :param _four_corner_points:     矩形的四个点，必须是从左上角开始的顺时针
+    :return:    矫正后的进行透视变换的区域
+    """
+    rows, cols = _img.shape[:2]
+    u0 = cols / 2.0
+    v0 = rows / 2.0
+    p = [_four_corner_points[0], _four_corner_points[1], _four_corner_points[3], _four_corner_points[2]]
+    # widths and heights of the projected image
+    w1 = scipy.spatial.distance.euclidean(p[0], p[1])
+    w2 = scipy.spatial.distance.euclidean(p[2], p[3])
+
+    h1 = scipy.spatial.distance.euclidean(p[0], p[2])
+    h2 = scipy.spatial.distance.euclidean(p[1], p[3])
+
+    w = max(w1, w2)
+    h = max(h1, h2)
+
+    # visible aspect ratio
+    ar_vis = float(w) / float(h)
+
+    # make numpy arrays and append 1 for linear algebra
+    m1 = np.array((p[0][0], p[0][1], 1)).astype('float32')
+    m2 = np.array((p[1][0], p[1][1], 1)).astype('float32')
+    m3 = np.array((p[2][0], p[2][1], 1)).astype('float32')
+    m4 = np.array((p[3][0], p[3][1], 1)).astype('float32')
+
+    # calculate the focal distance
+    k2 = np.dot(np.cross(m1, m4), m3) / np.dot(np.cross(m2, m4), m3)
+    k3 = np.dot(np.cross(m1, m4), m2) / np.dot(np.cross(m3, m4), m2)
+
+    n2 = k2 * m2 - m1
+    n3 = k3 * m3 - m1
+
+    n21 = n2[0]
+    n22 = n2[1]
+    n23 = n2[2]
+
+    n31 = n3[0]
+    n32 = n3[1]
+    n33 = n3[2]
+
+    f = math.sqrt(np.abs((1.0 / (n23 * n33)) * ((n21 * n31 - (n21 * n33 + n23 * n31) * u0 + n23 * n33 * u0 * u0) + (
+            n22 * n32 - (n22 * n33 + n23 * n32) * v0 + n23 * n33 * v0 * v0))))
+
+    A = np.array([[f, 0, u0], [0, f, v0], [0, 0, 1]]).astype('float32')
+
+    At = np.transpose(A)
+    Ati = np.linalg.inv(At)
+    Ai = np.linalg.inv(A)
+
+    # calculate the real aspect ratio
+    ar_real = math.sqrt(np.dot(np.dot(np.dot(n2, Ati), Ai), n2) / np.dot(np.dot(np.dot(n3, Ati), Ai), n3))
+
+    if ar_real < ar_vis:
+        W = int(w)
+        H = int(W / ar_real)
+    else:
+        H = int(h)
+        W = int(ar_real * H)
+
+    pts1 = np.array(p).astype('float32')
+    pts2 = np.float32([[0, 0], [W, 0], [0, H], [W, H]])
+
+    # project the image with the new w/h
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+
+    dst = cv2.warpPerspective(_img, M, (W, H))
+    return dst
+
+
+def polygon_to_rectangle_basic(_img, _polygon, _aspect_ratio_correct=True):
     """
     将多边形的最小面积四边形进行透视变换得到矩形
     适用于绝大部分场景
     :param  _img:   当前图像
     :param _polygon:    多边形区域
+    :param _aspect_ratio_correct:   是否进行长宽比矫正，默认矫正
     :return:    对应的矩形区域(ndarray)
     """
     sorted_points = clockwise_points(_polygon)
@@ -154,9 +231,12 @@ def polygon_to_rectangle_basic(_img, _polygon):
     first_edge = (arc_lengths[0] + arc_lengths[2]) // 2
     second_edge = (arc_lengths[1] + arc_lengths[3]) // 2
     img_np = np.array(_img)
-    M = cv2.getPerspectiveTransform([m_edge[0] for m_edge in fours_edges],
-                                    [[0, 0], [first_edge, 0], [first_edge, second_edge], [0, second_edge]])
-    warped_roi = cv2.warpPerspective(img_np, M, (first_edge, second_edge))
+    if not _aspect_ratio_correct:
+        M = cv2.getPerspectiveTransform([m_edge[0] for m_edge in fours_edges],
+                                        [[0, 0], [first_edge, 0], [first_edge, second_edge], [0, second_edge]])
+        warped_roi = cv2.warpPerspective(img_np, M, (first_edge, second_edge))
+    else:
+        warped_roi = extract_rectangle_with_correct_aspect_ratio(img_np, [m_edge[0] for m_edge in fours_edges])
     if first_edge < second_edge:
         return cv2.rotate(warped_roi, cv2.ROTATE_90_COUNTERCLOCKWISE)
     else:
@@ -171,16 +251,16 @@ def detect_result_post_process(_detect_result, _detector_model_type):
     :return:    后处理后的结果
     """
     to_return_polygons = []
-    if detector_model_type in {'pse', 'pan'}:
+    if _detector_model_type in {'pse', 'pan'}:
         # 对label map进行多边形抽取以及聚合
         pass
-    elif detector_model_type in {'db'}:
+    elif _detector_model_type in {'db'}:
         # 对shrink map进行多边形抽取以及聚合
         pass
-    elif detector_model_type in {'centernet', 'fcos', 'east', 'advancedeast'}:
+    elif _detector_model_type in {'centernet', 'fcos', 'east', 'advancedeast'}:
         # 对于回归出来的直接是矩形框的，主要是做nms以及聚合
         pass
-    elif detector_model_type in {'ctpn', 'yolo_ctpn'}:
+    elif _detector_model_type in {'ctpn', 'yolo_ctpn'}:
         # 对ctpn类型的回归框进行连接得到多边形区域，并进行多边形聚合
         pass
     return to_return_polygons
@@ -269,8 +349,10 @@ if __name__ == '__main__':
         transforms.Normalize(std=[1, 1, 1], mean=[0.5, 0.5, 0.5]),
         transforms.ToTensor(),
     ])
-    detector_model_type = 'db'
-    recognizer_model_type = 'crnn_res'
+    detector_model_type = ''
+    detector_config = AttrDict()
+    recognizer_model_type = ''
+    recognizer_config = AttrDict()
     detector_pretrained_model_file = ''
     recognizer_pretrained_model_file = ''
     annotate_on_image = True
@@ -279,8 +361,10 @@ if __name__ == '__main__':
     # 模型推断
     label_converter = StrLabelConverter(labels)
     device = torch.device(device_name)
-    detector = get_detector(detector_model_type, detector_model_type).to(device)
-    recognizer = get_recognizer(recognizer_model_type, recognizer_pretrained_model_file).to(device)
+    detector = DetModel(detector_config).to(device)
+    detector.load_state_dict(torch.load(detector_pretrained_model_file, map_location='cpu'))
+    recognizer = RecModel(recognizer_config).to(device)
+    recognizer.load_state_dict(torch.load(recognizer_pretrained_model_file, map_location='cpu'))
     detector.eval()
     recognizer.eval()
     with torch.no_grad():
