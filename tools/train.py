@@ -12,7 +12,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch.optim import SGD
-
+from addict import Dict
 from utils import weight_init, StrLabelConverter, init_logger
 
 import argparse
@@ -71,8 +71,10 @@ def get_architecture(arch_config):
     assert arch_type in {'RecModel', 'DetModel'}, f'{arch_type} is not developed yet!'
     module = import_module(f'torchocr.networks.architectures.{arch_type}')
     arch_model = getattr(module, arch_type)
-    # 此处需要转换，讨论转换为什么格式
-    return arch_model(arch_config)
+    if not arch_config:
+        return arch_model()
+    else:
+        return arch_model(Dict(arch_config))
 
 
 def get_loss(loss_config):
@@ -86,8 +88,10 @@ def get_loss(loss_config):
     # assert loss_type in {'CTCLoss'}, f'{loss_type} is not developed yet!'
     module = import_module(f'torchocr.networks.losses.{loss_type}')
     arch_model = getattr(module, loss_type)
-    # 此处需要转换，讨论转换为什么格式
-    return arch_model(loss_config)
+    if not loss_config:
+        return arch_model()
+    else:
+        return arch_model(loss_config)
 
 
 def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=None):
@@ -174,12 +178,12 @@ def get_data_loader(dataset_config, batch_size):
     :return:
     """
     dataset_type = dataset_config.pop('type')
-    assert dataset_type in {'ICDAR15_REC_Dataset', 'ICDAR15_DET_Dataset'}, f'{dataset_type} is not developed yet!'
-    module = import_module(f'dataset.{dataset_type}')
+    assert dataset_type in {'ICDAR15RecDataset', 'ICDAR15DetDataset'}, f'{dataset_type} is not developed yet!'
+    module = import_module(f'dataset.icdar2015.{dataset_type}')
     dataset_class = getattr(module, dataset_type)
     # 此处需要转换，讨论转换为什么格式
-    train_set = dataset_class(**dataset_config)
-    test_set = dataset_class(**dataset_config)
+    train_set = dataset_class(dataset_config)
+    test_set = dataset_class(dataset_config)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
                                                shuffle=True,
                                                num_workers=4, pin_memory=True)
@@ -348,13 +352,16 @@ def train_info_initial(rec_train_options, logger):
 
     Args:
         rec_train_options:
+        logger:
     Returns:
     """
     logger.info('=>train options:')
     for key, val in rec_train_options.items():
         logger.info(f'\t{key} : {val}')
-
-    os.makedirs(rec_train_options['checkpoint_save_dir'], exist_ok=True)
+    if rec_train_options['checkpoint_save_dir']:
+        os.makedirs(rec_train_options['checkpoint_save_dir'], exist_ok=True)
+    else:
+        os.makedirs('./checkpoint_dir', exist_ok=True)
 
 
 def main():
@@ -368,8 +375,8 @@ def main():
 
     # ===>
     to_use_device = torch.device(
-        cfg['device'] if torch.cuda.is_available() and ('cuda' in cfg['device']) else 'cpu')
-    set_random_seed(cfg['SEED'], 'cuda' in cfg['device'], deterministic=True)
+        rec_train_options['device'] if torch.cuda.is_available() and ('cuda' in rec_train_options['device']) else 'cpu')
+    set_random_seed(cfg['SEED'], 'cuda' in rec_train_options['device'], deterministic=True)
 
     # ===> build network
     net = get_architecture(cfg['model'])
@@ -396,7 +403,7 @@ def main():
 
     # ===> loss function
     loss_func = get_loss(cfg['loss'])
-    if torch.cuda.is_available and ('cuda' in cfg['device']):
+    if torch.cuda.is_available and ('cuda' in rec_train_options['device']):
         loss_func = loss_func.cuda()
 
     # ===> data loader
