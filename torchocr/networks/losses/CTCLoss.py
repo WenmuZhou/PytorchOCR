@@ -14,4 +14,4 @@ class CTCLoss(nn.Module):
             labels = torch.cat((labels, label[j]), 0)
         output_size = torch.IntTensor([pred.size(0)] * int(pred.size(1)))
         label_size = torch.IntTensor([label.size(1)] * int(label.size(0)))
-        return self.loss_func(pred, labels, output_size, label_size) / label.size(0)
+        return self.loss_func(pred, labels, output_size, label_size)
