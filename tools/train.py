@@ -197,11 +197,11 @@ def get_data_loader(dataset_config, batch_size):
     return train_loader, eval_loader
 
 
-def evaluate(net, val_loader, loss_func, logger, max_iter=50):
-    use_cuda = torch.cuda.is_available() and ('cuda' in device)
+def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
+
     logger.info('start val')
     net.eval()
-    totalloss = 0.0
+    total_loss = 0.0
     k = 0
     correct_num = 0
     total_num = 0
@@ -209,28 +209,19 @@ def evaluate(net, val_loader, loss_func, logger, max_iter=50):
     max_iter = min(max_iter, len(val_loader))
     for i in range(max_iter):
         k = k + 1
-        (data, label_str) = val_iter.next()
-        labels = torch.IntTensor([])
-        for j in range(label_str.size(0)):
-            label, length = str_label_converter.encode(label_str[j])
-            labels = torch.cat((labels, label), 0)
-            labels = torch.cat((labels, label[j]), 0)
-        if torch.cuda.is_available and use_cuda:
-            data = data.cuda()
-        output = net(data)
-        output_size = torch.IntTensor([output.size(0)] * int(output.size(1)))
-        label_size = torch.IntTensor([label.size(1)] * int(label.size(0)))
-        loss = loss_func(output, labels, output_size, label_size) / label.size(0)
-        totalloss += float(loss)
+        (data, label) = val_iter.next()
+        data, label = data.to(to_use_device), label.to(to_use_device)
+        output = net.forward(data)
+        loss = loss_func(output, label)
+        total_loss += float(loss)
         pred_label = output.max(2)[1]
         pred_label = pred_label.transpose(1, 0).contiguous().view(-1)
-        pred = str_label_converter.decode(pred_label, 1)
-        total_num += len(pred)
-        for x, y in zip(pred, labels):
+        total_num += len(pred_label)
+        for x, y in zip(pred_label, label):
             if int(x) == int(y):
                 correct_num += 1
     accuracy = correct_num / float(total_num) * 100
-    evaluate_loss = totalloss / k
+    evaluate_loss = total_loss / k
     logger.info('evaluate loss : %.3f , accuary : %.3f%%' % (evaluate_loss, accuracy))
 
 
@@ -339,7 +330,7 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
                 scheduler.step()
                 if i % rec_train_options['val_interval'] == 0:
                     # val
-                    evaluate(net, eval_loader, loss_func)
+                    evaluate(net, eval_loader, loss_func, to_use_device, logger)
                     net.train()  # train mode
             # 保存ckpt
             # operation for model save as parameter ckpt_save_type is  HighestAcc
