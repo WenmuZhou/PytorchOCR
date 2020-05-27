@@ -91,7 +91,7 @@ def get_loss(loss_config):
     if not loss_config:
         return arch_model()
     else:
-        return arch_model(loss_config)
+        return arch_model(**loss_config)
 
 
 def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=None):
@@ -133,7 +133,7 @@ def get_lrs(optimizer, type='LambdaLR', **kwargs):
     """
     scheduler = None
     if type == 'LambdaLR':
-        burn_in, steps = kwargs
+        burn_in, steps = kwargs['burn_in'], kwargs['steps']
 
         # Learning rate setup
         def burnin_schedule(i):
@@ -178,22 +178,26 @@ def get_data_loader(dataset_config, batch_size):
     :return:
     """
     dataset_type = dataset_config.pop('type')
+    train_dataset_cfg =  dataset_config.pop('train')
+    eval_dataset_cfg = dataset_config.pop('eval')
     assert dataset_type in {'ICDAR15RecDataset', 'ICDAR15DetDataset'}, f'{dataset_type} is not developed yet!'
-    module = import_module(f'dataset.icdar2015.{dataset_type}')
-    dataset_class = getattr(module, dataset_type)
+    train_module = import_module(f'dataset.icdar2015.{dataset_type}')
+    eval_module = import_module(f'dataset.icdar2015.{dataset_type}')
+    train_dataset_class = getattr(train_module, dataset_type)
+    eval_dataset_class = getattr(eval_module, dataset_type)
     # 此处需要转换，讨论转换为什么格式
-    train_set = dataset_class(dataset_config)
-    test_set = dataset_class(dataset_config)
+    train_set = train_dataset_class(Dict(train_dataset_cfg))
+    eval_set = eval_dataset_class(Dict(eval_dataset_cfg))
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
                                                shuffle=True,
                                                num_workers=4, pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1,  # one image each batch for testing
+    eval_loader = torch.utils.data.DataLoader(eval_set, batch_size=1,  # one image each batch for testing
                                               shuffle=False, num_workers=4,
                                               pin_memory=True)
-    return train_loader, test_loader
+    return train_loader, eval_loader
 
 
-def evaluate(net, val_loader, loss_func, max_iter=50):
+def evaluate(net, val_loader, loss_func, logger, max_iter=50):
     use_cuda = torch.cuda.is_available() and ('cuda' in device)
     logger.info('start val')
     net.eval()
@@ -304,7 +308,7 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
             total_loss = []
             total_num = []
-            for i, (data, labels) in enumerate(train_loader):  # traverse each batch in the epoch
+            for i, (data, labels, ) in enumerate(train_loader):  # traverse each batch in the epoch
                 current_step = epoch * all_step + i
                 num_in_print = num_in_print + 1
                 # put training data, label to device
@@ -391,7 +395,7 @@ def main():
     params_to_train = get_fine_tune_params(net, rec_train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
     solver = get_optimizers(params_to_train, rec_train_options)
-    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'])
+    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'], **rec_train_options['lr_scheduler_info'])
 
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
