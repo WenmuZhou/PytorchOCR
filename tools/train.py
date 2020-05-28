@@ -13,8 +13,9 @@ import torch
 import torch.optim as optim
 from torch.optim import SGD
 from addict import Dict
-from utils import weight_init, StrLabelConverter, init_logger
-
+from utils import weight_init, init_logger, cal_recognize_recall_precision_f1
+import glob
+import shutil
 import argparse
 
 
@@ -178,7 +179,7 @@ def get_data_loader(dataset_config, batch_size):
     :return:
     """
     dataset_type = dataset_config.pop('type')
-    train_dataset_cfg =  dataset_config.pop('train')
+    train_dataset_cfg = dataset_config.pop('train')
     eval_dataset_cfg = dataset_config.pop('eval')
     assert dataset_type in {'ICDAR15RecDataset', 'ICDAR15DetDataset'}, f'{dataset_type} is not developed yet!'
     train_module = import_module(f'dataset.icdar2015.{dataset_type}')
@@ -198,36 +199,40 @@ def get_data_loader(dataset_config, batch_size):
 
 
 def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
-
-    logger.info('start val')
+    logger.info('start evaluate')
     net.eval()
-    total_loss = 0.0
-    k = 0
-    correct_num = 0
-    total_num = 0
-    val_iter = iter(val_loader)
-    max_iter = min(max_iter, len(val_loader))
-    for i in range(max_iter):
-        k = k + 1
-        (data, label) = val_iter.next()
-        data, label = data.to(to_use_device), label.to(to_use_device)
-        output = net.forward(data)
-        loss = loss_func(output, label)
-        total_loss += float(loss)
-        pred_label = output.max(2)[1]
-        pred_label = pred_label.transpose(1, 0).contiguous().view(-1)
-        total_num += len(pred_label)
-        for x, y in zip(pred_label, label):
-            if int(x) == int(y):
-                correct_num += 1
-    accuracy = correct_num / float(total_num) * 100
-    evaluate_loss = total_loss / k
-    logger.info('evaluate loss : %.3f , accuary : %.3f%%' % (evaluate_loss, accuracy))
+    nums = 0
+    result_dict = {
+        'eval_loss': 0.,
+        'recall': 0.,
+        'precision': 0.,
+        'f1': 0.
+    }
+    # val_iter = iter(val_loader)
+    # max_iter = min(max_iter, len(val_loader))
+    # for i in range(max_iter):
+    for i, batch_data in enumerate(val_loader):
+        for data in batch_data:
+            data.to(to_use_device)
+        output = net.forward(batch_data[0])
+        loss = loss_func(output, batch_data[1:])
+        result_dict['eval_loss'] += float(loss.item())
+        res = cal_recognize_recall_precision_f1(output, batch_data[1:])
+
+        result_dict['recall'] += res['recall']
+        result_dict['precision'] += res['precision']
+        result_dict['f1'] += res['f1']
+        nums += batch_data[0][0]
+    logger.info('evaluate result:')
+    for key, val in result_dict.items():
+        result_dict[key] = result_dict[key] / nums
+        logger.info('\t {}:{}'.format(key, result_dict[key]))
+    return result_dict['eval_loss'], result_dict['recall'], result_dict['precision'], result_dict['f1']
 
 
-def save_model(checkpoint_path, model, solver, epoch, logger):
+def save_checkpoint(checkpoint_path, model, optimizer, epoch, logger):
     state = {'state_dict': model.state_dict(),
-             'optimizer': solver.state_dict(),
+             'optimizer': optimizer.state_dict(),
              'epoch': epoch}
     torch.save(state, checkpoint_path)
     logger.info('models saved to %s' % checkpoint_path)
@@ -252,13 +257,13 @@ def save_model_logic(total_loss, total_num, min_loss, net, solver, epoch, rec_tr
         loss_mean = sum([total_loss[idx] * total_num[idx] for idx in range(len(total_loss))]) / sum(total_num)
         if loss_mean < min_loss:
             min_loss = loss_mean
-            save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                       solver, epoch, logger)
+            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
+                            solver, epoch, logger)
 
     else:
         if epoch % rec_train_options['ckpt_save_epoch'] == 0:
-            save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                       solver, epoch, logger)
+            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
+                            solver, epoch, logger)
     return min_loss
 
 
@@ -280,66 +285,87 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
     """
 
     # ===>
-    use_cuda = torch.cuda.is_available() and ('cuda' in rec_train_options['device'])
-
     logger.info('==> Training...')
     net.train()  # train mode
-
     # ===> print loss信息的参数
     loss_for_print = 0.0
     num_in_print = 0
-    current_step = 0
-
     all_step = len(train_loader)
     logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.__len__(), all_step))
-    # ===> parameter for model save
-    min_loss = 10000
     epoch = 0
+    best_model = {'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
     try:
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
-            total_loss = []
-            total_num = []
-            for i, (data, labels, ) in enumerate(train_loader):  # traverse each batch in the epoch
-                current_step = epoch * all_step + i
-                num_in_print = num_in_print + 1
+            lr = scheduler.get_lr()[0]
+            for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
                 # put training data, label to device
-                data, labels = data.to(to_use_device), labels.to(to_use_device)
+                for data in batch_data:
+                    data.to(to_use_device)
 
                 # forward calculation
-                output = net.forward(data)
+                output = net.forward(batch_data[0])
 
                 # calculate  loss
-                loss = loss_func(output, labels)
+                loss = loss_func(output, batch_data[1:])
+                # statistic loss for print
+                loss_for_print = loss_for_print + loss.item()
+                num_in_print = num_in_print + 1
 
                 if i % rec_train_options['print_interval'] == 0:
+                    # interval_batch_time = time.time() - start
                     # display
-                    logger.info("[%d/%d] || [%d/%d] || Loss:%.3f" % (
-                        epoch, rec_train_options['epochs'], i + 1, all_step, loss_for_print / num_in_print))
-                    # operation for model save as parameter ckpt_save_type is  HighestAcc
-                    if rec_train_options['ckpt_save_type'] == 'HighestAcc':
-                        total_loss.append(loss_for_print)
-                        total_num.append(num_in_print)
+                    logger.info("[%d/%d] || [%d/%d] ||lr:%.4f || mean loss for batch:%.3f || " % (
+                        epoch, rec_train_options['epochs'], i + 1, all_step, lr, loss_for_print / num_in_print))
                     loss_for_print = 0.0
                     num_in_print = 0
 
                 # clear the grad
                 solver.zero_grad()
-
                 loss.backward()
                 solver.step()
                 scheduler.step()
+
                 if i % rec_train_options['val_interval'] == 0:
                     # val
-                    evaluate(net, eval_loader, loss_func, to_use_device, logger)
+                    eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
+                    net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                        rec_train_options['checkpoint_save_dir'], epoch,eval_loss,recall,precision,f1)
+                    # save_checkpoint(net_save_path, net, solver, epoch, logger)
+
+                    if f1 > best_model['f1']:
+                        # best_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/Best_*.pth')
+                        # for b_path in best_path:
+                        #     if os.path.exists(b_path):
+                        #         os.remove(b_path)
+                        best_model['recall'] = recall
+                        best_model['precision'] = precision
+                        best_model['f1'] = f1
+                        best_model['models'] = net_save_path
+                        save_checkpoint(net_save_path, net, solver, epoch, logger)
+                        # best_save_path = '{}/Best_{}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                        #     rec_train_options['checkpoint_save_dir'], epoch,
+                        #     recall,
+                        #     precision,
+                        #     f1)
+                        # if os.path.exists(net_save_path):
+                        #     shutil.copyfile(net_save_path, best_save_path)
+                        # else:
+                        #     save_checkpoint(best_save_path, net, solver, epoch, logger)
+                        #
+                        # pse_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/PSENet_*.pth')
+                        # for p_path in pse_path:
+                        #     if os.path.exists(p_path):
+                        #         os.remove(p_path)
                     net.train()  # train mode
-            # 保存ckpt
-            # operation for model save as parameter ckpt_save_type is  HighestAcc
-            min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
+            # # 保存ckpt
+            # # operation for model save as parameter ckpt_save_type is  HighestAcc
+            # min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
     except KeyboardInterrupt:
-        save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net, solver,
-                   epoch, logger)
+        save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
+                        solver, epoch, logger)
     finally:
-        pass
+        if best_model['models']:
+            logger.info(best_model)
 
 
 def train_info_initial(rec_train_options, logger):
