@@ -14,9 +14,9 @@ import torch.optim as optim
 from torch.optim import SGD
 from addict import Dict
 from utils import weight_init, init_logger, cal_recognize_recall_precision_f1
-import glob
-import shutil
+import tqdm
 import argparse
+from dataset.icdar2015.ICDAR15RecDataset import RecDataLoader
 
 
 def parse_args(logger):
@@ -189,12 +189,14 @@ def get_data_loader(dataset_config, batch_size):
     # 此处需要转换，讨论转换为什么格式
     train_set = train_dataset_class(Dict(train_dataset_cfg))
     eval_set = eval_dataset_class(Dict(eval_dataset_cfg))
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
-                                               shuffle=True,
-                                               num_workers=4, pin_memory=True)
-    eval_loader = torch.utils.data.DataLoader(eval_set, batch_size=1,  # one image each batch for testing
-                                              shuffle=False, num_workers=4,
-                                              pin_memory=True)
+    train_loader = RecDataLoader(train_set, Dict(train_dataset_cfg))
+    eval_loader = RecDataLoader(eval_set, Dict(eval_dataset_cfg))
+    # train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
+    #                                            shuffle=True,
+    #                                            num_workers=4, pin_memory=True)
+    # eval_loader = torch.utils.data.DataLoader(eval_set, batch_size=1,  # one image each batch for testing
+    #                                           shuffle=False, num_workers=4,
+    #                                           pin_memory=True)
     return train_loader, eval_loader
 
 
@@ -208,22 +210,23 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
         'precision': 0.,
         'f1': 0.
     }
-    # val_iter = iter(val_loader)
-    # max_iter = min(max_iter, len(val_loader))
-    # for i in range(max_iter):
-    for i, batch_data in enumerate(val_loader):
-        for data in batch_data:
-            data.to(to_use_device)
-        output = net.forward(batch_data[0])
-        loss = loss_func(output, batch_data[1:])
-        result_dict['eval_loss'] += float(loss.item())
-        res = cal_recognize_recall_precision_f1(output, batch_data[1:])
 
-        result_dict['recall'] += res['recall']
-        result_dict['precision'] += res['precision']
-        result_dict['f1'] += res['f1']
-        nums += batch_data[0][0]
-    logger.info('evaluate result:')
+    for batch_data in tqdm.tqdm(val_loader):
+        # for data in batch_data:
+        #     data.to(to_use_device)
+        output = net.forward(batch_data[0].to(to_use_device))
+        loss = loss_func(output, batch_data[1:])
+        # print('eval loss {}'.format(float(loss.item())))
+        result_dict['eval_loss'] += float(loss.item())
+        # res = cal_recognize_recall_precision_f1(output, batch_data[1:])
+        #
+        # result_dict['recall'] += res['recall']
+        # result_dict['precision'] += res['precision']
+        # result_dict['f1'] += res['f1']
+        # print('batch shape:{}'.format(batch_data[0].shape[0]))
+        nums += batch_data[0].shape[0]
+    logger.info(f'evaluate result:\n\t nums:{nums}')
+    assert(nums > 0)
     for key, val in result_dict.items():
         result_dict[key] = result_dict[key] / nums
         logger.info('\t {}:{}'.format(key, result_dict[key]))
@@ -293,17 +296,17 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
     all_step = len(train_loader)
     logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.__len__(), all_step))
     epoch = 0
-    best_model = {'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
+    best_model = {'eval_loss':0, 'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
     try:
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
             lr = scheduler.get_lr()[0]
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
+
                 # put training data, label to device
-                for data in batch_data:
-                    data.to(to_use_device)
+                # batch_data = [data.to(to_use_device) for data in batch_data]
 
                 # forward calculation
-                output = net.forward(batch_data[0])
+                output = net.forward(batch_data[0].to(to_use_device))
 
                 # calculate  loss
                 loss = loss_func(output, batch_data[1:])
@@ -325,19 +328,19 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
                 solver.step()
                 scheduler.step()
 
-                if i % rec_train_options['val_interval'] == 0:
+                if i >= rec_train_options['val_interval'] and i% rec_train_options['val_interval'] == 0:
                     # val
                     eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
                     net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
-                        rec_train_options['checkpoint_save_dir'], epoch,eval_loss,recall,precision,f1)
+                        rec_train_options['checkpoint_save_dir'], epoch, eval_loss,recall,precision,f1)
                     # save_checkpoint(net_save_path, net, solver, epoch, logger)
 
-                    if f1 > best_model['f1']:
+                    if eval_loss > best_model['eval_loss']:
                         # best_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/Best_*.pth')
                         # for b_path in best_path:
                         #     if os.path.exists(b_path):
                         #         os.remove(b_path)
-                        best_model['recall'] = recall
+                        best_model['eval_loss'] = eval_loss
                         best_model['precision'] = precision
                         best_model['f1'] = f1
                         best_model['models'] = net_save_path
