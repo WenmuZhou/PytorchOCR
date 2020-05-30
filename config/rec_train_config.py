@@ -24,7 +24,7 @@
 rec_train_options = {
     # for train
     'resume_from': None,
-    'checkpoint_save_dir': "",
+    'checkpoint_save_dir': "./out_dir/checkpoint",
     'device': 'cuda:0',
     'base_lr': 0.01,
     'batch_size': 2,
@@ -35,8 +35,8 @@ rec_train_options = {
     # 'optimizer_step': [140, 160, 180],
     'optimizer': ['Adam'],
     'optimizer_step': [],
-    'lr_scheduler': 'ReduceLROnPlateau',
-    'lr_scheduler_info': [],
+    'lr_scheduler': 'LambdaLR',
+    'lr_scheduler_info': {'burn_in': 1, 'steps': [50, 100]},
     'print_interval': 200, # step为单位
     'val_interval': 1000, # step为单位
     'ckpt_save_type': 'HighestAcc', # 'FixedEpochStep'
@@ -54,12 +54,13 @@ SEED = 927
 
 # for model
 # 建议都为dict
+
 model = {
     'type': "RecModel",
-    'neck_dict': {"type": 'PPaddleRNN'},
-    'backbone_dict': {"type": "ResNet", 'layers': 34},
-    'head_dict': {"type": "CTC", 'n_class': 27},
-    'in_channels': 3,
+    'neck': {"type": 'PPaddleRNN'},
+    'backbone': {"type": "ResNet", 'layers': 34},
+    'head': {"type": "CTC", 'n_class': 80},
+    'in_channels': 1,
     'labels': 1000
 }
 # class ArcConfig:
@@ -81,12 +82,37 @@ model = {
 
 loss = {
     'type': 'CTCLoss',
+    'blank_idx': 0,
 }
 # for dataset
 # ##lable文件
+### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 dataset = {
-    'type': 'ICDAR15_REC_Dataset',
-    'label_file': '',
+    'type': 'ICDAR15RecDataset',
+    'train': {
+        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'input_h': 32,
+        'mean': 0.588,
+        'std': 0.193,
+        'mode': 'train',
+        'augmentation': False,
+        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
+        'batch_size': 2,
+        'shuffle': True,
+        'num_workers': 4,
+    },
+    'eval': {
+        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'input_h': 32,
+        'mean': 0.588,
+        'std': 0.193,
+        'mode': 'eval',
+        'augmentation': False,
+        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
+        'batch_size': 1,
+        'shuffle': False,
+        'num_workers': 4,
+    }
 
 }
 
