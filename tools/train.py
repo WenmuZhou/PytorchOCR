@@ -12,10 +12,11 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch.optim import SGD
-
-from utils import weight_init, StrLabelConverter, init_logger
-
+from addict import Dict
+from utils import weight_init, init_logger, cal_recognize_recall_precision_f1
+import tqdm
 import argparse
+from dataset.icdar2015.ICDAR15RecDataset import RecDataLoader
 
 
 def parse_args(logger):
@@ -71,8 +72,10 @@ def get_architecture(arch_config):
     assert arch_type in {'RecModel', 'DetModel'}, f'{arch_type} is not developed yet!'
     module = import_module(f'torchocr.networks.architectures.{arch_type}')
     arch_model = getattr(module, arch_type)
-    # 此处需要转换，讨论转换为什么格式
-    return arch_model(arch_config)
+    if not arch_config:
+        return arch_model()
+    else:
+        return arch_model(Dict(arch_config))
 
 
 def get_loss(loss_config):
@@ -86,8 +89,10 @@ def get_loss(loss_config):
     # assert loss_type in {'CTCLoss'}, f'{loss_type} is not developed yet!'
     module = import_module(f'torchocr.networks.losses.{loss_type}')
     arch_model = getattr(module, loss_type)
-    # 此处需要转换，讨论转换为什么格式
-    return arch_model(loss_config)
+    if not loss_config:
+        return arch_model()
+    else:
+        return arch_model(**loss_config)
 
 
 def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=None):
@@ -129,7 +134,7 @@ def get_lrs(optimizer, type='LambdaLR', **kwargs):
     """
     scheduler = None
     if type == 'LambdaLR':
-        burn_in, steps = kwargs
+        burn_in, steps = kwargs['burn_in'], kwargs['steps']
 
         # Learning rate setup
         def burnin_schedule(i):
@@ -174,61 +179,63 @@ def get_data_loader(dataset_config, batch_size):
     :return:
     """
     dataset_type = dataset_config.pop('type')
-    assert dataset_type in {'ICDAR15_REC_Dataset', 'ICDAR15_DET_Dataset'}, f'{dataset_type} is not developed yet!'
-    module = import_module(f'dataset.{dataset_type}')
-    dataset_class = getattr(module, dataset_type)
+    train_dataset_cfg = dataset_config.pop('train')
+    eval_dataset_cfg = dataset_config.pop('eval')
+    assert dataset_type in {'ICDAR15RecDataset', 'ICDAR15DetDataset'}, f'{dataset_type} is not developed yet!'
+    train_module = import_module(f'dataset.icdar2015.{dataset_type}')
+    eval_module = import_module(f'dataset.icdar2015.{dataset_type}')
+    train_dataset_class = getattr(train_module, dataset_type)
+    eval_dataset_class = getattr(eval_module, dataset_type)
     # 此处需要转换，讨论转换为什么格式
-    train_set = dataset_class(**dataset_config)
-    test_set = dataset_class(**dataset_config)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
-                                               shuffle=True,
-                                               num_workers=4, pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1,  # one image each batch for testing
-                                              shuffle=False, num_workers=4,
-                                              pin_memory=True)
-    return train_loader, test_loader
+    train_set = train_dataset_class(Dict(train_dataset_cfg))
+    eval_set = eval_dataset_class(Dict(eval_dataset_cfg))
+    train_loader = RecDataLoader(train_set, Dict(train_dataset_cfg))
+    eval_loader = RecDataLoader(eval_set, Dict(eval_dataset_cfg))
+    # train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size,
+    #                                            shuffle=True,
+    #                                            num_workers=4, pin_memory=True)
+    # eval_loader = torch.utils.data.DataLoader(eval_set, batch_size=1,  # one image each batch for testing
+    #                                           shuffle=False, num_workers=4,
+    #                                           pin_memory=True)
+    return train_loader, eval_loader
 
 
-def evaluate(net, val_loader, loss_func, max_iter=50):
-    use_cuda = torch.cuda.is_available() and ('cuda' in device)
-    logger.info('start val')
+def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
+    logger.info('start evaluate')
     net.eval()
-    totalloss = 0.0
-    k = 0
-    correct_num = 0
-    total_num = 0
-    val_iter = iter(val_loader)
-    max_iter = min(max_iter, len(val_loader))
-    for i in range(max_iter):
-        k = k + 1
-        (data, label_str) = val_iter.next()
-        labels = torch.IntTensor([])
-        for j in range(label_str.size(0)):
-            label, length = str_label_converter.encode(label_str[j])
-            labels = torch.cat((labels, label), 0)
-            labels = torch.cat((labels, label[j]), 0)
-        if torch.cuda.is_available and use_cuda:
-            data = data.cuda()
-        output = net(data)
-        output_size = torch.IntTensor([output.size(0)] * int(output.size(1)))
-        label_size = torch.IntTensor([label.size(1)] * int(label.size(0)))
-        loss = loss_func(output, labels, output_size, label_size) / label.size(0)
-        totalloss += float(loss)
-        pred_label = output.max(2)[1]
-        pred_label = pred_label.transpose(1, 0).contiguous().view(-1)
-        pred = str_label_converter.decode(pred_label, 1)
-        total_num += len(pred)
-        for x, y in zip(pred, labels):
-            if int(x) == int(y):
-                correct_num += 1
-    accuracy = correct_num / float(total_num) * 100
-    evaluate_loss = totalloss / k
-    logger.info('evaluate loss : %.3f , accuary : %.3f%%' % (evaluate_loss, accuracy))
+    nums = 0
+    result_dict = {
+        'eval_loss': 0.,
+        'recall': 0.,
+        'precision': 0.,
+        'f1': 0.
+    }
+
+    for batch_data in tqdm.tqdm(val_loader):
+        # for data in batch_data:
+        #     data.to(to_use_device)
+        output = net.forward(batch_data[0].to(to_use_device))
+        loss = loss_func(output, batch_data[1:])
+        # print('eval loss {}'.format(float(loss.item())))
+        result_dict['eval_loss'] += float(loss.item())
+        # res = cal_recognize_recall_precision_f1(output, batch_data[1:])
+        #
+        # result_dict['recall'] += res['recall']
+        # result_dict['precision'] += res['precision']
+        # result_dict['f1'] += res['f1']
+        # print('batch shape:{}'.format(batch_data[0].shape[0]))
+        nums += batch_data[0].shape[0]
+    logger.info(f'evaluate result:\n\t nums:{nums}')
+    assert(nums > 0)
+    for key, val in result_dict.items():
+        result_dict[key] = result_dict[key] / nums
+        logger.info('\t {}:{}'.format(key, result_dict[key]))
+    return result_dict['eval_loss'], result_dict['recall'], result_dict['precision'], result_dict['f1']
 
 
-def save_model(checkpoint_path, model, solver, epoch, logger):
+def save_checkpoint(checkpoint_path, model, optimizer, epoch, logger):
     state = {'state_dict': model.state_dict(),
-             'optimizer': solver.state_dict(),
+             'optimizer': optimizer.state_dict(),
              'epoch': epoch}
     torch.save(state, checkpoint_path)
     logger.info('models saved to %s' % checkpoint_path)
@@ -253,13 +260,13 @@ def save_model_logic(total_loss, total_num, min_loss, net, solver, epoch, rec_tr
         loss_mean = sum([total_loss[idx] * total_num[idx] for idx in range(len(total_loss))]) / sum(total_num)
         if loss_mean < min_loss:
             min_loss = loss_mean
-            save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                       solver, epoch, logger)
+            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
+                            solver, epoch, logger)
 
     else:
         if epoch % rec_train_options['ckpt_save_epoch'] == 0:
-            save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                       solver, epoch, logger)
+            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
+                            solver, epoch, logger)
     return min_loss
 
 
@@ -281,66 +288,87 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
     """
 
     # ===>
-    use_cuda = torch.cuda.is_available() and ('cuda' in rec_train_options['device'])
-
     logger.info('==> Training...')
     net.train()  # train mode
-
     # ===> print loss信息的参数
     loss_for_print = 0.0
     num_in_print = 0
-    current_step = 0
-
     all_step = len(train_loader)
     logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.__len__(), all_step))
-    # ===> parameter for model save
-    min_loss = 10000
     epoch = 0
+    best_model = {'eval_loss':0, 'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
     try:
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
-            total_loss = []
-            total_num = []
-            for i, (data, labels) in enumerate(train_loader):  # traverse each batch in the epoch
-                current_step = epoch * all_step + i
-                num_in_print = num_in_print + 1
+            lr = scheduler.get_lr()[0]
+            for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
+
                 # put training data, label to device
-                data, labels = data.to(to_use_device), labels.to(to_use_device)
+                # batch_data = [data.to(to_use_device) for data in batch_data]
 
                 # forward calculation
-                output = net.forward(data)
+                output = net.forward(batch_data[0].to(to_use_device))
 
                 # calculate  loss
-                loss = loss_func(output, labels)
+                loss = loss_func(output, batch_data[1:])
+                # statistic loss for print
+                loss_for_print = loss_for_print + loss.item()
+                num_in_print = num_in_print + 1
 
                 if i % rec_train_options['print_interval'] == 0:
+                    # interval_batch_time = time.time() - start
                     # display
-                    logger.info("[%d/%d] || [%d/%d] || Loss:%.3f" % (
-                        epoch, rec_train_options['epochs'], i + 1, all_step, loss_for_print / num_in_print))
-                    # operation for model save as parameter ckpt_save_type is  HighestAcc
-                    if rec_train_options['ckpt_save_type'] == 'HighestAcc':
-                        total_loss.append(loss_for_print)
-                        total_num.append(num_in_print)
+                    logger.info("[%d/%d] || [%d/%d] ||lr:%.4f || mean loss for batch:%.3f || " % (
+                        epoch, rec_train_options['epochs'], i + 1, all_step, lr, loss_for_print / num_in_print))
                     loss_for_print = 0.0
                     num_in_print = 0
 
                 # clear the grad
                 solver.zero_grad()
-
                 loss.backward()
                 solver.step()
                 scheduler.step()
-                if i % rec_train_options['val_interval'] == 0:
+
+                if i >= rec_train_options['val_interval'] and i% rec_train_options['val_interval'] == 0:
                     # val
-                    evaluate(net, eval_loader, loss_func)
+                    eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
+                    net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                        rec_train_options['checkpoint_save_dir'], epoch, eval_loss,recall,precision,f1)
+                    # save_checkpoint(net_save_path, net, solver, epoch, logger)
+
+                    if eval_loss > best_model['eval_loss']:
+                        # best_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/Best_*.pth')
+                        # for b_path in best_path:
+                        #     if os.path.exists(b_path):
+                        #         os.remove(b_path)
+                        best_model['eval_loss'] = eval_loss
+                        best_model['precision'] = precision
+                        best_model['f1'] = f1
+                        best_model['models'] = net_save_path
+                        save_checkpoint(net_save_path, net, solver, epoch, logger)
+                        # best_save_path = '{}/Best_{}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                        #     rec_train_options['checkpoint_save_dir'], epoch,
+                        #     recall,
+                        #     precision,
+                        #     f1)
+                        # if os.path.exists(net_save_path):
+                        #     shutil.copyfile(net_save_path, best_save_path)
+                        # else:
+                        #     save_checkpoint(best_save_path, net, solver, epoch, logger)
+                        #
+                        # pse_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/PSENet_*.pth')
+                        # for p_path in pse_path:
+                        #     if os.path.exists(p_path):
+                        #         os.remove(p_path)
                     net.train()  # train mode
-            # 保存ckpt
-            # operation for model save as parameter ckpt_save_type is  HighestAcc
-            min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
+            # # 保存ckpt
+            # # operation for model save as parameter ckpt_save_type is  HighestAcc
+            # min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
     except KeyboardInterrupt:
-        save_model(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net, solver,
-                   epoch, logger)
+        save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
+                        solver, epoch, logger)
     finally:
-        pass
+        if best_model['models']:
+            logger.info(best_model)
 
 
 def train_info_initial(rec_train_options, logger):
@@ -348,13 +376,16 @@ def train_info_initial(rec_train_options, logger):
 
     Args:
         rec_train_options:
+        logger:
     Returns:
     """
     logger.info('=>train options:')
     for key, val in rec_train_options.items():
         logger.info(f'\t{key} : {val}')
-
-    os.makedirs(rec_train_options['checkpoint_save_dir'], exist_ok=True)
+    if rec_train_options['checkpoint_save_dir']:
+        os.makedirs(rec_train_options['checkpoint_save_dir'], exist_ok=True)
+    else:
+        os.makedirs('./checkpoint_dir', exist_ok=True)
 
 
 def main():
@@ -368,8 +399,8 @@ def main():
 
     # ===>
     to_use_device = torch.device(
-        cfg['device'] if torch.cuda.is_available() and ('cuda' in cfg['device']) else 'cpu')
-    set_random_seed(cfg['SEED'], 'cuda' in cfg['device'], deterministic=True)
+        rec_train_options['device'] if torch.cuda.is_available() and ('cuda' in rec_train_options['device']) else 'cpu')
+    set_random_seed(cfg['SEED'], 'cuda' in rec_train_options['device'], deterministic=True)
 
     # ===> build network
     net = get_architecture(cfg['model'])
@@ -384,7 +415,7 @@ def main():
     params_to_train = get_fine_tune_params(net, rec_train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
     solver = get_optimizers(params_to_train, rec_train_options)
-    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'])
+    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'], **rec_train_options['lr_scheduler_info'])
 
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
@@ -396,7 +427,7 @@ def main():
 
     # ===> loss function
     loss_func = get_loss(cfg['loss'])
-    if torch.cuda.is_available and ('cuda' in cfg['device']):
+    if torch.cuda.is_available and ('cuda' in rec_train_options['device']):
         loss_func = loss_func.cuda()
 
     # ===> data loader
