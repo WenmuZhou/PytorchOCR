@@ -26,6 +26,17 @@ class DBLoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, pred, batch):
+        """
+
+        :param pred:
+        :param batch: bach为一个dict{
+                                    'shrink_map': 收缩图,b*c*h,w
+                                    'shrink_mask: 收缩图mask,b*c*h,w
+                                    'threshold_map: 二值化边界gt,b*c*h,w
+                                    'threshold_mask: 二值化边界gtmask,b*c*h,w
+                                    }
+        :return:
+        """
         shrink_maps = pred[:, 0, :, :]
         threshold_maps = pred[:, 1, :, :]
         binary_maps = pred[:, 2, :, :]
