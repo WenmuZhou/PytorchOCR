@@ -1,8 +1,8 @@
-'''
+"""
 @Author: Jeffery Sheng (Zhenfei Sheng)
 @Time:   2020/5/21 19:44
 @File:   ICDAR15RecDataset.py
-'''
+"""
 
 import os
 import cv2
@@ -11,17 +11,17 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from utils import StrLabelConverter
 from util_scripts.CreateRecAug import cv2pil, pil2cv, RandomBrightness, RandomContrast, \
-                                      RandomLine, RandomSharpness, Compress, Rotate, \
-                                      Blur, MotionBlur, Salt, AdjustResolution
+    RandomLine, RandomSharpness, Compress, Rotate, \
+    Blur, MotionBlur, Salt, AdjustResolution
 
 
-class icdar15RecDataset(Dataset):
+class ICDAR15RecDataset(Dataset):
     def __init__(self, config):
-        '''
+        """
         :param config: dataset config, need data_dir, input_h, mean, std,
         mode:'train' or 'val', augmentation: True or False,
         batch_size, shuffle, num_workers
-        '''
+        """
         self.config = config
         self.data_dir = config.data_dir
         self.input_h = config.input_h
@@ -41,23 +41,24 @@ class icdar15RecDataset(Dataset):
         gt_path = os.path.join(self.data_dir, f'{self.mode}.txt')
         with open(gt_path, 'r', encoding='utf-8') as file:
             # build {img_path: trans}
-            self.labels = [{line.split('\t')[0]: line.split('\t')[-1][:-1]} for line in file.readlines()]
+            self.labels = []
+            for m_line in file:
+                m_image_name, m_gt_text = m_line.strip().split('\t')
+                self.labels.append((m_image_name, m_gt_text))
 
         print(f'load {self.__len__()} images.')
 
-    def _findmaxlength(self):
-        return max({len(list(d.values())[0]) for d in self.labels})
+    def _find_max_length(self):
+        return max({_[1] for _ in self.labels})
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, index):
-        # get img_path
-        img_name = list(self.labels[index].keys())[0]
-        img_path = os.path.join(self.data_dir, f'images/{img_name}')
+        # get img_path and trans
+        img_name, trans = self.labels[index]
+        img_path = os.path.join(self.data_dir, 'images', img_name)
 
-        # get trans
-        trans = list(self.labels[index].values())[0]
         # convert to label
         label, length = self.converter.encode(trans)
         # read img
@@ -70,11 +71,12 @@ class icdar15RecDataset(Dataset):
 
         return img, label, length
 
+
 class RecDataLoader:
-    def __init__(self, dataset: Dataset, config):
+    def __init__(self, dataset, config):
         self.dataset = dataset
         self.process = RecDataProcess(config)
-        self.len_thresh = self.dataset._findmaxlength() // 2
+        self.len_thresh = self.dataset._find_max_length() // 2
         self.batch_size = config.batch_size
         self.shuffle = config.shuffle
         self.num_workers = config.num_workers
@@ -84,8 +86,8 @@ class RecDataLoader:
         self.queue_2 = list()
 
     def __len__(self):
-        return len(self.dataset)//self.batch_size if len(self.dataset) % self.batch_size == 0 \
-        else len(self.dataset)//self.batch_size + 1
+        return len(self.dataset) // self.batch_size if len(self.dataset) % self.batch_size == 0 \
+            else len(self.dataset) // self.batch_size + 1
 
     def __iter__(self):
         return self
@@ -111,7 +113,7 @@ class RecDataLoader:
 
     def build(self):
         self.dataiter = DataLoader(self.dataset, batch_size=1,
-                          shuffle=self.shuffle, num_workers=self.num_workers).__iter__()
+                                   shuffle=self.shuffle, num_workers=self.num_workers).__iter__()
 
     def __next__(self):
         if self.dataiter == None:
@@ -155,7 +157,6 @@ class RecDataLoader:
             batch_data = self.queue_1
             self.queue_1 = list()
             return self.pack(batch_data)
-
 
 
 class RecDataProcess:
@@ -206,7 +207,7 @@ class RecDataProcess:
         # to float32
         img = img.astype(np.float32)
         # normalize
-        img = (img/255. - self.config.mean) / self.config.std
+        img = (img / 255. - self.config.mean) / self.config.std
         # roll axis
         img = img.transpose([2, 0, 1])
         return img
