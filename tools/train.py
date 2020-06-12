@@ -418,14 +418,14 @@ def main():
     # ===> get fine tune layers
     params_to_train = get_fine_tune_params(net, rec_train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
-    solver = get_optimizers(params_to_train, rec_train_options)
+    solvers = get_optimizers(params_to_train, rec_train_options)
     schedulers = [get_lrs(m_solver, rec_train_options['lr_scheduler'], **rec_train_options['lr_scheduler_info']) for
-                  m_solver in solver]
+                  m_solver in solvers]
 
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
     if resume_from:
-        net, _, solver = load_model(net, resume_from, to_use_device, third_name=rec_train_options['third_party_name'])
+        net, _, solvers = load_model(net, resume_from, to_use_device, third_name=rec_train_options['third_party_name'])
         logger.info(f'==> net resume from {resume_from}')
     else:
         logger.info(f'==> net resume from scratch.')
@@ -439,7 +439,7 @@ def main():
     train_loader, eval_loader = get_data_loader(cfg['dataset'], rec_train_options['batch_size'])
 
     # ===> train
-    train(net, solver[0], scheduler, loss_func, train_loader, eval_loader, to_use_device, rec_train_options, logger)
+    train(net, solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device, rec_train_options, logger)
 
 
 if __name__ == '__main__':
