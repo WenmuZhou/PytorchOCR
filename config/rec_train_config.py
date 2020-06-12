@@ -36,11 +36,13 @@ rec_train_options = {
     # 'optimizer_step': [140, 160, 180],
     'optimizer': ['Adam'],
     'optimizer_step': [],
-    'lr_scheduler': 'LambdaLR',
-    'lr_scheduler_info': {'burn_in': 1, 'steps': [50, 100]},
-    'print_interval': 200, # step为单位
-    'val_interval': 1000, # step为单位
-    'ckpt_save_type': 'HighestAcc', # 'FixedEpochStep'
+    # 'lr_scheduler': 'LambdaLR',
+    'lr_scheduler': 'StepLR',
+    # 'lr_scheduler_info': {'burn_in': 1, 'steps': [50, 100]},
+    'lr_scheduler_info': {'step_size':50,'gamma':0.5},
+    'print_interval': 200,  # step为单位
+    'val_interval': 1000,  # step为单位
+    'ckpt_save_type': 'HighestAcc',  # 'FixedEpochStep'
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
 
