@@ -23,7 +23,8 @@
 ###
 rec_train_options = {
     # for train
-    'resume_from': None,
+    'resume_from': '/home/novio/project/PytorchOCR/rec_r34_vd_none_bilstm_ctc/best_accuracy.pdparams',
+    'third_party_name': 'paddle',
     'checkpoint_save_dir': "./out_dir/checkpoint",
     'device': 'cuda:0',
     'base_lr': 0.01,
@@ -35,11 +36,13 @@ rec_train_options = {
     # 'optimizer_step': [140, 160, 180],
     'optimizer': ['Adam'],
     'optimizer_step': [],
-    'lr_scheduler': 'LambdaLR',
-    'lr_scheduler_info': {'burn_in': 1, 'steps': [50, 100]},
-    'print_interval': 200, # step为单位
-    'val_interval': 1000, # step为单位
-    'ckpt_save_type': 'HighestAcc', # 'FixedEpochStep'
+    # 'lr_scheduler': 'LambdaLR',
+    'lr_scheduler': 'StepLR',
+    # 'lr_scheduler_info': {'burn_in': 1, 'steps': [50, 100]},
+    'lr_scheduler_info': {'step_size':50,'gamma':0.5},
+    'print_interval': 200,  # step为单位
+    'val_interval': 1000,  # step为单位
+    'ckpt_save_type': 'HighestAcc',  # 'FixedEpochStep'
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
 
@@ -59,9 +62,8 @@ model = {
     'type': "RecModel",
     'neck': {"type": 'PPaddleRNN'},
     'backbone': {"type": "ResNet", 'layers': 34},
-    'head': {"type": "CTC", 'n_class': 80},
-    'in_channels': 1,
-    'labels': 1000
+    'head': {"type": "CTC", 'n_class': 91},
+    'in_channels': 3,
 }
 # class ArcConfig:
 #     def __init__(self):
@@ -88,32 +90,30 @@ loss = {
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 dataset = {
-    'type': 'ICDAR15RecDataset',
+    'type': 'icdar15.ICDAR15RecDataset',
     'train': {
-        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'data_dir': '/data/OCR/ICDAR2015/converted_data',
         'input_h': 32,
         'mean': 0.588,
         'std': 0.193,
         'mode': 'train',
         'augmentation': False,
-        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
-        'batch_size': 2,
+        'alphabet': '../datasets/alphabets/enAlphaNumPunc90.txt',
+        'batch_size': 16,
         'shuffle': True,
-        'num_workers': 4,
+        'num_workers': 1,
     },
     'eval': {
-        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'data_dir': '/data/OCR/ICDAR2015/converted_data',
         'input_h': 32,
         'mean': 0.588,
         'std': 0.193,
         'mode': 'eval',
         'augmentation': False,
-        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
-        'batch_size': 1,
+        'alphabet': '../datasets/alphabets/enAlphaNumPunc90.txt',
+        'batch_size': 32,
         'shuffle': False,
-        'num_workers': 4,
+        'num_workers': 1,
     }
 
 }
-
-
