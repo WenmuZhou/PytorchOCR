@@ -3,20 +3,22 @@
 # @Author  : xiangjing
 
 
+import argparse
 import os
+import random
 import sys
 from importlib import import_module
-import random
-from torch import nn
+
 import numpy as np
 import torch
 import torch.optim as optim
-from torch.optim import SGD
-from addict import Dict
-from utils import weight_init, init_logger, cal_recognize_recall_precision_f1
 import tqdm
-import argparse
-from dataset.icdar2015.ICDAR15RecDataset import RecDataLoader
+from addict import Dict
+from torch import nn
+from torch.optim import SGD
+
+from datasets.icdar15.ICDAR15RecDataset import RecDataLoader
+from utils import weight_init, init_logger
 
 
 def parse_args(logger):
