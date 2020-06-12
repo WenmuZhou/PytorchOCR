@@ -235,7 +235,7 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
             # print('batch shape:{}'.format(batch_data[0].shape[0]))
             nums += batch_data[0].shape[0]
     logger.info(f'evaluate result:\n\t nums:{nums}')
-    assert nums > 0,'there is no eval data available'
+    assert nums > 0, 'there is no eval data available'
     for key, val in result_dict.items():
         result_dict[key] = result_dict[key] / nums
         logger.info('\t {}:{}'.format(key, result_dict[key]))
