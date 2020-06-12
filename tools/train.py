@@ -228,7 +228,7 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
             output = net.forward(batch_data[0].to(to_use_device))
             loss = loss_func(output, batch_data[1:])
             # print('eval loss {}'.format(float(loss.item())))
-            result_dict['eval_loss'] += float(loss.item())
+            result_dict['eval_loss'] += loss.item()*batch_data[0].size(0)
             # res = cal_recognize_recall_precision_f1(output, batch_data[1:])
             #
             # result_dict['recall'] += res['recall']
