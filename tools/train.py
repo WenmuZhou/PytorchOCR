@@ -117,7 +117,9 @@ def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=No
             start_epoch = state['epoch']
 
     elif third_name == 'paddle':
-        pass
+        import paddle.fluid as fluid
+        paddle_model = fluid.io.load_program_state(resume_from)
+        _model.load_3rd_state_dict(third_name, paddle_model)
     return _model, start_epoch, optimizer
 
 
