@@ -298,7 +298,6 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
 
     # ===>
     logger.info('==> Training...')
-    net.train()  # train mode
     # ===> print loss信息的参数
     loss_for_print = 0.0
     num_in_print = 0
@@ -377,6 +376,9 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
     except KeyboardInterrupt:
         save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
                         _solvers, epoch, logger)
+    except Exception as e:
+        tb.print_exc(limit=1, file=sys.stdout)
+        logger.error(str(e))
     finally:
         if best_model['models']:
             logger.info(best_model)
@@ -421,6 +423,7 @@ def main():
     if torch.cuda.device_count() > 1:
         net = nn.DataParallel(net)
     net = net.to(to_use_device)
+    net.train()
 
     # ===> get fine tune layers
     params_to_train = get_fine_tune_params(net, rec_train_options['fine_tune_stage'])
@@ -445,7 +448,7 @@ def main():
         loss_func = loss_func.to(to_use_device)
 
     # ===> data loader
-    train_loader, eval_loader = get_data_loader(cfg['dataset'], rec_train_options['batch_size'])
+    train_loader, eval_loader = get_data_loader(cfg['dataset'])
 
     # ===> train
     train(net, solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device, rec_train_options, logger)
