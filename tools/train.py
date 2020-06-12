@@ -329,12 +329,8 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
                         loss_for_print / num_in_print))
                     loss_for_print = 0.0
                     num_in_print = 0
-
-                # clear the grad
-                [_solver.zero_grad() for _solver in _solvers]
                 loss.backward()
                 [_solver.step() for _solver in _solvers]
-                [_scheduler.step() for _scheduler in schedulers]
 
                 if i >= rec_train_options['val_interval'] and i % rec_train_options['val_interval'] == 0:
                     # val
