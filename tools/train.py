@@ -309,14 +309,12 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
     try:
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
             current_lr = [m_scheduler.get_lr()[0] for m_scheduler in schedulers]
+            net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
-
-                # put training data, label to device
-                # batch_data = [data.to(to_use_device) for data in batch_data]
-
+                # clear the grad
+                [_solver.zero_grad() for _solver in _solvers]
                 # forward calculation
                 output = net.forward(batch_data[0].to(to_use_device))
-
                 # calculate  loss
                 loss = loss_func(output, batch_data[1:])
                 # statistic loss for print
@@ -374,6 +372,8 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
             # # 保存ckpt
             # # operation for model save as parameter ckpt_save_type is  HighestAcc
             # min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
+            [_scheduler.step() for _scheduler in schedulers]
+
     except KeyboardInterrupt:
         save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
                         _solvers, epoch, logger)
