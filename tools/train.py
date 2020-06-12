@@ -233,9 +233,9 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
     return result_dict['eval_loss'], result_dict['recall'], result_dict['precision'], result_dict['f1']
 
 
-def save_checkpoint(checkpoint_path, model, optimizer, epoch, logger):
+def save_checkpoint(checkpoint_path, model, _optimizers, epoch, logger):
     state = {'state_dict': model.state_dict(),
-             'optimizer': optimizer.state_dict(),
+             'optimizer': [_.state_dict() for _ in _optimizers],
              'epoch': epoch}
     torch.save(state, checkpoint_path)
     logger.info('models saved to %s' % checkpoint_path)
