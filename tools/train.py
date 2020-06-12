@@ -417,7 +417,8 @@ def main():
     params_to_train = get_fine_tune_params(net, rec_train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
     solver = get_optimizers(params_to_train, rec_train_options)
-    scheduler = get_lrs(solver[0], rec_train_options['lr_scheduler'], **rec_train_options['lr_scheduler_info'])
+    schedulers = [get_lrs(m_solver, rec_train_options['lr_scheduler'], **rec_train_options['lr_scheduler_info']) for
+                  m_solver in solver]
 
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
