@@ -114,7 +114,7 @@ def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=No
     start_epoch = 0
     if not third_name:
         state = torch.load(resume_from, map_location=to_use_device)
-        _model.load_state_dict(state)
+        _model.load_state_dict(state['state_dict'])
         if optimizer is not None:
             optimizer.load_state_dict(state['optimizer'])
             start_epoch = state['epoch']
