@@ -156,7 +156,7 @@ def get_lrs(optimizer, type='LambdaLR', **kwargs):
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, burnin_schedule)
     elif type == 'StepLR':
         # 等间隔调整学习率， 调整倍数为gamma倍，调整间隔为step_size，间隔单位是step，step通常是指epoch。
-        step_size, gamma = kwargs['step_size'],kwargs['gamma']
+        step_size, gamma = kwargs['step_size'], kwargs['gamma']
         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
     elif type == 'ReduceLROnPlateau':
         # 当某指标不再变化（下降或升高），调整学习率，这是非常实用的学习率调整策略。例如，当验证集的loss不再下降时，进行学习率调整；或者监测验证集的accuracy，当accuracy不再上升时，则调整学习率。
@@ -280,7 +280,7 @@ def save_model_logic(total_loss, total_num, min_loss, net, solver, epoch, rec_tr
 
 
 def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device,
-          rec_train_options, logger):
+          rec_train_options,_epoch, logger):
     """
     训练
     Args:
@@ -292,6 +292,7 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
         eval_loader: 验证数据集dataloader
         to_use_device:
         rec_train_options:
+        _epoch: 当前epoch
         logger:
     Returns:
     """
@@ -303,10 +304,9 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
     num_in_print = 0
     all_step = len(train_loader)
     logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.__len__(), all_step))
-    epoch = 0
     best_model = {'eval_loss': 0, 'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
     try:
-        for epoch in range(rec_train_options['epochs']):  # traverse each epoch
+        for epoch in range(_epoch,rec_train_options['epochs']):  # traverse each epoch
             current_lr = [m_scheduler.get_lr()[0] for m_scheduler in schedulers]
             net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
@@ -332,38 +332,37 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
                 loss.backward()
                 [_solver.step() for _solver in _solvers]
 
-                if i >= rec_train_options['val_interval'] and i % rec_train_options['val_interval'] == 0:
-                    # val
-                    eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
-                    net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
-                        rec_train_options['checkpoint_save_dir'], epoch, eval_loss, recall, precision, f1)
-                    # save_checkpoint(net_save_path, net, solver, epoch, logger)
+            if epoch >= rec_train_options['val_interval'] and epoch % rec_train_options['val_interval'] == 0:
+                # val
+                eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
+                net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                    rec_train_options['checkpoint_save_dir'], epoch, eval_loss, recall, precision, f1)
+                # save_checkpoint(net_save_path, net, solver, epoch, logger)
 
-                    if eval_loss > best_model['eval_loss']:
-                        # best_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/Best_*.pth')
-                        # for b_path in best_path:
-                        #     if os.path.exists(b_path):
-                        #         os.remove(b_path)
-                        best_model['eval_loss'] = eval_loss
-                        best_model['precision'] = precision
-                        best_model['f1'] = f1
-                        best_model['models'] = net_save_path
-                        save_checkpoint(net_save_path, net, _solvers, epoch, logger)
-                        # best_save_path = '{}/Best_{}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
-                        #     rec_train_options['checkpoint_save_dir'], epoch,
-                        #     recall,
-                        #     precision,
-                        #     f1)
-                        # if os.path.exists(net_save_path):
-                        #     shutil.copyfile(net_save_path, best_save_path)
-                        # else:
-                        #     save_checkpoint(best_save_path, net, solver, epoch, logger)
-                        #
-                        # pse_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/PSENet_*.pth')
-                        # for p_path in pse_path:
-                        #     if os.path.exists(p_path):
-                        #         os.remove(p_path)
-                    net.train()  # train mode
+                if eval_loss > best_model['eval_loss']:
+                    # best_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/Best_*.pth')
+                    # for b_path in best_path:
+                    #     if os.path.exists(b_path):
+                    #         os.remove(b_path)
+                    best_model['eval_loss'] = eval_loss
+                    best_model['precision'] = precision
+                    best_model['f1'] = f1
+                    best_model['models'] = net_save_path
+                    save_checkpoint(net_save_path, net, _solvers, epoch, logger)
+                    # best_save_path = '{}/Best_{}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
+                    #     rec_train_options['checkpoint_save_dir'], epoch,
+                    #     recall,
+                    #     precision,
+                    #     f1)
+                    # if os.path.exists(net_save_path):
+                    #     shutil.copyfile(net_save_path, best_save_path)
+                    # else:
+                    #     save_checkpoint(best_save_path, net, solver, epoch, logger)
+                    #
+                    # pse_path = glob.glob(rec_train_options['checkpoint_save_dir'] + '/PSENet_*.pth')
+                    # for p_path in pse_path:
+                    #     if os.path.exists(p_path):
+                    #         os.remove(p_path)
             # # 保存ckpt
             # # operation for model save as parameter ckpt_save_type is  HighestAcc
             # min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
@@ -431,7 +430,8 @@ def main():
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
     if resume_from:
-        net, _, _resumed_solvers = load_model(net, resume_from, to_use_device, third_name=rec_train_options['third_party_name'])
+        net, current_epoch, _resumed_solvers = load_model(net, resume_from, to_use_device,
+                                                          third_name=rec_train_options['third_party_name'])
         if _resumed_solvers:
             solvers = _resumed_solvers
         logger.info(f'==> net resume from {resume_from}')
@@ -447,7 +447,7 @@ def main():
     train_loader, eval_loader = get_data_loader(cfg['dataset'])
 
     # ===> train
-    train(net, solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device, rec_train_options, logger)
+    train(net, solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device, rec_train_options,current_epoch, logger)
 
 
 if __name__ == '__main__':
