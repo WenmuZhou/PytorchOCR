@@ -117,7 +117,7 @@ def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=No
         _model.load_state_dict(state['state_dict'])
         if optimizer is not None:
             optimizer.load_state_dict(state['optimizer'])
-            start_epoch = state['epoch']
+        start_epoch = state['epoch']
 
     elif third_name == 'paddle':
         import paddle.fluid as fluid
