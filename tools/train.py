@@ -270,14 +270,14 @@ def save_model_logic(total_loss, total_num, min_loss, net, solver, epoch, rec_tr
     return min_loss
 
 
-def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_device,
+def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device,
           rec_train_options, logger):
     """
     训练
     Args:
         net: 模型
-        solver: 优化器
-        scheduler: 学习率更新
+        _solvers: 优化器
+        schedulers: 学习率更新
         loss_func: loss函数
         train_loader: 训练数据集dataloader
         eval_loader: 验证数据集dataloader
@@ -296,10 +296,10 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
     all_step = len(train_loader)
     logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.__len__(), all_step))
     epoch = 0
-    best_model = {'eval_loss':0, 'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
+    best_model = {'eval_loss': 0, 'recall': 0, 'precision': 0, 'f1': 0, 'models': ''}
     try:
         for epoch in range(rec_train_options['epochs']):  # traverse each epoch
-            lr = scheduler.get_lr()[0]
+            current_lr = [m_scheduler.get_lr()[0] for m_scheduler in schedulers]
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
 
                 # put training data, label to device
@@ -317,22 +317,24 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
                 if i % rec_train_options['print_interval'] == 0:
                     # interval_batch_time = time.time() - start
                     # display
-                    logger.info("[%d/%d] || [%d/%d] ||lr:%.4f || mean loss for batch:%.3f || " % (
-                        epoch, rec_train_options['epochs'], i + 1, all_step, lr, loss_for_print / num_in_print))
+                    logger.info("[%d/%d] || [%d/%d] ||lr:%s || mean loss for batch:%.3f || " % (
+                        epoch, rec_train_options['epochs'], i + 1, all_step,
+                        ','.join(['%0.4f' % m_lr for m_lr in current_lr]),
+                        loss_for_print / num_in_print))
                     loss_for_print = 0.0
                     num_in_print = 0
 
                 # clear the grad
-                solver.zero_grad()
+                [_solver.zero_grad() for _solver in _solvers]
                 loss.backward()
-                solver.step()
-                scheduler.step()
+                [_solver.step() for _solver in _solvers]
+                [_scheduler.step() for _scheduler in schedulers]
 
-                if i >= rec_train_options['val_interval'] and i% rec_train_options['val_interval'] == 0:
+                if i >= rec_train_options['val_interval'] and i % rec_train_options['val_interval'] == 0:
                     # val
                     eval_loss, recall, precision, f1 = evaluate(net, eval_loader, loss_func, to_use_device, logger)
                     net_save_path = '{}/epoch_{}_eval_loss{:.6f}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
-                        rec_train_options['checkpoint_save_dir'], epoch, eval_loss,recall,precision,f1)
+                        rec_train_options['checkpoint_save_dir'], epoch, eval_loss, recall, precision, f1)
                     # save_checkpoint(net_save_path, net, solver, epoch, logger)
 
                     if eval_loss > best_model['eval_loss']:
@@ -344,7 +346,7 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
                         best_model['precision'] = precision
                         best_model['f1'] = f1
                         best_model['models'] = net_save_path
-                        save_checkpoint(net_save_path, net, solver, epoch, logger)
+                        save_checkpoint(net_save_path, net, _solvers, epoch, logger)
                         # best_save_path = '{}/Best_{}_r{:.6f}_p{:.6f}_f1{:.6f}.pth'.format(
                         #     rec_train_options['checkpoint_save_dir'], epoch,
                         #     recall,
@@ -365,7 +367,7 @@ def train(net, solver, scheduler, loss_func, train_loader, eval_loader, to_use_d
             # min_loss = save_model_logic(total_loss, total_num, min_loss, net, epoch, rec_train_options, logger)
     except KeyboardInterrupt:
         save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
-                        solver, epoch, logger)
+                        _solvers, epoch, logger)
     finally:
         if best_model['models']:
             logger.info(best_model)
