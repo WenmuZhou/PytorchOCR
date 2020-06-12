@@ -180,7 +180,7 @@ def get_fine_tune_params(net, finetune_stage):
     return to_return_parameters
 
 
-def get_data_loader(dataset_config, batch_size):
+def get_data_loader(dataset_config):
     """
     数据加载
     :return:
@@ -188,11 +188,13 @@ def get_data_loader(dataset_config, batch_size):
     dataset_type = dataset_config.pop('type')
     train_dataset_cfg = dataset_config.pop('train')
     eval_dataset_cfg = dataset_config.pop('eval')
-    assert dataset_type in {'ICDAR15RecDataset', 'ICDAR15DetDataset'}, f'{dataset_type} is not developed yet!'
-    train_module = import_module(f'dataset.icdar2015.{dataset_type}')
-    eval_module = import_module(f'dataset.icdar2015.{dataset_type}')
-    train_dataset_class = getattr(train_module, dataset_type)
-    eval_dataset_class = getattr(eval_module, dataset_type)
+    assert dataset_type in {'icdar15.ICDAR15RecDataset',
+                            'icdar15.ICDAR15DetDataset'}, \
+        f'{dataset_type} is not developed yet!'
+    train_module = import_module(f'datasets.{dataset_type}')
+    eval_module = import_module(f'datasets.{dataset_type}')
+    train_dataset_class = getattr(train_module, dataset_type.split('.')[-1])
+    eval_dataset_class = getattr(eval_module, dataset_type.split('.')[-1])
     # 此处需要转换，讨论转换为什么格式
     train_set = train_dataset_class(Dict(train_dataset_cfg))
     eval_set = eval_dataset_class(Dict(eval_dataset_cfg))
