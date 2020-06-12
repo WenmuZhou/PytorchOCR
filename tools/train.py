@@ -430,7 +430,7 @@ def main():
     # ===> loss function
     loss_func = get_loss(cfg['loss'])
     if torch.cuda.is_available and ('cuda' in rec_train_options['device']):
-        loss_func = loss_func.cuda()
+        loss_func = loss_func.to(to_use_device)
 
     # ===> data loader
     train_loader, eval_loader = get_data_loader(cfg['dataset'], rec_train_options['batch_size'])
