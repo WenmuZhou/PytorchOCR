@@ -49,7 +49,7 @@ class ICDAR15RecDataset(Dataset):
         print(f'load {self.__len__()} images.')
 
     def _find_max_length(self):
-        return max({_[1] for _ in self.labels})
+        return max({len(_[1]) for _ in self.labels})
 
     def __len__(self):
         return len(self.labels)
@@ -57,7 +57,7 @@ class ICDAR15RecDataset(Dataset):
     def __getitem__(self, index):
         # get img_path and trans
         img_name, trans = self.labels[index]
-        img_path = os.path.join(self.data_dir, 'images', img_name)
+        img_path = os.path.join(self.data_dir, 'image', img_name)
 
         # convert to label
         label, length = self.converter.encode(trans)
@@ -66,9 +66,6 @@ class ICDAR15RecDataset(Dataset):
         # do aug
         if self.augmentation:
             img = pil2cv(RecDataProcess(self.config).aug_img(cv2pil(img)))
-        # to gray
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
         return img, label, length
 
 
@@ -95,18 +92,19 @@ class RecDataLoader:
     def pack(self, batch_data):
         batch = [[], [], []]
         max_length = max({it[2].item() for it in batch_data})
-        # img tensor current shape: C, H, W
-        max_img_w = max({it[0].shape[-1] for it in batch_data})
+        # img tensor current shape: B,H,W,C
+        all_same_height_images = [self.process.resize_with_specific_height(_[0][0].numpy()) for _ in batch_data]
+        max_img_w = max({m_img.shape[1] for m_img in all_same_height_images})
         # make sure max_img_w is integral multiple of 8
-        max_img_w = max_img_w + (8 - max_img_w % 8) if max_img_w % 8 != 0 else max_img_w
+        max_img_w = int(np.ceil(max_img_w / 8) * 8)
         for i in range(len(batch_data)):
-            _img, _label, _length = batch_data[i]
-            # trans to np array, roll back axis
-            _img = _img.numpy().transpose([1, 2, 0])
-            img = self.process.resize_normalize(_img, max_img_w)
-            label = _label.tolist()[0] + [0] * (max_length - len(_label.tolist()[0]))
+            _, _label, _length = batch_data[i]
+            img = self.process.normalize_img(self.process.width_pad_img(all_same_height_images[i], max_img_w))
+            img = img.transpose([2, 0, 1])
+            label = torch.zeros([max_length])
+            label[:_length.item()] = _label
             batch[0].append(torch.FloatTensor(img))
-            batch[1].append(torch.IntTensor(label))
+            batch[1].append(label.to(dtype=torch.int32))
             batch[2].append(torch.IntTensor([max_length]))
 
         return [torch.stack(batch[0]), torch.stack(batch[1]), torch.cat(batch[2])]
@@ -197,17 +195,32 @@ class RecDataProcess:
         img = self.salt.process(img)
         return img
 
-    def resize_normalize(self, img, input_w):
-        # to resize in proportion
-        # width should change with the max length
-        img = cv2.resize(img, (0, 0), fx=input_w / img.shape[1],
-                         fy=self.config.input_h / img.shape[0], interpolation=cv2.INTER_CUBIC)
-        # add third axis
-        img = np.reshape(img, (self.config.input_h, input_w, 1))
-        # to float32
-        img = img.astype(np.float32)
-        # normalize
-        img = (img / 255. - self.config.mean) / self.config.std
-        # roll axis
-        img = img.transpose([2, 0, 1])
-        return img
+    def resize_with_specific_height(self, _img):
+        """
+        将图像resize到指定高度
+        :param _img:    待resize的图像
+        :return:    resize完成的图像
+        """
+        resize_ratio = self.config.input_h / _img.shape[0]
+        return cv2.resize(_img, (0, 0), fx=resize_ratio, fy=resize_ratio, interpolation=cv2.INTER_LINEAR)
+
+    def normalize_img(self, _img):
+        """
+        根据配置的均值和标准差进行归一化
+        :param _img:    待归一化的图像
+        :return:    归一化后的图像
+        """
+        return (_img.astype(np.float32) / 255 - self.config.mean) / self.config.std
+
+    def width_pad_img(self, _img, _target_width, _pad_value=0):
+        """
+        将图像进行高度不变，宽度的调整的pad
+        :param _img:    待pad的图像
+        :param _target_width:   目标宽度
+        :param _pad_value:  pad的值
+        :return:    pad完成后的图像
+        """
+        _height, _width, _channels = _img.shape
+        to_return_img = np.ones([_height, _target_width, _channels]) * _pad_value
+        to_return_img[:_height, :_width, :] = _img
+        return to_return_img
