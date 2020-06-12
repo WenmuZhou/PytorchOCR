@@ -15,7 +15,8 @@ import torch.optim as optim
 import tqdm
 from addict import Dict
 from torch import nn
-from torch.optim import SGD
+from torch.optim import SGD, Adam
+import traceback as tb
 
 from datasets.icdar15.ICDAR15RecDataset import RecDataLoader
 from utils import weight_init, init_logger
