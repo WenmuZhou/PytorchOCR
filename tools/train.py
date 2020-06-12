@@ -98,15 +98,15 @@ def get_loss(loss_config):
         return arch_model(**loss_config)
 
 
-def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=None):
+def load_model(_model, resume_from, to_use_device, _optimizers=None, third_name=None):
     """
     加载预训练模型
     Args:
         _model:  模型
         resume_from: 预训练模型路径
         to_use_device: 设备
-        optimizer: 如果不为None，则表明采用模型的训练参数
-        third_name:
+        _optimizers: 如果不为None，则表明采用模型的训练参数
+        third_name: 第三方预训练模型的名称
 
     Returns:
 
@@ -115,15 +115,17 @@ def load_model(_model, resume_from, to_use_device, optimizer=None, third_name=No
     if not third_name:
         state = torch.load(resume_from, map_location=to_use_device)
         _model.load_state_dict(state['state_dict'])
-        if optimizer is not None:
-            optimizer.load_state_dict(state['optimizer'])
+        if _optimizers is not None:
+            assert len(_optimizers) == len(state['optimizer'])
+            for m_optimizer,m_optimizer_state_dict in zip(_optimizers,state['optimizer']):
+                m_optimizer.load_state_dict(m_optimizer_state_dict)
         start_epoch = state['epoch']
 
     elif third_name == 'paddle':
         import paddle.fluid as fluid
         paddle_model = fluid.io.load_program_state(resume_from)
         _model.load_3rd_state_dict(third_name, paddle_model)
-    return _model, start_epoch, optimizer
+    return _model, start_epoch, _optimizers
 
 
 def get_optimizers(params, rec_train_options):
