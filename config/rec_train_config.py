@@ -23,7 +23,8 @@
 ###
 rec_train_options = {
     # for train
-    'resume_from': None,
+    'resume_from': '/home/novio/project/PytorchOCR/rec_r34_vd_none_bilstm_ctc/best_accuracy.pdparams',
+    'third_party_name': 'paddle',
     'checkpoint_save_dir': "./out_dir/checkpoint",
     'device': 'cuda:0',
     'base_lr': 0.01,
