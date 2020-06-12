@@ -90,32 +90,30 @@ loss = {
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 dataset = {
-    'type': 'ICDAR15RecDataset',
+    'type': 'icdar15.ICDAR15RecDataset',
     'train': {
-        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'data_dir': '/data/OCR/ICDAR2015/converted_data',
         'input_h': 32,
         'mean': 0.588,
         'std': 0.193,
         'mode': 'train',
         'augmentation': False,
-        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
-        'batch_size': 2,
+        'alphabet': '../datasets/alphabets/enAlphaNumPunc90.txt',
+        'batch_size': 16,
         'shuffle': True,
-        'num_workers': 4,
+        'num_workers': 1,
     },
     'eval': {
-        'data_dir': '/home/zy/dataset/icdar2015/rec',
+        'data_dir': '/data/OCR/ICDAR2015/converted_data',
         'input_h': 32,
         'mean': 0.588,
         'std': 0.193,
         'mode': 'eval',
         'augmentation': False,
-        'alphabet': '/home/zy/dataset/icdar2015/rec/enAlphaNumPunc79.txt',
-        'batch_size': 1,
+        'alphabet': '../datasets/alphabets/enAlphaNumPunc90.txt',
+        'batch_size': 32,
         'shuffle': False,
-        'num_workers': 4,
+        'num_workers': 1,
     }
 
 }
-
-
