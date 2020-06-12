@@ -210,23 +210,23 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, max_iter=50):
         'precision': 0.,
         'f1': 0.
     }
-
-    for batch_data in tqdm.tqdm(val_loader):
-        # for data in batch_data:
-        #     data.to(to_use_device)
-        output = net.forward(batch_data[0].to(to_use_device))
-        loss = loss_func(output, batch_data[1:])
-        # print('eval loss {}'.format(float(loss.item())))
-        result_dict['eval_loss'] += float(loss.item())
-        # res = cal_recognize_recall_precision_f1(output, batch_data[1:])
-        #
-        # result_dict['recall'] += res['recall']
-        # result_dict['precision'] += res['precision']
-        # result_dict['f1'] += res['f1']
-        # print('batch shape:{}'.format(batch_data[0].shape[0]))
-        nums += batch_data[0].shape[0]
+    with torch.no_grad():
+        for batch_data in tqdm.tqdm(val_loader):
+            # for data in batch_data:
+            #     data.to(to_use_device)
+            output = net.forward(batch_data[0].to(to_use_device))
+            loss = loss_func(output, batch_data[1:])
+            # print('eval loss {}'.format(float(loss.item())))
+            result_dict['eval_loss'] += float(loss.item())
+            # res = cal_recognize_recall_precision_f1(output, batch_data[1:])
+            #
+            # result_dict['recall'] += res['recall']
+            # result_dict['precision'] += res['precision']
+            # result_dict['f1'] += res['f1']
+            # print('batch shape:{}'.format(batch_data[0].shape[0]))
+            nums += batch_data[0].shape[0]
     logger.info(f'evaluate result:\n\t nums:{nums}')
-    assert(nums > 0)
+    assert nums > 0,'there is no eval data available'
     for key, val in result_dict.items():
         result_dict[key] = result_dict[key] / nums
         logger.info('\t {}:{}'.format(key, result_dict[key]))
