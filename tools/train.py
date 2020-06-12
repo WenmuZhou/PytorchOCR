@@ -172,10 +172,12 @@ def get_fine_tune_params(net, finetune_stage):
         net:
     Returns: 需要优化的参数
     """
+    to_return_parameters = []
     for stage in finetune_stage:
         attr = getattr(net, stage, None)
         for element in attr.parameters():
-            yield element
+            to_return_parameters.append(element)
+    return to_return_parameters
 
 
 def get_data_loader(dataset_config, batch_size):
