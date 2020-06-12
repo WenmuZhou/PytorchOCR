@@ -156,7 +156,7 @@ def get_lrs(optimizer, type='LambdaLR', **kwargs):
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, burnin_schedule)
     elif type == 'StepLR':
         # 等间隔调整学习率， 调整倍数为gamma倍，调整间隔为step_size，间隔单位是step，step通常是指epoch。
-        step_size, gamma = kwargs
+        step_size, gamma = kwargs['step_size'],kwargs['gamma']
         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
     elif type == 'ReduceLROnPlateau':
         # 当某指标不再变化（下降或升高），调整学习率，这是非常实用的学习率调整策略。例如，当验证集的loss不再下降时，进行学习率调整；或者监测验证集的accuracy，当accuracy不再上升时，则调整学习率。
