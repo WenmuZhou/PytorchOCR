@@ -422,7 +422,7 @@ def main():
     # ===> whether to resume from checkpoint
     resume_from = rec_train_options['resume_from']
     if resume_from:
-        net, _, solver = load_model(net, resume_from, to_use_device)
+        net, _, solver = load_model(net, resume_from, to_use_device, third_name=rec_train_options['third_party_name'])
         logger.info(f'==> net resume from {resume_from}')
     else:
         logger.info(f'==> net resume from scratch.')
