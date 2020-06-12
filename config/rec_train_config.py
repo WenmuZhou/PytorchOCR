@@ -62,9 +62,8 @@ model = {
     'type': "RecModel",
     'neck': {"type": 'PPaddleRNN'},
     'backbone': {"type": "ResNet", 'layers': 34},
-    'head': {"type": "CTC", 'n_class': 80},
-    'in_channels': 1,
-    'labels': 1000
+    'head': {"type": "CTC", 'n_class': 91},
+    'in_channels': 3,
 }
 # class ArcConfig:
 #     def __init__(self):
