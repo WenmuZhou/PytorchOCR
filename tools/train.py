@@ -131,7 +131,7 @@ def get_optimizers(params, rec_train_options):
     优化器
     Returns:
     """
-    return [SGD(params, lr=rec_train_options['base_lr'], weight_decay=rec_train_options['weight_decay'])]
+    return [Adam(params, lr=rec_train_options['base_lr'], weight_decay=rec_train_options['weight_decay'])]
 
 
 def get_lrs(optimizer, type='LambdaLR', **kwargs):
