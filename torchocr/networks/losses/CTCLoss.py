@@ -9,9 +9,10 @@ class CTCLoss(nn.Module):
         self.loss_func = torch.nn.CTCLoss(blank=blank_idx, reduction=reduction, zero_infinity=True)
 
     def forward(self, pred, args):
-        label, label_length = args[0], args[1]
-        pred = pred.transpose(0,1)
-        batch_size = label.size(0)
-        pred_size = torch.LongTensor([pred.size(0)] * batch_size)
-
-        return self.loss_func(pred, label, pred_size, label_length) / batch_size
+        batch_size = pred.size(0)
+        label, label_length = args['targets'], args['targets_lengths']
+        pred = pred.log_softmax(2)
+        pred = pred.permute(1, 0, 2)
+        preds_lengths = torch.tensor([pred.size(0)] * batch_size, dtype=torch.long)
+        loss = self.loss_func(pred, label, preds_lengths, label_length)
+        return {'loss': loss}

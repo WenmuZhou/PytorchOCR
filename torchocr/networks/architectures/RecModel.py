@@ -29,7 +29,7 @@ class RecModel(nn.Module):
         assert head_type in head_dict, f'head.type must in {head_dict}'
         self.head = head_dict[head_type](self.neck.out_channels, **config.head)
 
-        self.name = f'{backbone_type}_{neck_type}_{head_type}'
+        self.name = f'RecModel_{backbone_type}_{neck_type}_{head_type}'
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         self.backbone.load_3rd_state_dict(_3rd_name, _state)
