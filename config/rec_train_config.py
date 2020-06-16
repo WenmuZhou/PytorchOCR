@@ -84,10 +84,14 @@ config.dataset = {
             'augmentation': False,
         },
         'loader': {
-                'type': 'RecDataLoader',  # 使用torch dataloader只需要改为 DataLoader
+            'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
             'batch_size': 32,
             'shuffle': True,
             'num_workers': 1,
+            'collate_fn': {
+                'type': 'RecCollateFn',
+                'img_w': 256
+            }
         }
     },
     'eval': {
