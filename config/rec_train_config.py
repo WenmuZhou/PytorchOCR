@@ -28,24 +28,24 @@ config.exp_name = 'CRNN'
 config.train_options = {
     # for train
     'resume_from': '',
-    'third_party_name': 'paddle',
+    'third_party_name': '',
     'checkpoint_save_dir': "./out_dir/checkpoint",
     'device': 'cuda:0',
     'batch_size': 2,
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
-    'print_interval': 1,  # step为单位
-    'val_interval': 10,  # step为单位
+    'print_interval': 10,  # step为单位
+    'val_interval': 625,  # step为单位
     'ckpt_save_type': 'HighestAcc',  # 'FixedEpochStep'
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
 
 config.SEED = 927
-config.optimizer = [{
+config.optimizer = {
     'type': 'Adam',
-    'lr': 0.01,
+    'lr': 0.001,
     'weight_decay': 1e-4,
-}]
+}
 
 config.lr_scheduler = {
     'type': 'StepLR',
@@ -55,8 +55,8 @@ config.lr_scheduler = {
 config.model = {
     'type': "RecModel",
     'neck': {"type": 'PPaddleRNN'},
-    'backbone': {"type": "ResNet", 'layers': 34},
-    'head': {"type": "CTC", 'n_class': 92},
+    'backbone': {"type": "ResNet", 'layers': 18},
+    'head': {"type": "CTC", 'n_class': 11},
     'in_channels': 3,
 }
 
@@ -72,20 +72,19 @@ config.post_p = {}
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 config.dataset = {
-    'alphabet': r'D:\code\OCR\PytorchOCR\torchocr\datasets\alphabets\enAlphaNumPunc90.txt',
+    'alphabet': r'torchocr/datasets/alphabets/digit.txt',
     'train': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'data_dir': r'D:\dataset\converted_icdar2015_rec_data\converted_data',
+            'file': r'E:\zj\dataset\test_crnn_digit\train.txt',
             'input_h': 32,
             'mean': 0.588,
             'std': 0.193,
-            'mode': 'train',
             'augmentation': False,
         },
         'loader': {
             'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
-            'batch_size': 32,
+            'batch_size': 16,
             'shuffle': True,
             'num_workers': 1,
             'collate_fn': {
@@ -97,16 +96,15 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'data_dir': r'D:\dataset\converted_icdar2015_rec_data\converted_data',
+            'file': r'E:\zj\dataset\test_crnn_digit\val.txt',
             'input_h': 32,
             'mean': 0.588,
             'std': 0.193,
-            'mode': 'eval',
             'augmentation': False,
         },
         'loader': {
             'type': 'RecDataLoader',
-            'batch_size': 32,
+            'batch_size': 4,
             'shuffle': False,
             'num_workers': 1,
         }

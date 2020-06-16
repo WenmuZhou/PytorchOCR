@@ -35,13 +35,13 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metri
     return result_dict
 
 
-def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device,
+def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device,
           cfg, _epoch, logger):
     """
     Returns:
     :param net: 模型
-    :param _solvers: 优化器
-    :param schedulers: 学习率更新
+    :param optimizer: 优化器
+    :param scheduler: 学习率更新
     :param loss_func: loss函数
     :param train_loader: 训练数据集dataloader
     :param eval_loader: 验证数据集dataloader
@@ -69,7 +69,7 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
     try:
         start = time.time()
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
-            current_lr = [m_scheduler.get_last_lr()[0] for m_scheduler in schedulers]
+            current_lr = scheduler.get_last_lr()[0]
             net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
                 cur_batch_size = batch_data['img'].shape[0]
@@ -77,23 +77,22 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
                 batch_data['targets'] = targets
                 batch_data['targets_lengths'] = targets_lengths
 
+                optimizer.zero_grad()
                 output = net.forward(batch_data['img'].to(to_use_device))
                 loss_dict = loss_func(output, batch_data)
-                [_solver.zero_grad() for _solver in _solvers]
                 loss_dict['loss'].backward()
-                [_solver.step() for _solver in _solvers]
-                [_scheduler.step() for _scheduler in schedulers]
-
+                torch.nn.utils.clip_grad_norm_(net.parameters(), 5)
+                optimizer.step()
                 # statistic loss for print
                 average['loss'] = (loss_dict['loss'].item(), 1)
                 acc_dict = metric(output, batch_data['label'])
                 average['acc'] = (acc_dict['n_correct'], cur_batch_size)
                 average['norm_edit_dis'] = (acc_dict['norm_edit_dis'], cur_batch_size)
-                if i % train_options['print_interval'] == 0:
+                if (i + 1) % train_options['print_interval'] == 0:
                     interval_batch_time = time.time() - start
                     logger.info(f"[{epoch}/{train_options['epochs']}] - "
                                 f"[{i + 1}/{all_step}] -"
-                                f"lr:{','.join([str(m_lr) for m_lr in current_lr])} - "
+                                f"lr:{current_lr} - "
                                 f"loss:{average['loss']:.4f} - "
                                 f"acc:{average['acc']:.4f} - "
                                 f"norm_edit_dis:{1 - average['norm_edit_dis']:.4f} - "
@@ -104,19 +103,19 @@ def train(net, _solvers, schedulers, loss_func, train_loader, eval_loader, to_us
                     eval_dict = evaluate(net, eval_loader, loss_func, to_use_device, logger, converter, metric)
                     if train_options['ckpt_save_type'] == 'HighestAcc':
                         net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
-                        save_checkpoint(net_save_path, net, _solvers, epoch, logger, cfg)
+                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
                         if eval_dict['eval_acc'] > best_model['eval_acc']:
                             best_model.update(eval_dict)
                             best_model['models'] = net_save_path
                             shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
                     elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
                         net_save_path = f"{train_options['checkpoint_save_dir']}/{epoch}.pth"
-                        save_checkpoint(net_save_path, net, _solvers, epoch, logger, cfg)
-
+                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
+            scheduler.step()
     except KeyboardInterrupt:
         import os
         save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
-                        _solvers, epoch, logger, cfg)
+                        optimizer, epoch, logger, cfg)
     except:
         error_msg = traceback.format_exc(limit=1)
         logger.error(error_msg)

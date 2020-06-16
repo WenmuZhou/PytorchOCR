@@ -22,9 +22,7 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
         state = torch.load(resume_from, map_location=to_use_device)
         _model.load_state_dict(state['state_dict'])
         if _optimizers is not None:
-            assert len(_optimizers) == len(state['optimizer'])
-            for m_optimizer, m_optimizer_state_dict in zip(_optimizers, state['optimizer']):
-                m_optimizer.load_state_dict(m_optimizer_state_dict)
+            _optimizers.load_state_dict(state['optimizer'])
         start_epoch = state['epoch']
 
     elif third_name == 'paddle':
@@ -36,7 +34,7 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
 
 def save_checkpoint(checkpoint_path, model, _optimizers, epoch, logger, cfg):
     state = {'state_dict': model.state_dict(),
-             'optimizer': [_.state_dict() for _ in _optimizers],
+             'optimizer': _optimizers.state_dict(),
              'epoch': epoch,
              'cfg': cfg}
     torch.save(state, checkpoint_path)

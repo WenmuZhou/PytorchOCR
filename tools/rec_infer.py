@@ -23,6 +23,7 @@ class RecInfer:
     def predict(self, img):
         img = self.process.resize_with_specific_height(img)
         img = self.process.width_pad_img(img, 120)
+        img = self.process.normalize_img(img)
         tensor = torch.from_numpy(img.transpose([2, 0, 1])).float()
         tensor = tensor.unsqueeze(dim=0)
         out = self.model(tensor)

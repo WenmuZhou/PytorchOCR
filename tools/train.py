@@ -68,20 +68,18 @@ def set_random_seed(seed, use_cuda=True, deterministic=False):
             torch.backends.cudnn.benchmark = False
 
 
-def build_optimizers(params, config):
+def build_optimizer(params, config):
     """
     优化器
     Returns:
     """
     from torch import optim
-    opt_list = []
-    for opt in config:
-        opt_type = opt.pop('type')
-        opt_list.append(getattr(optim, opt_type)(params, **opt))
-    return opt_list
+    opt_type = config.pop('type')
+    opt = getattr(optim, opt_type)(params, **config)
+    return opt
 
 
-def build_schedulers(optimizer, config):
+def build_scheduler(optimizer, config):
     """
     """
     scheduler = None
@@ -155,16 +153,16 @@ def main():
     # ===> get fine tune layers
     params_to_train = get_fine_tune_params(net, train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
-    solvers = build_optimizers(params_to_train, cfg['optimizer'])
-    schedulers = [build_schedulers(m_solver, cfg['lr_scheduler']) for m_solver in solvers]
+    optimizer = build_optimizer(net.parameters(), cfg['optimizer'])
+    scheduler = build_scheduler(optimizer, cfg['lr_scheduler'])
 
     # ===> whether to resume from checkpoint
     resume_from = train_options['resume_from']
     if resume_from:
-        net, current_epoch, _resumed_solvers = load_checkpoint(net, resume_from, to_use_device,
-                                                               third_name=train_options['third_party_name'])
-        if _resumed_solvers:
-            solvers = _resumed_solvers
+        net, current_epoch, _resumed_optimizer = load_checkpoint(net, resume_from, to_use_device, optimizer,
+                                                                 third_name=train_options['third_party_name'])
+        if _resumed_optimizer:
+            optimizer = _resumed_optimizer
         logger.info(f'net resume from {resume_from}')
     else:
         current_epoch = 0
@@ -183,7 +181,7 @@ def main():
         from tools.rec_train import train
     else:
         pass
-    train(net, solvers, schedulers, loss_func, train_loader, eval_loader, to_use_device, cfg, current_epoch, logger)
+    train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device, cfg, current_epoch, logger)
 
 
 if __name__ == '__main__':

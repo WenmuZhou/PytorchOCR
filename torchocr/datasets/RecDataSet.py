@@ -22,7 +22,6 @@ class RecTextLineDataset(Dataset):
         batch_size, shuffle, num_workers
         """
         self.config = config
-        self.data_dir = config.data_dir
         self.input_h = config.input_h
         self.mode = config.mode
         self.mean = np.array(config.mean, dtype=np.float32)
@@ -30,14 +29,13 @@ class RecTextLineDataset(Dataset):
         self.augmentation = config.augmentation
         self.process = RecDataProcess(config)
 
-        # build path of train.txt of val.txt
-        gt_path = os.path.join(self.data_dir, f'{self.mode}.txt')
-        with open(gt_path, 'r', encoding='utf-8') as file:
-            # build {img_path: trans}
-            self.labels = []
-            for m_line in file:
-                m_image_name, m_gt_text = m_line.strip().split('\t')
-                self.labels.append((m_image_name, m_gt_text))
+        self.labels = []
+        with open(config.file, 'r', encoding='utf-8') as f_reader:
+            for m_line in f_reader.readlines():
+                params = m_line.strip().split('\t')
+                if len(params) == 2:
+                    m_image_name, m_gt_text = params
+                    self.labels.append((m_image_name, m_gt_text))
 
     def _find_max_length(self):
         return max({len(_[1]) for _ in self.labels})
@@ -47,9 +45,7 @@ class RecTextLineDataset(Dataset):
 
     def __getitem__(self, index):
         # get img_path and trans
-        img_name, trans = self.labels[index]
-        img_path = os.path.join(self.data_dir, 'image', img_name)
-
+        img_path, trans = self.labels[index]
         # read img
         img = cv2.imread(img_path)
         # do aug
