@@ -6,14 +6,14 @@ import shutil
 import traceback
 import torch
 from tqdm import tqdm
-from torchocr.utils import save_checkpoint, AverageMeter
+from torchocr.utils import save_checkpoint
 
 
 def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metric):
     logger.info('start evaluate')
     net.eval()
     nums = 0
-    result_dict = {'eval_loss': 0., 'eval_acc': 0., 'eval_ned': 0.}
+    result_dict = {'eval_loss': 0., 'eval_acc': 0., 'norm_edit_dis': 0.}
     with torch.no_grad():
         for batch_data in tqdm(val_loader):
             targets, targets_lengths = converter.encode(batch_data['label'])
@@ -24,13 +24,14 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metri
             result_dict['eval_loss'] += loss['loss'].item()
             nums += batch_data['img'].shape[0]
             acc_dict = metric(output, batch_data['label'])
-            result_dict['eval_acc'] = acc_dict['n_correct']
-            result_dict['norm_edit_dis'] = acc_dict['norm_edit_dis']
-
-    for key, val in result_dict.items():
-        result_dict[key] = result_dict[key] / nums
-        logger.info('{}:{}'.format(key, result_dict[key]))
-    result_dict['norm_edit_dis'] = 1 - result_dict['norm_edit_dis']
+            result_dict['eval_acc'] += acc_dict['n_correct']
+            result_dict['norm_edit_dis'] += acc_dict['norm_edit_dis']
+    result_dict['eval_loss'] /= len(val_loader)
+    result_dict['eval_acc'] /= nums
+    result_dict['norm_edit_dis'] = 1 - result_dict['norm_edit_dis'] / nums
+    logger.info(f"eval_loss:{result_dict['eval_loss']}")
+    logger.info(f"eval_acc:{result_dict['eval_acc']}")
+    logger.info(f"norm_edit_dis:{result_dict['norm_edit_dis']}")
     net.train()
     return result_dict
 
@@ -60,18 +61,17 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     # ===>
     logger.info('Training...')
     # ===> print loss信息的参数
-    average = AverageMeter()
     all_step = len(train_loader)
-    logger.info('train dataset has {} samples,{} in dataloader'.format(train_loader.dataset.__len__(), all_step))
-    logger.info('eval dataset has {} samples,{} in dataloader'.format(eval_loader.dataset.__len__(), len(eval_loader)))
+    logger.info(f'train dataset has {train_loader.dataset.__len__()} samples,{all_step} in dataloader')
+    logger.info(f'eval dataset has {eval_loader.dataset.__len__()} samples,{len(eval_loader)} in dataloader')
     best_model = {'best_acc': 0, 'eval_loss': 0, 'model_path': '', 'eval_acc': 0., 'eval_ned': 0.}
     # 开始训练
     try:
         start = time.time()
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
-            current_lr = scheduler.get_last_lr()[0]
             net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
+                current_lr = optimizer.param_groups[0]['lr']
                 cur_batch_size = batch_data['img'].shape[0]
                 targets, targets_lengths = converter.encode(batch_data['label'])
                 batch_data['targets'] = targets
@@ -84,18 +84,17 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                 torch.nn.utils.clip_grad_norm_(net.parameters(), 5)
                 optimizer.step()
                 # statistic loss for print
-                average['loss'] = (loss_dict['loss'].item(), 1)
                 acc_dict = metric(output, batch_data['label'])
-                average['acc'] = (acc_dict['n_correct'], cur_batch_size)
-                average['norm_edit_dis'] = (acc_dict['norm_edit_dis'], cur_batch_size)
+                acc = acc_dict['n_correct'] / cur_batch_size
+                norm_edit_dis = 1 - acc_dict['norm_edit_dis'] / cur_batch_size
                 if (i + 1) % train_options['print_interval'] == 0:
                     interval_batch_time = time.time() - start
                     logger.info(f"[{epoch}/{train_options['epochs']}] - "
                                 f"[{i + 1}/{all_step}] -"
                                 f"lr:{current_lr} - "
-                                f"loss:{average['loss']:.4f} - "
-                                f"acc:{average['acc']:.4f} - "
-                                f"norm_edit_dis:{1 - average['norm_edit_dis']:.4f} - "
+                                f"loss:{loss_dict['loss'].item():.4f} - "
+                                f"acc:{acc:.4f} - "
+                                f"norm_edit_dis:{norm_edit_dis:.4f} - "
                                 f"time:{interval_batch_time:.4f}")
                     start = time.time()
                 if (i + 1) >= train_options['val_interval'] and (i + 1) % train_options['val_interval'] == 0:

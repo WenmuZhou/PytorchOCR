@@ -49,8 +49,8 @@ config.optimizer = {
 
 config.lr_scheduler = {
     'type': 'StepLR',
-    'step_size': 50,
-    'game': 0.5
+    'step_size': 50, # epoch为单位
+    'gamma': 0.5
 }
 config.model = {
     'type': "RecModel",
@@ -83,13 +83,13 @@ config.dataset = {
             'augmentation': False,
         },
         'loader': {
-            'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
+            'type': 'RecDataLoader',  # 使用torch dataloader只需要改为 DataLoader
             'batch_size': 16,
             'shuffle': True,
             'num_workers': 1,
             'collate_fn': {
                 'type': 'RecCollateFn',
-                'img_w': 256
+                'img_w': 120
             }
         }
     },
