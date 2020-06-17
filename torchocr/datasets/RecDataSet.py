@@ -1,7 +1,7 @@
 """
 @Author: Jeffery Sheng (Zhenfei Sheng)
 @Time:   2020/5/21 19:44
-@File:   ICDAR15RecDataset.py
+@File:   RecDataSet.py
 """
 
 import os
@@ -9,13 +9,12 @@ import cv2
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from utils import StrLabelConverter
 from util_scripts.CreateRecAug import cv2pil, pil2cv, RandomBrightness, RandomContrast, \
     RandomLine, RandomSharpness, Compress, Rotate, \
     Blur, MotionBlur, Salt, AdjustResolution
 
 
-class ICDAR15RecDataset(Dataset):
+class RecTextLineDataset(Dataset):
     def __init__(self, config):
         """
         :param config: dataset config, need data_dir, input_h, mean, std,
@@ -23,30 +22,20 @@ class ICDAR15RecDataset(Dataset):
         batch_size, shuffle, num_workers
         """
         self.config = config
-        self.data_dir = config.data_dir
         self.input_h = config.input_h
         self.mode = config.mode
-        self.alphabet = config.alphabet
         self.mean = np.array(config.mean, dtype=np.float32)
         self.std = np.array(config.std, dtype=np.float32)
         self.augmentation = config.augmentation
+        self.process = RecDataProcess(config)
 
-        # get alphabet
-        with open(self.alphabet, 'r') as file:
-            alphabet = ''.join([s.strip('\n') for s in file.readlines()])
-        # get converter
-        self.converter = StrLabelConverter(alphabet, False)
-
-        # build path of train.txt of val.txt
-        gt_path = os.path.join(self.data_dir, f'{self.mode}.txt')
-        with open(gt_path, 'r', encoding='utf-8') as file:
-            # build {img_path: trans}
-            self.labels = []
-            for m_line in file:
-                m_image_name, m_gt_text = m_line.strip().split('\t')
-                self.labels.append((m_image_name, m_gt_text))
-
-        print(f'load {self.__len__()} images.')
+        self.labels = []
+        with open(config.file, 'r', encoding='utf-8') as f_reader:
+            for m_line in f_reader.readlines():
+                params = m_line.strip().split('\t')
+                if len(params) == 2:
+                    m_image_name, m_gt_text = params
+                    self.labels.append((m_image_name, m_gt_text))
 
     def _find_max_length(self):
         return max({len(_[1]) for _ in self.labels})
@@ -56,27 +45,23 @@ class ICDAR15RecDataset(Dataset):
 
     def __getitem__(self, index):
         # get img_path and trans
-        img_name, trans = self.labels[index]
-        img_path = os.path.join(self.data_dir, 'image', img_name)
-
-        # convert to label
-        label, length = self.converter.encode(trans)
+        img_path, trans = self.labels[index]
         # read img
         img = cv2.imread(img_path)
         # do aug
         if self.augmentation:
-            img = pil2cv(RecDataProcess(self.config).aug_img(cv2pil(img)))
-        return img, label, length
+            img = pil2cv(self.process.aug_img(cv2pil(img)))
+        return {'img': img, 'label': trans}
 
 
 class RecDataLoader:
-    def __init__(self, dataset, config):
+    def __init__(self, dataset, batch_size, shuffle, num_workers, **kwargs):
         self.dataset = dataset
-        self.process = RecDataProcess(config)
+        self.process = dataset.process
         self.len_thresh = self.dataset._find_max_length() // 2
-        self.batch_size = config.batch_size
-        self.shuffle = config.shuffle
-        self.num_workers = config.num_workers
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.num_workers = num_workers
         self.iteration = 0
         self.dataiter = None
         self.queue_1 = list()
@@ -90,28 +75,23 @@ class RecDataLoader:
         return self
 
     def pack(self, batch_data):
-        batch = [[], [], []]
-        max_length = max({it[2].item() for it in batch_data})
+        batch = {'img': [], 'label': []}
         # img tensor current shape: B,H,W,C
-        all_same_height_images = [self.process.resize_with_specific_height(_[0][0].numpy()) for _ in batch_data]
+        all_same_height_images = [self.process.resize_with_specific_height(_['img'][0].numpy()) for _ in batch_data]
         max_img_w = max({m_img.shape[1] for m_img in all_same_height_images})
         # make sure max_img_w is integral multiple of 8
         max_img_w = int(np.ceil(max_img_w / 8) * 8)
         for i in range(len(batch_data)):
-            _, _label, _length = batch_data[i]
+            _label = batch_data[i]['label'][0]
             img = self.process.normalize_img(self.process.width_pad_img(all_same_height_images[i], max_img_w))
             img = img.transpose([2, 0, 1])
-            label = torch.zeros([max_length])
-            label[:_length.item()] = _label
-            batch[0].append(torch.FloatTensor(img))
-            batch[1].append(label.to(dtype=torch.int32))
-            batch[2].append(torch.IntTensor([max_length]))
-
-        return [torch.stack(batch[0]), torch.stack(batch[1]), torch.cat(batch[2])]
+            batch['img'].append(torch.FloatTensor(img))
+            batch['label'].append(_label)
+        batch['img'] = torch.stack(batch['img'])
+        return batch
 
     def build(self):
-        self.dataiter = DataLoader(self.dataset, batch_size=1,
-                                   shuffle=self.shuffle, num_workers=self.num_workers).__iter__()
+        self.dataiter = DataLoader(self.dataset, batch_size=1, shuffle=self.shuffle, num_workers=self.num_workers).__iter__()
 
     def __next__(self):
         if self.dataiter == None:
@@ -131,7 +111,7 @@ class RecDataLoader:
                 temp = self.dataiter.__next__()
                 self.iteration += 1
                 # to different queue
-                if temp[2].item() <= self.len_thresh:
+                if len(temp['label'][0]) <= self.len_thresh:
                     self.queue_1.append(temp)
                 else:
                     self.queue_2.append(temp)

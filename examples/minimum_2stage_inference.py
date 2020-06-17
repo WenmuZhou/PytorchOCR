@@ -12,7 +12,7 @@ import numpy as np
 import scipy
 from torchocr.networks.architectures.RecModel import *
 from torchocr.networks.architectures.DetModel import *
-from utils import StrLabelConverter
+from torchocr.utils import CTCLabelConverter
 
 default_font_for_annotate = ImageFont.truetype('./田氏颜体大字库2.0.ttf', 20)
 
@@ -359,7 +359,7 @@ if __name__ == '__main__':
     need_rectify_on_single_character = True
     labels = ''.join([f'{i}' for i in range(10)] + [chr(97 + i) for i in range(26)])
     # 模型推断
-    label_converter = StrLabelConverter(labels)
+    label_converter = CTCLabelConverter(labels)
     device = torch.device(device_name)
     detector = DetModel(detector_config).to(device)
     detector.load_state_dict(torch.load(detector_pretrained_model_file, map_location='cpu'))
