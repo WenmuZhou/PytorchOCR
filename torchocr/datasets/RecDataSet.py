@@ -17,9 +17,15 @@ from torchocr.utils.CreateRecAug import cv2pil, pil2cv, RandomBrightness, Random
 class RecTextLineDataset(Dataset):
     def __init__(self, config):
         """
-        :param config: dataset config, need data_dir, input_h, mean, std,
-        mode:'train' or 'val', augmentation: True or False,
-        batch_size, shuffle, num_workers
+        文本行 DataSet, 用于处理标注格式为 `img_path\tlabel` 的标注格式
+
+        :param config: 相关配置，一般为 config['dataset']['train']['dataset] or config['dataset']['eval']['dataset]
+                其主要应包含如下字段： file: 标注文件路径
+                                    input_h: 图片的目标高
+                                    mean: 归一化均值
+                                    std: 归一化方差
+                                    augmentation: 使用使用数据增强
+        :return None
         """
         self.augmentation = config.augmentation
         self.process = RecDataProcess(config)
@@ -52,6 +58,17 @@ class RecTextLineDataset(Dataset):
 
 class RecLmdbDataset(Dataset):
     def __init__(self, config):
+        """
+        Lmdb DataSet, 用于处理转换为 lmdb 文件后的数据集
+
+        :param config: 相关配置，一般为 config['dataset']['train']['dataset] or config['dataset']['eval']['dataset]
+                其主要应包含如下字段： file: 标注文件路径
+                                    input_h: 图片的目标高
+                                    mean: 归一化均值
+                                    std: 归一化方差
+                                    augmentation: 使用使用数据增强
+        :return None
+        """
         import lmdb, sys
         self.env = lmdb.open(config.file, max_readers=32, readonly=True, lock=False, readahead=False, meminit=False)
         if not self.env:
@@ -95,7 +112,7 @@ class RecLmdbDataset(Dataset):
             buf.write(imgbuf)
             buf.seek(0)
             img = Image.open(buf).convert('RGB')  # for color image
-            # We only train and evaluate on alphanumerics (or pre-defined character set in train.py)
+            # We only train and evaluate on alphanumerics (or pre-defined character set in rec_train.py)
             img = np.array(img)
             if self.augmentation:
                 img = pil2cv(self.process.aug_img(cv2pil(img)))
@@ -107,6 +124,15 @@ class RecLmdbDataset(Dataset):
 
 class RecDataLoader:
     def __init__(self, dataset, batch_size, shuffle, num_workers, **kwargs):
+        """
+        自定义 DataLoader, 主要实现数据集的按长度划分，将长度相近的放在一个 batch
+
+        :param dataset: 继承自 torch.utils.data.DataSet的类对象
+        :param batch_size: 一个 batch 的图片数量
+        :param shuffle: 是否打乱数据集
+        :param num_workers: 后台进程数
+        :param kwargs: **
+        """
         self.dataset = dataset
         self.process = dataset.process
         self.len_thresh = self.dataset._find_max_length() // 2
@@ -190,6 +216,11 @@ class RecDataLoader:
 
 class RecDataProcess:
     def __init__(self, config):
+        """
+        文本是被数据增广类
+
+        :param config: 配置，主要用到的字段有 input_h, mean, std
+        """
         self.config = config
         self.random_contrast = RandomContrast(probability=0.3)
         self.random_brightness = RandomBrightness(probability=0.3)

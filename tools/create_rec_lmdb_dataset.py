@@ -27,20 +27,19 @@ def writeCache(env, cache):
             txn.put(k, v)
 
 
-def createDataset(data_list, outputPath, checkValid=True):
+def createDataset(data_list, lmdb_save_path, checkValid=True):
     """
     Create LMDB dataset for training and evaluation.
     ARGS:
-        inputPath  : input folder path where starts imagePath
-        outputPath : LMDB output path
-        gtFile     : list of image path and label
+        data_list  : a list contains img_path\tlabel
+        lmdb_save_path : LMDB output path
         checkValid : if true, check the validity of every image
     """
-    os.makedirs(outputPath, exist_ok=True)
-    env = lmdb.open(outputPath, map_size=109951162)
+    os.makedirs(lmdb_save_path, exist_ok=True)
+    env = lmdb.open(lmdb_save_path, map_size=109951162)
     cache = {}
     cnt = 1
-    for imagePath, label in tqdm(data_list, desc=f'make dataset, save to {outputPath}'):
+    for imagePath, label in tqdm(data_list, desc=f'make dataset, save to {lmdb_save_path}'):
         with open(imagePath, 'rb') as f:
             imageBin = f.read()
         if checkValid:
@@ -68,13 +67,13 @@ def createDataset(data_list, outputPath, checkValid=True):
 
 if __name__ == '__main__':
     import pathlib
-    data_file = r"D:\dataset\test_crnn_digit\val.txt"
-    save_path = r'D:/dataset/test_crnn_digit/lmdb/eval'
-    os.makedirs(save_path, exist_ok=True)
+    label_file = r"path/val.txt"
+    lmdb_save_path = r'path/lmdb/eval'
+    os.makedirs(lmdb_save_path, exist_ok=True)
 
     data_list = []
-    with open(data_file, 'r', encoding='utf-8') as f:
-        for line in tqdm(f.readlines(), desc=f'load data from {data_file}'):
+    with open(label_file, 'r', encoding='utf-8') as f:
+        for line in tqdm(f.readlines(), desc=f'load data from {label_file}'):
             line = line.strip('\n').replace('.jpg ', '.jpg\t').replace('.png ', '.png\t').split('\t')
             if len(line) > 1:
                 img_path = pathlib.Path(line[0].strip(' '))
@@ -82,4 +81,4 @@ if __name__ == '__main__':
                 if img_path.exists() and img_path.stat().st_size > 0:
                     data_list.append((str(img_path), label))
 
-    createDataset(data_list, save_path)
+    createDataset(data_list, lmdb_save_path)
