@@ -52,7 +52,7 @@ class RecCollateFn:
         max_img_w = int(np.ceil(max_img_w / 8) * 8)
         labels = []
         for i in range(len(batch)):
-            _label = batch[i]['label'][0]
+            _label = batch[i]['label']
             labels.append(_label)
             img = self.process.width_pad_img(all_same_height_images[i], max_img_w)
             img = self.process.normalize_img(img)
@@ -62,6 +62,9 @@ class RecCollateFn:
         return {'img': resize_images, 'label': labels}
 
 class RecCollateFnWithResize:
+    """
+    将图片resize到固定宽度的RecCollateFn
+    """
     def __init__(self, *args, **kwargs):
         from torchvision import transforms
         self.img_h = kwargs.get('img_h', 32)
