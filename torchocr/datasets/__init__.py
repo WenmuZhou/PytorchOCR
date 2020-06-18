@@ -3,11 +3,11 @@ from addict import Dict
 from torch.utils.data import DataLoader
 
 from .collate_fn import RecCollateFn
-from .RecDataSet import RecDataLoader, RecTextLineDataset
+from .RecDataSet import RecDataLoader, RecTextLineDataset, RecLmdbDataset
 
 __all__ = ['build_dataloader']
 
-support_dataset = ['RecTextLineDataset', 'DetTextLineDataset']
+support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset']
 support_loader = ['RecDataLoader', 'DataLoader']
 
 
@@ -24,6 +24,7 @@ def build_loader(dataset, config):
 
     # build collate_fn
     if 'collate_fn' in config:
+        config['collate_fn']['dataset'] = dataset
         collate_fn = build_collate_fn(config.pop('collate_fn'))
     else:
         collate_fn = None

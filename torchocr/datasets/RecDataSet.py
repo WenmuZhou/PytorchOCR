@@ -3,10 +3,11 @@
 @Time:   2020/5/21 19:44
 @File:   RecDataSet.py
 """
-
+import six
 import cv2
 import torch
 import numpy as np
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchocr.utils.CreateRecAug import cv2pil, pil2cv, RandomBrightness, RandomContrast, \
     RandomLine, RandomSharpness, Compress, Rotate, \
@@ -20,11 +21,6 @@ class RecTextLineDataset(Dataset):
         mode:'train' or 'val', augmentation: True or False,
         batch_size, shuffle, num_workers
         """
-        self.config = config
-        self.input_h = config.input_h
-        self.mode = config.mode
-        self.mean = np.array(config.mean, dtype=np.float32)
-        self.std = np.array(config.std, dtype=np.float32)
         self.augmentation = config.augmentation
         self.process = RecDataProcess(config)
 
@@ -47,10 +43,66 @@ class RecTextLineDataset(Dataset):
         img_path, trans = self.labels[index]
         # read img
         img = cv2.imread(img_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # do aug
         if self.augmentation:
             img = pil2cv(self.process.aug_img(cv2pil(img)))
         return {'img': img, 'label': trans}
+
+
+class RecLmdbDataset(Dataset):
+    def __init__(self, config):
+        import lmdb, sys
+        self.env = lmdb.open(config.file, max_readers=32, readonly=True, lock=False, readahead=False, meminit=False)
+        if not self.env:
+            print('cannot create lmdb from %s' % (config.file))
+            sys.exit(0)
+
+        self.augmentation = config.augmentation
+        self.process = RecDataProcess(config)
+        self.filtered_index_list = []
+        self.labels = []
+        with self.env.begin(write=False) as txn:
+            nSamples = int(txn.get('num-samples'.encode()))
+            self.nSamples = nSamples
+            for index in range(self.nSamples):
+                index += 1  # lmdb starts with 1
+                label_key = 'label-%09d'.encode() % index
+                label = txn.get(label_key).decode('utf-8')
+                self.labels.append(label)
+                # todo 添加 过滤最长
+                # if len(label) > config.max_len:
+                #     # print(f'The length of the label is longer than max_length: length
+                #     # {len(label)}, {label} in dataset {self.root}')
+                #     continue
+
+                # By default, images containing characters which are not in opt.character are filtered.
+                # You can add [UNK] token to `opt.character` in utils.py instead of this filtering.
+                self.filtered_index_list.append(index)
+
+    def _find_max_length(self):
+        return max({len(_) for _ in self.labels})
+
+    def __getitem__(self, index):
+        index = self.filtered_index_list[index]
+        with self.env.begin(write=False) as txn:
+            label_key = 'label-%09d'.encode() % index
+            label = txn.get(label_key).decode('utf-8')
+            img_key = 'image-%09d'.encode() % index
+            imgbuf = txn.get(img_key)
+
+            buf = six.BytesIO()
+            buf.write(imgbuf)
+            buf.seek(0)
+            img = Image.open(buf).convert('RGB')  # for color image
+            # We only train and evaluate on alphanumerics (or pre-defined character set in train.py)
+            img = np.array(img)
+            if self.augmentation:
+                img = pil2cv(self.process.aug_img(cv2pil(img)))
+        return {'img': img, 'label': label}
+
+    def __len__(self):
+        return len(self.filtered_index_list)
 
 
 class RecDataLoader:
@@ -84,7 +136,7 @@ class RecDataLoader:
             _label = batch_data[i]['label'][0]
             img = self.process.normalize_img(self.process.width_pad_img(all_same_height_images[i], max_img_w))
             img = img.transpose([2, 0, 1])
-            batch['img'].append(torch.FloatTensor(img))
+            batch['img'].append(torch.tensor(img, dtype=torch.float))
             batch['label'].append(_label)
         batch['img'] = torch.stack(batch['img'])
         return batch
@@ -200,6 +252,6 @@ class RecDataProcess:
         :return:    pad完成后的图像
         """
         _height, _width, _channels = _img.shape
-        to_return_img = np.ones([_height, _target_width, _channels]) * _pad_value
+        to_return_img = np.ones([_height, _target_width, _channels], dtype=_img.dtype) * _pad_value
         to_return_img[:_height, :_width, :] = _img
         return to_return_img

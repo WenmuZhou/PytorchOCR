@@ -34,7 +34,7 @@ config.train_options = {
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
     'print_interval': 10,  # step为单位
-    'val_interval': 300,  # step为单位
+    'val_interval': 625,  # step为单位
     'ckpt_save_type': 'HighestAcc',  # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
@@ -74,8 +74,8 @@ config.dataset = {
     'alphabet': r'torchocr/datasets/alphabets/digit.txt',
     'train': {
         'dataset': {
-            'type': 'RecTextLineDataset',
-            'file': r'D:\dataset\test_crnn_digit\train.txt',
+            'type': 'RecLmdbDataset',
+            'file': r'D:/dataset/test_crnn_digit/lmdb/train',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -94,8 +94,8 @@ config.dataset = {
     },
     'eval': {
         'dataset': {
-            'type': 'RecTextLineDataset',
-            'file': r'D:\dataset\test_crnn_digit\val.txt',
+            'type': 'RecLmdbDataset',
+            'file': r'D:/dataset/test_crnn_digit/lmdb/eval',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -106,10 +106,6 @@ config.dataset = {
             'batch_size': 4,
             'shuffle': False,
             'num_workers': 1,
-            'collate_fn': {
-                'type': 'RecCollateFn',
-                'img_w': 120
-            }
         }
     }
 }
