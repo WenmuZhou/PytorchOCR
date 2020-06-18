@@ -9,5 +9,4 @@ shapely==1.7.0
 torch==1.4.0
 torchvision==0.5.0
 python-Levenshtein
-
-
+lmdb

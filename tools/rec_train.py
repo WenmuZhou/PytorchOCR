@@ -14,6 +14,7 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metri
     net.eval()
     nums = 0
     result_dict = {'eval_loss': 0., 'eval_acc': 0., 'norm_edit_dis': 0.}
+    show_str = []
     with torch.no_grad():
         for batch_data in tqdm(val_loader):
             targets, targets_lengths = converter.encode(batch_data['label'])
@@ -21,17 +22,23 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metri
             batch_data['targets_lengths'] = targets_lengths
             output = net.forward(batch_data['img'].to(to_use_device))
             loss = loss_func(output, batch_data)
-            result_dict['eval_loss'] += loss['loss'].item()
+
             nums += batch_data['img'].shape[0]
             acc_dict = metric(output, batch_data['label'])
+            result_dict['eval_loss'] += loss['loss'].item()
             result_dict['eval_acc'] += acc_dict['n_correct']
             result_dict['norm_edit_dis'] += acc_dict['norm_edit_dis']
+            show_str.extend(acc_dict['show_str'])
+
     result_dict['eval_loss'] /= len(val_loader)
     result_dict['eval_acc'] /= nums
     result_dict['norm_edit_dis'] = 1 - result_dict['norm_edit_dis'] / nums
     logger.info(f"eval_loss:{result_dict['eval_loss']}")
     logger.info(f"eval_acc:{result_dict['eval_acc']}")
     logger.info(f"norm_edit_dis:{result_dict['norm_edit_dis']}")
+
+    for s in show_str[:10]:
+        logger.info(s)
     net.train()
     return result_dict
 
@@ -113,7 +120,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
             scheduler.step()
     except KeyboardInterrupt:
         import os
-        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final_' + str(epoch) + '.pth'), net,
+        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net,
                         optimizer, epoch, logger, cfg)
     except:
         error_msg = traceback.format_exc(limit=1)
