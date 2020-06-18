@@ -4,12 +4,11 @@
 @File:   RecDataSet.py
 """
 
-import os
 import cv2
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from util_scripts.CreateRecAug import cv2pil, pil2cv, RandomBrightness, RandomContrast, \
+from torchocr.utils.CreateRecAug import cv2pil, pil2cv, RandomBrightness, RandomContrast, \
     RandomLine, RandomSharpness, Compress, Rotate, \
     Blur, MotionBlur, Salt, AdjustResolution
 

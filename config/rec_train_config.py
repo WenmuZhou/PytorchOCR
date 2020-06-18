@@ -49,13 +49,13 @@ config.optimizer = {
 
 config.lr_scheduler = {
     'type': 'StepLR',
-    'step_size': 50, # epoch为单位
-    'gamma': 0.5
+    'step_size': 1,
+    'gama': 0.5
 }
 config.model = {
     'type': "RecModel",
-    'neck': {"type": 'PPaddleRNN'},
-    'backbone': {"type": "ResNet", 'layers': 18},
+    'neck': {"type": 'RNN'},
+    'backbone': {"type": "VGG", 'layers': 18},
     'head': {"type": "CTC", 'n_class': 11},
     'in_channels': 3,
 }
@@ -76,14 +76,14 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'E:\zj\dataset\test_crnn_digit\train.txt',
+            'file': r'D:\dataset\test_crnn_digit\train.txt',
             'input_h': 32,
             'mean': 0.588,
             'std': 0.193,
             'augmentation': False,
         },
         'loader': {
-            'type': 'RecDataLoader',  # 使用torch dataloader只需要改为 DataLoader
+            'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
             'batch_size': 16,
             'shuffle': True,
             'num_workers': 1,
@@ -96,7 +96,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'E:\zj\dataset\test_crnn_digit\val.txt',
+            'file': r'D:\dataset\test_crnn_digit\val.txt',
             'input_h': 32,
             'mean': 0.588,
             'std': 0.193,
