@@ -27,16 +27,15 @@ config = Dict()
 config.exp_name = 'CRNN'
 config.train_options = {
     # for train
-    'resume_from': '',
-    'third_party_name': '',
-    'checkpoint_save_dir': "./out_dir/checkpoint",
+    'resume_from': '', # 继续训练地址
+    'third_party_name': '', # 加载paddle模型可选
+    'checkpoint_save_dir': "./output/checkpoint", # 模型保存地址，log文件也保存在这里
     'device': 'cuda:0',
-    'batch_size': 2,
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
     'print_interval': 10,  # step为单位
     'val_interval': 625,  # step为单位
-    'ckpt_save_type': 'HighestAcc',  # 'FixedEpochStep'
+    'ckpt_save_type': 'HighestAcc',  # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
 
@@ -54,8 +53,8 @@ config.lr_scheduler = {
 }
 config.model = {
     'type': "RecModel",
-    'neck': {"type": 'RNN'},
-    'backbone': {"type": "VGG", 'layers': 18},
+    'backbone': {"type": "ResNet", 'layers': 18},
+    'neck': {"type": 'PPaddleRNN'},
     'head': {"type": "CTC", 'n_class': 11},
     'in_channels': 3,
 }

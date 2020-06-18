@@ -33,11 +33,18 @@ class RecInfer:
         txt = self.converter.decode(out.softmax(dim=2).detach().cpu().numpy())
         return txt
 
+def init_args():
+    import argparse
+    parser = argparse.ArgumentParser(description='DBNet.pytorch')
+    parser.add_argument('--model_path', default=r'output/checkpoint/best.pth', type=str)
+    parser.add_argument('--img_path', default=r'E:\zj\dataset\test_crnn_digit\val\11_song5_0_3_w.jpg', type=str, help='img path for predict')
+    args = parser.parse_args()
+    return args
+
 if __name__ == '__main__':
     import cv2
-    model_path = 'out_dir/checkpoint/best.pth'
-    img_path = r'E:\zj\dataset\test_crnn_digit\val\11_song5_0_3_w.jpg'
-    img = cv2.imread(img_path)
-    model = RecInfer(model_path)
+    args = init_args()
+    img = cv2.imread(args.img_path)
+    model = RecInfer(args.model_path)
     out = model.predict(img)
     print(out)
