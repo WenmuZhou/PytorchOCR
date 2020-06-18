@@ -16,7 +16,7 @@ class Resize:
         """
         对图片进行处理，先按照高度进行resize，resize之后如果宽度不足指定宽度，就补黑色像素，否则就强行缩放到指定宽度
         :param img_path: 图片地址
-        :return:
+        :return: 处理为指定宽高的图片
         """
         img_h = self.img_h
         img_w = self.img_w
@@ -61,7 +61,7 @@ class RecCollateFn:
         resize_images = torch.stack(resize_images)
         return {'img': resize_images, 'label': labels}
 
-class RecCollateFn1:
+class RecCollateFnWithResize:
     def __init__(self, *args, **kwargs):
         from torchvision import transforms
         self.img_h = kwargs.get('img_h', 32)

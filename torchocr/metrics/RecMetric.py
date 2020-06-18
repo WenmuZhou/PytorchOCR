@@ -6,6 +6,11 @@ import Levenshtein
 
 class RecMetric:
     def __init__(self, converter):
+        """
+        文本识别相关指标计算类
+
+        :param converter: 用于label转换的转换器
+        """
         self.converter = converter
 
     def __call__(self, predictions, labels):

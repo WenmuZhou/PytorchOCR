@@ -2,7 +2,7 @@ import copy
 from addict import Dict
 from torch.utils.data import DataLoader
 
-from .collate_fn import RecCollateFn
+from .RecCollateFn import RecCollateFn
 from .RecDataSet import RecDataLoader, RecTextLineDataset, RecLmdbDataset
 
 __all__ = ['build_dataloader']
@@ -12,6 +12,12 @@ support_loader = ['RecDataLoader', 'DataLoader']
 
 
 def build_dataset(config):
+    """
+    根据配置构造dataset
+
+    :param config: 数据集相关的配置，一般为 config['dataset']['train']['dataset] or config['dataset']['eval']['dataset]
+    :return: 根据配置构造好的 DataSet 类对象
+    """
     dataset_type = config.pop('type')
     assert dataset_type in support_dataset, f'{dataset_type} is not developed yet!, only {support_dataset} are support now'
     dataset_class = eval(dataset_type)(config)
@@ -19,6 +25,13 @@ def build_dataset(config):
 
 
 def build_loader(dataset, config):
+    """
+    根据配置构造 dataloader, 包含两个步骤，1. 构造 collate_fn, 2. 构造 dataloader
+
+    :param dataset: 继承自 torch.utils.data.DataSet的类对象
+    :param config: loader 相关的配置，一般为 config['dataset']['train']['loader] or config['dataset']['eval']['loader]
+    :return: 根据配置构造好的 DataSet 类对象
+    """
     dataloader_type = config.pop('type')
     assert dataloader_type in support_loader, f'{dataloader_type} is not developed yet!, only {support_loader} are support now'
 
@@ -33,6 +46,12 @@ def build_loader(dataset, config):
 
 
 def build_collate_fn(config):
+    """
+    根据配置构造 collate_fn
+
+    :param config: collate_fn 相关的配置
+    :return: 根据配置构造好的 collate_fn 类对象
+    """
     collate_fn_type = config.pop('type')
     if len(collate_fn_type) == 0:
         return None
@@ -42,10 +61,10 @@ def build_collate_fn(config):
 
 def build_dataloader(config):
     """
-    数据加载
-    :return:
+    根据配置构造 dataloader, 包含两个步骤，1. 构造 dataset, 2. 构造 dataloader
+    :param config: 数据集相关的配置，一般为 config['dataset']['train'] or config['dataset']['eval']
+    :return: 根据配置构造好的 DataLoader 类对象
     """
-    # Rec开头的dataset只能配合Rec开头的dataloader使用
     # build dataset
     copy_config = copy.deepcopy(config)
     copy_config = Dict(copy_config)

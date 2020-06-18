@@ -75,7 +75,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'D:\dataset\test_crnn_digit\train.txt',
+            'file': r'path/train.txt',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -95,7 +95,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'D:\dataset\test_crnn_digit\val.txt',
+            'file': r'path/eval.txt',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,

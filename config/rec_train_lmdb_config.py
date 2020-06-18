@@ -75,7 +75,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'D:/dataset/test_crnn_digit/lmdb/train',
+            'file': r'path/lmdb/train',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -95,7 +95,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'D:/dataset/test_crnn_digit/lmdb/eval',
+            'file': r'path/lmdb/eval',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
