@@ -3,7 +3,6 @@
 # @Author  : zhoujun
 
 from .logging import get_logger
-from .AverageMeter import AverageMeter
 from .init import weight_init
 from .LabelConvert import CTCLabelConverter
 from .save import save_checkpoint
