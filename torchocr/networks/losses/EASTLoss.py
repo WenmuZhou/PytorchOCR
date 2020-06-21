@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/6/18 21:16
-# @Author  : lgc
+# @Author  : lgcy
 from torch import nn
 import torch
 

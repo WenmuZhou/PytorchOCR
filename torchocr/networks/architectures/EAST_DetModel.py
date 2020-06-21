@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/6/21 13:15
-# @Author  : lgc
+# @Author  : lgcy
 from addict import Dict as AttrDict
 from torch import nn
 
@@ -61,3 +61,4 @@ if __name__ == '__main__':
     print(model.name)
     print(y[0].shape)
     print(y[1].shape)
+

@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 # @Time    : 2020/6/21 11:40
-# @author :lgc
+# @author :lgcy
 import torch.nn.functional as F
 from torch import nn, Tensor
 import torch
