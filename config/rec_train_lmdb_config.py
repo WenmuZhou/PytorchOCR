@@ -27,9 +27,9 @@ config = Dict()
 config.exp_name = 'CRNN'
 config.train_options = {
     # for train
-    'resume_from': '', # 继续训练地址
-    'third_party_name': '', # 加载paddle模型可选
-    'checkpoint_save_dir': "./output/checkpoint", # 模型保存地址，log文件也保存在这里
+    'resume_from': '',  # 继续训练地址
+    'third_party_name': '',  # 加载paddle模型可选
+    'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint",  # 模型保存地址，log文件也保存在这里
     'device': 'cuda:0',
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
@@ -64,9 +64,6 @@ config.loss = {
     'blank_idx': 0,
 }
 
-config.metric = {}
-config.post_p = {}
-
 # for dataset
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
@@ -75,7 +72,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/train', # LMDB 数据集路径
+            'file': r'path/lmdb/train',  # LMDB 数据集路径
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -95,7 +92,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/eval', # LMDB 数据集路径
+            'file': r'path/lmdb/eval',  # LMDB 数据集路径
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
