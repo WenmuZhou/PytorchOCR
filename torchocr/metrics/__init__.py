@@ -3,3 +3,4 @@
 # @Author  : zhoujun
 
 from .RecMetric import RecMetric
+from .DetMetric import DetMetric

@@ -2,12 +2,14 @@ import copy
 from addict import Dict
 from torch.utils.data import DataLoader
 
-from .RecCollateFn import RecCollateFn
 from .RecDataSet import RecDataLoader, RecTextLineDataset, RecLmdbDataset
+from .DetDataSet import JsonDataset
+from .RecCollateFn import RecCollateFn
+from .DetCollateFN import DetCollectFN
 
 __all__ = ['build_dataloader']
 
-support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset']
+support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset','JsonDataset']
 support_loader = ['RecDataLoader', 'DataLoader']
 
 
