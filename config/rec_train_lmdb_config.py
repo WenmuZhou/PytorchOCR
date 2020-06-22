@@ -75,7 +75,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/train',
+            'file': r'path/lmdb/train', # LMDB 数据集路径
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -95,7 +95,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/eval',
+            'file': r'path/lmdb/eval', # LMDB 数据集路径
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
