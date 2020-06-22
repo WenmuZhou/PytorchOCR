@@ -19,6 +19,9 @@ def load_json(file_path: str):
 
 
 class JsonDataset(Dataset):
+    """
+    from https://github.com/WenmuZhou/OCR_DataSet/blob/master/dataset/det.py
+    """
     def __init__(self, config):
         assert config.img_mode in ['RGB', 'BRG', 'GRAY']
         self.ignore_tags = config.ignore_tags
