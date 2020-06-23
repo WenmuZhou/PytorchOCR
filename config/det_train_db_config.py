@@ -74,7 +74,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'D:\dataset\icdar2015\detection/train.json',
+            'file': r'train.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             # db 预处理，不需要修改
@@ -101,7 +101,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'D:\dataset\icdar2015\detection/test.json',
+            'file': r'test.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             'pre_processes': [{'type': 'ResizeShortSize', 'args': {'short_size': 736, 'resize_text_polys': False}}],
