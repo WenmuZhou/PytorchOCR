@@ -182,6 +182,7 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
     base_lr = optimizer.param_groups[0]['lr']
     try:
         start = time.time()
+        train_loss = 0.
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
@@ -198,6 +199,7 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                 loss_dict['loss'].backward()
                 optimizer.step()
                 # statistic loss for print
+                train_loss += loss_dict['loss'].item()
                 loss_str = 'loss: {:.4f} - '.format(loss_dict.pop('loss').item())
                 for idx, (key, value) in enumerate(loss_dict.items()):
                     loss_dict[key] = value.item()
@@ -207,11 +209,13 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                 if (i + 1) % train_options['print_interval'] == 0:
                     interval_batch_time = time.time() - start
                     logger.info(f"[{epoch}/{train_options['epochs']}] - "
-                                f"[{i + 1}/{all_step}] -"
+                                f"[{i + 1}/{all_step}] - "
                                 f"lr:{current_lr} - "
                                 f"{loss_str} - "
                                 f"time:{interval_batch_time:.4f}")
                     start = time.time()
+
+            logger.info(f'train_loss: {train_loss / len(train_loader)}')
             if (epoch + 1) % train_options['val_interval'] == 0:
                 # val
                 eval_dict = evaluate(net, eval_loader, to_use_device, logger, post_process, metric)
