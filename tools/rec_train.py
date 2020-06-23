@@ -237,7 +237,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                 if (i + 1) % train_options['print_interval'] == 0:
                     interval_batch_time = time.time() - start
                     logger.info(f"[{epoch}/{train_options['epochs']}] - "
-                                f"[{i + 1}/{all_step}] -"
+                                f"[{i + 1}/{all_step}] - "
                                 f"lr:{current_lr} - "
                                 f"loss:{loss_dict['loss'].item():.4f} - "
                                 f"acc:{acc:.4f} - "
