@@ -225,7 +225,7 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                     save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
                 best_str = 'current best, '
                 for k, v in best_model.items():
-                    best_str += '{}: {:.6f}, '.format(k, v)
+                    best_str += '{}: {}, '.format(k, v)
                 logger.info(best_str)
     except KeyboardInterrupt:
         import os
