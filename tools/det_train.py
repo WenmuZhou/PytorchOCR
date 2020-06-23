@@ -182,9 +182,9 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
     base_lr = optimizer.param_groups[0]['lr']
     try:
         start = time.time()
-        train_loss = 0.
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
+            train_loss = 0.
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
                 current_lr = adjust_learning_rate(optimizer, base_lr, epoch, train_options['epochs'], 0.9)
                 # 数据进行转换和丢到gpu
