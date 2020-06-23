@@ -145,6 +145,8 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
     logger.info('FPS:{}'.format(total_frame / total_time))
     net.train()
     result_dict = {'recall': metrics['recall'].avg, 'precision': metrics['precision'].avg, 'hmean': metrics['fmeasure'].avg}
+    for k, v in result_dict.items():
+        logger.info(f'{k}:{v}')
     return result_dict
 
 
