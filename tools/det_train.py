@@ -32,7 +32,7 @@ from torchocr.metrics import DetMetric
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/det_train_db_config.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/det_train_db_config_local.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
@@ -122,9 +122,9 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
     :param metric: 根据网络输出和 label 计算 acc 等指标的类对象
     :return:  一个包含 eval_loss，eval_acc和 norm_edit_dis 的 dict,
         例子： {
-                'eval_loss':0,
-                'eval_acc': 0.99,
-                'norm_edit_dis': 0.9999,
+                'recall':0,
+                'precision': 0.99,
+                'hmean': 0.9999,
                 }
     """
     logger.info('start evaluate')
@@ -136,7 +136,7 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
         for batch_data in tqdm(val_loader):
             start = time.time()
             output = net.forward(batch_data['img'].to(to_use_device))
-            boxes, scores = post_process(batch_data, output, is_output_polygon=metric.is_output_polygon)
+            boxes, scores = post_process(output, batch_data['shape'], is_output_polygon=metric.is_output_polygon)
             total_frame += batch_data['img'].size()[0]
             total_time += time.time() - start
             raw_metric = metric(batch_data, (boxes, scores))

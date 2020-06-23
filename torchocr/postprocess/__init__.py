@@ -2,7 +2,6 @@
 # @Time    : 2020/5/15 17:41
 # @Author  : zhoujun
 
-from addict import Dict
 import copy
 from .DBPostProcess import DBPostProcess
 
@@ -16,5 +15,5 @@ def build_post_process(config):
     copy_config = copy.deepcopy(config)
     post_process_type = copy_config.pop('type')
     assert post_process_type in support_post_process, f'{post_process_type} is not developed yet!, only {support_post_process} are support now'
-    post_process = eval(post_process_type)(Dict(copy_config))
+    post_process = eval(post_process_type)(**copy_config)
     return post_process
