@@ -184,6 +184,11 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
             net.train()  # train mode
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
                 current_lr = adjust_learning_rate(optimizer, base_lr, epoch, train_options['epochs'], 0.9)
+                # 数据进行转换和丢到gpu
+                for key, value in batch_data.items():
+                    if value is not None:
+                        if isinstance(value, torch.Tensor):
+                            batch_data[key] = value.to(to_use_device)
                 # 清零梯度及反向传播
                 optimizer.zero_grad()
                 output = net.forward(batch_data['img'].to(to_use_device))
