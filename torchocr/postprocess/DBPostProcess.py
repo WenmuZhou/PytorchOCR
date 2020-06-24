@@ -67,6 +67,8 @@ class DBPostProcess():
                 dest_height = dest_height.item()
             if not is_output_polygon:
                 box = np.array(four_point_box)
+            else:
+                box = box.reshape(-1, 2)
             box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
             box[:, 1] = np.clip(np.round(box[:, 1] / height * dest_height), 0, dest_height)
             boxes.append(box)
