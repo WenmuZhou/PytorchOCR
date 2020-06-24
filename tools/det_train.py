@@ -142,11 +142,11 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
             raw_metric = metric(batch_data, (boxes, scores))
             raw_metrics.append(raw_metric)
     metrics = metric.gather_measure(raw_metrics)
-    logger.info('FPS:{}'.format(total_frame / total_time))
     net.train()
     result_dict = {'recall': metrics['recall'].avg, 'precision': metrics['precision'].avg, 'hmean': metrics['fmeasure'].avg}
     for k, v in result_dict.items():
         logger.info(f'{k}:{v}')
+    logger.info('FPS:{}'.format(total_frame / total_time))
     return result_dict
 
 
