@@ -7,7 +7,7 @@ import sys
 import pathlib
 # 将 torchocr路径加到python陆经里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
-sys.path.append(__dir__)
+sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
 import random
 import time

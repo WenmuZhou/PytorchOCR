@@ -8,7 +8,7 @@ import pathlib
 
 # 将 torchocr路径加到python陆经里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
-sys.path.append(__dir__)
+sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
 import random
 import time
@@ -32,7 +32,7 @@ from torchocr.metrics import DetMetric
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/det_train_db_config_local.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/det_train_db_config.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
