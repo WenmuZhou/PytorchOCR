@@ -76,7 +76,7 @@ if __name__ == '__main__':
     img = cv2.imread(args.img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     model = DetInfer(args.model_path)
-    box_list, score_list = model.predict(img, is_output_polygon=True)
+    box_list, score_list = model.predict(img, is_output_polygon=False)
     # img = draw_ocr_box_txt(img, box_list)
     img = draw_bbox(img, box_list)
     plt.imshow(img)
