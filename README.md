@@ -57,3 +57,6 @@ PytorchOCR开源的文本识别算法列表：
 
 ## 贡献代码
 我们非常欢迎你为PytorchOCR贡献代码，也十分感谢你的反馈。
+
+## 相关仓库
+* https://github.com/WenmuZhou/OCR_DataSet
