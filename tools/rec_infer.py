@@ -22,8 +22,10 @@ class RecInfer:
         ckpt = torch.load(model_path, map_location='cpu')
         cfg = ckpt['cfg']
         self.model = build_model(cfg['model'])
-        self.model = nn.DataParallel(self.model)
-        self.model.load_state_dict(ckpt['state_dict'])
+        state_dict = {}
+        for k, v in ckpt['state_dict'].items():
+            state_dict[k.replace('module.', '')] = v
+        self.model.load_state_dict(state_dict)
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
@@ -48,7 +50,7 @@ class RecInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path', required=True, type=str,help='rec model path')
+    parser.add_argument('--model_path', required=True, type=str, help='rec model path')
     parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
     args = parser.parse_args()
     return args
