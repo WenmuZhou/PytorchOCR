@@ -8,6 +8,11 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 * 2020.06.18 更新README
 * 2020.06.17 识别模块的训练和预测ok
 
+## todo list
+* [ ] 识别模型预训练模型
+* [ ] DB通用模型
+* [ ] 手机端部署
+
 ## 环境配置
 
 需要的环境如下
@@ -52,3 +57,6 @@ PytorchOCR开源的文本识别算法列表：
 
 ## 贡献代码
 我们非常欢迎你为PytorchOCR贡献代码，也十分感谢你的反馈。
+
+## 相关仓库
+* https://github.com/WenmuZhou/OCR_DataSet
