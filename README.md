@@ -9,7 +9,11 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 * 2020.06.17 识别模块的训练和预测ok
 
 ## 环境配置
-TBD
+
+需要的环境如下
+* pytorch 1.4+
+* torchvision 0.5+
+* gcc 4.9+ (pse,pan会用到)
 
 ## 模型下载
 
@@ -33,7 +37,9 @@ PytorchOCR开源的文本检测算法列表：
 |DB|ResNet18_vd|90.56%|72.66%|80.63%|见百度网盘|
 
 ## 文本识别算法
-TBD
+
+PytorchOCR开源的文本识别算法列表：
+- [x]  CRNN([paper](https://arxiv.org/abs/1507.05717)
 
 ## 结果展示
 
