@@ -10,7 +10,6 @@ __dir__ = pathlib.Path(os.path.abspath(__file__))
 sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
 
-import numpy as np
 import torch
 from torch import nn
 from torchvision import transforms
@@ -24,8 +23,10 @@ class DetInfer:
         ckpt = torch.load(model_path, map_location='cpu')
         cfg = ckpt['cfg']
         self.model = build_model(cfg['model'])
-        self.model = nn.DataParallel(self.model)
-        self.model.load_state_dict(ckpt['state_dict'])
+        state_dict = {}
+        for k, v in ckpt['state_dict'].items():
+            state_dict[k.replace('module.', '')] = v
+        self.model.load_state_dict(state_dict)
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
@@ -44,6 +45,7 @@ class DetInfer:
         data = self.resize(data)
         tensor = self.transform(data['img'])
         tensor = tensor.unsqueeze(dim=0)
+        tensor = tensor.to(self.device)
         out = self.model(tensor)
         box_list, score_list = self.post_proess(out, data['shape'], is_output_polygon=is_output_polygon)
         box_list, score_list = box_list[0], score_list[0]

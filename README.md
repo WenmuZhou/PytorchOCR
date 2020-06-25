@@ -12,14 +12,25 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 TBD
 
 ## 模型下载
-TBD
+
+链接：https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA 
+提取码：vvvx
 
 ## 文档教程
 * [文字检测](doc/检测.md)
 * [文字识别](doc/识别.md)
 
 ## 文本检测算法
-TBD
+
+PytorchOCR开源的文本检测算法列表：
+- [x]  DB([paper](https://arxiv.org/abs/1911.08947))
+
+在ICDAR2015文本检测公开数据集上，算法效果如下：
+
+
+| 模型 | 骨干网络 | precision | recall | Hmean | 下载链接 |
+|  ----  | ----  |  ----  | ----  |  ----  | ----  |
+|DB|ResNet18_vd|90.36%|72.32%|80.34%|见百度网盘|
 
 ## 文本识别算法
 TBD
