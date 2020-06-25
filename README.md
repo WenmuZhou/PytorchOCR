@@ -15,6 +15,11 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 * torchvision 0.5+
 * gcc 4.9+ (pse,pan会用到)
 
+快速安装环境
+```bash
+pip3 install -r requirements.txt
+```
+
 ## 模型下载
 
 链接：https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA 
