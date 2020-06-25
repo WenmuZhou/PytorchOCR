@@ -5,6 +5,7 @@
 import os
 import sys
 import pathlib
+
 # 将 torchocr路径加到python陆经里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
 sys.path.append(str(__dir__))
@@ -22,14 +23,16 @@ import torch.optim as optim
 from torch import nn
 
 from torchocr.networks import build_model, build_loss
+from torchocr.postprocess import build_post_process
 from torchocr.datasets import build_dataloader
-from torchocr.utils import get_logger, weight_init, load_checkpoint,save_checkpoint
+from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkpoint
+from torchocr.metrics import DetMetric
 
 
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/rec_train_config.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/det_train_db_config.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
@@ -83,36 +86,13 @@ def build_optimizer(params, config):
     return opt
 
 
-def build_scheduler(optimizer, config):
-    """
-    """
-    scheduler = None
-    sch_type = config.pop('type')
-    if sch_type == 'LambdaLR':
-        burn_in, steps = config['burn_in'], config['steps']
-
-        # Learning rate setup
-        def burnin_schedule(i):
-            if i < burn_in:
-                factor = pow(i / burn_in, 4)
-            elif i < steps[0]:
-                factor = 1.0
-            elif i < steps[1]:
-                factor = 0.1
-            else:
-                factor = 0.01
-            return factor
-
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer, burnin_schedule)
-    elif sch_type == 'StepLR':
-        # 等间隔调整学习率， 调整倍数为gamma倍，调整间隔为step_size，间隔单位是step，step通常是指epoch。
-        step_size, gamma = config['step_size'], config['gamma']
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
-    elif sch_type == 'ReduceLROnPlateau':
-        # 当某指标不再变化（下降或升高），调整学习率，这是非常实用的学习率调整策略。例如，当验证集的loss不再下降时，进行学习率调整；或者监测验证集的accuracy，当accuracy不再上升时，则调整学习率。
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1,
-                                                               patience=3, verbose=True, threshold=1e-4)
-    return scheduler
+def adjust_learning_rate(optimizer, base_lr, epoch, epochs, factor):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    rate = np.power(1.0 - epoch / float(epochs + 1), factor)
+    lr = rate * base_lr
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return lr
 
 
 def get_fine_tune_params(net, finetune_stage):
@@ -129,59 +109,49 @@ def get_fine_tune_params(net, finetune_stage):
             to_return_parameters.append(element)
     return to_return_parameters
 
-def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metric):
+
+def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
     """
     在验证集上评估模型
 
     :param net: 网络
     :param val_loader: 验证集 dataloader
-    :param loss_func: 损失函数
     :param to_use_device: device
     :param logger: logger类对象
-    :param converter: label转换器类对象
+    :param post_process: 后处理类对象
     :param metric: 根据网络输出和 label 计算 acc 等指标的类对象
     :return:  一个包含 eval_loss，eval_acc和 norm_edit_dis 的 dict,
         例子： {
-                'eval_loss':0,
-                'eval_acc': 0.99,
-                'norm_edit_dis': 0.9999,
+                'recall':0,
+                'precision': 0.99,
+                'hmean': 0.9999,
                 }
     """
     logger.info('start evaluate')
     net.eval()
-    nums = 0
-    result_dict = {'eval_loss': 0., 'eval_acc': 0., 'norm_edit_dis': 0.}
-    show_str = []
+    raw_metrics = []
+    total_frame = 0.0
+    total_time = 0.0
     with torch.no_grad():
         for batch_data in tqdm(val_loader):
-            targets, targets_lengths = converter.encode(batch_data['label'])
-            batch_data['targets'] = targets
-            batch_data['targets_lengths'] = targets_lengths
+            start = time.time()
             output = net.forward(batch_data['img'].to(to_use_device))
-            loss = loss_func(output, batch_data)
-
-            nums += batch_data['img'].shape[0]
-            acc_dict = metric(output, batch_data['label'])
-            result_dict['eval_loss'] += loss['loss'].item()
-            result_dict['eval_acc'] += acc_dict['n_correct']
-            result_dict['norm_edit_dis'] += acc_dict['norm_edit_dis']
-            show_str.extend(acc_dict['show_str'])
-
-    result_dict['eval_loss'] /= len(val_loader)
-    result_dict['eval_acc'] /= nums
-    result_dict['norm_edit_dis'] = 1 - result_dict['norm_edit_dis'] / nums
-    logger.info(f"eval_loss:{result_dict['eval_loss']}")
-    logger.info(f"eval_acc:{result_dict['eval_acc']}")
-    logger.info(f"norm_edit_dis:{result_dict['norm_edit_dis']}")
-
-    for s in show_str[:10]:
-        logger.info(s)
+            boxes, scores = post_process(output, batch_data['shape'], is_output_polygon=metric.is_output_polygon)
+            total_frame += batch_data['img'].size()[0]
+            total_time += time.time() - start
+            raw_metric = metric(batch_data, (boxes, scores))
+            raw_metrics.append(raw_metric)
+    metrics = metric.gather_measure(raw_metrics)
     net.train()
+    result_dict = {'recall': metrics['recall'].avg, 'precision': metrics['precision'].avg, 'hmean': metrics['fmeasure'].avg}
+    for k, v in result_dict.items():
+        logger.info(f'{k}:{v}')
+    logger.info('FPS:{}'.format(total_frame / total_time))
     return result_dict
 
 
-def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device,
-          cfg, _epoch, logger):
+def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
+          cfg, _epoch, logger, post_process):
     """
     训练函数
 
@@ -195,69 +165,74 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     :param cfg: 当前训练所使用的配置
     :param _epoch: 当前训练起始的 epoch
     :param logger: logger 对象
+    :param post_process: 后处理类对象
     :return: None
     """
 
-    from torchocr.metrics import RecMetric
-    from torchocr.utils import CTCLabelConverter
-    with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
-        cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
-    converter = CTCLabelConverter(cfg.dataset.alphabet)
     train_options = cfg.train_options
-    metric = RecMetric(converter)
+    metric = DetMetric()
     # ===>
     logger.info('Training...')
     # ===> print loss信息的参数
     all_step = len(train_loader)
     logger.info(f'train dataset has {train_loader.dataset.__len__()} samples,{all_step} in dataloader')
     logger.info(f'eval dataset has {eval_loader.dataset.__len__()} samples,{len(eval_loader)} in dataloader')
-    best_model = {'best_acc': 0, 'eval_loss': 0, 'model_path': '', 'eval_acc': 0., 'eval_ned': 0.}
+    best_model = {'recall': 0, 'precision': 0, 'hmean': 0, 'best_model_epoch': 0}
     # 开始训练
+    base_lr = optimizer.param_groups[0]['lr']
     try:
         start = time.time()
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
+            train_loss = 0.
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
-                current_lr = optimizer.param_groups[0]['lr']
-                cur_batch_size = batch_data['img'].shape[0]
-                targets, targets_lengths = converter.encode(batch_data['label'])
-                batch_data['targets'] = targets
-                batch_data['targets_lengths'] = targets_lengths
+                current_lr = adjust_learning_rate(optimizer, base_lr, epoch, train_options['epochs'], 0.9)
+                # 数据进行转换和丢到gpu
+                for key, value in batch_data.items():
+                    if value is not None:
+                        if isinstance(value, torch.Tensor):
+                            batch_data[key] = value.to(to_use_device)
                 # 清零梯度及反向传播
                 optimizer.zero_grad()
                 output = net.forward(batch_data['img'].to(to_use_device))
                 loss_dict = loss_func(output, batch_data)
                 loss_dict['loss'].backward()
-                torch.nn.utils.clip_grad_norm_(net.parameters(), 5)
                 optimizer.step()
                 # statistic loss for print
-                acc_dict = metric(output, batch_data['label'])
-                acc = acc_dict['n_correct'] / cur_batch_size
-                norm_edit_dis = 1 - acc_dict['norm_edit_dis'] / cur_batch_size
+                train_loss += loss_dict['loss'].item()
+                loss_str = 'loss: {:.4f} - '.format(loss_dict.pop('loss').item())
+                for idx, (key, value) in enumerate(loss_dict.items()):
+                    loss_dict[key] = value.item()
+                    loss_str += '{}: {:.4f}'.format(key, loss_dict[key])
+                    if idx < len(loss_dict) - 1:
+                        loss_str += ' - '
                 if (i + 1) % train_options['print_interval'] == 0:
                     interval_batch_time = time.time() - start
                     logger.info(f"[{epoch}/{train_options['epochs']}] - "
                                 f"[{i + 1}/{all_step}] - "
                                 f"lr:{current_lr} - "
-                                f"loss:{loss_dict['loss'].item():.4f} - "
-                                f"acc:{acc:.4f} - "
-                                f"norm_edit_dis:{norm_edit_dis:.4f} - "
+                                f"{loss_str} - "
                                 f"time:{interval_batch_time:.4f}")
                     start = time.time()
-                if (i + 1) >= train_options['val_interval'] and (i + 1) % train_options['val_interval'] == 0:
-                    # val
-                    eval_dict = evaluate(net, eval_loader, loss_func, to_use_device, logger, converter, metric)
-                    if train_options['ckpt_save_type'] == 'HighestAcc':
-                        net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
-                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
-                        if eval_dict['eval_acc'] > best_model['eval_acc']:
-                            best_model.update(eval_dict)
-                            best_model['models'] = net_save_path
-                            shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
-                    elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
-                        net_save_path = f"{train_options['checkpoint_save_dir']}/{epoch}.pth"
-                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
-            scheduler.step()
+
+            logger.info(f'train_loss: {train_loss / len(train_loader)}')
+            if (epoch + 1) % train_options['val_interval'] == 0:
+                # val
+                eval_dict = evaluate(net, eval_loader, to_use_device, logger, post_process, metric)
+                if train_options['ckpt_save_type'] == 'HighestAcc':
+                    net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
+                    save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
+                    if eval_dict['hmean'] > best_model['hmean']:
+                        best_model.update(eval_dict)
+                        best_model['models'] = net_save_path
+                        shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
+                elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
+                    net_save_path = f"{train_options['checkpoint_save_dir']}/{epoch}.pth"
+                    save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
+                best_str = 'current best, '
+                for k, v in best_model.items():
+                    best_str += '{}: {}, '.format(k, v)
+                logger.info(best_str)
     except KeyboardInterrupt:
         import os
         save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net,
@@ -268,6 +243,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     finally:
         for k, v in best_model.items():
             logger.info(f'{k}: {v}')
+
 
 def main():
     # ===> 获取配置文件参数
@@ -297,7 +273,6 @@ def main():
     params_to_train = get_fine_tune_params(net, train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
     optimizer = build_optimizer(net.parameters(), cfg['optimizer'])
-    scheduler = build_scheduler(optimizer, cfg['lr_scheduler'])
 
     # ===> whether to resume from checkpoint
     resume_from = train_options['resume_from']
@@ -319,8 +294,10 @@ def main():
     train_loader = build_dataloader(cfg.dataset.train)
     eval_loader = build_dataloader(cfg.dataset.eval)
 
+    # post_process
+    post_process = build_post_process(cfg['post_process'])
     # ===> train
-    train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device, cfg, current_epoch, logger)
+    train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device, cfg, current_epoch, logger, post_process)
 
 
 if __name__ == '__main__':

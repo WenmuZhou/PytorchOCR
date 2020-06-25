@@ -51,4 +51,5 @@ class DBLoss(nn.Module):
             metrics['loss'] = loss_all
         else:
             metrics['loss'] = loss_shrink_maps
+
         return metrics

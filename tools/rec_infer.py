@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/6/16 10:57
 # @Author  : zhoujun
+import os
+import sys
+import pathlib
+
+# 将 torchocr路径加到python陆经里
+__dir__ = pathlib.Path(os.path.abspath(__file__))
+sys.path.append(str(__dir__))
+sys.path.append(str(__dir__.parent.parent))
+
 import torch
 from torch import nn
 from torchocr.networks import build_model
@@ -12,13 +21,14 @@ class RecInfer:
     def __init__(self, model_path):
         ckpt = torch.load(model_path, map_location='cpu')
         cfg = ckpt['cfg']
-        from config.rec_train_config import config
-        self.model = build_model(config['model'])
+        self.model = build_model(cfg['model'])
         self.model = nn.DataParallel(self.model)
         self.model.load_state_dict(ckpt['state_dict'])
 
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.model.to(device)
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
+        self.model.eval()
+
         self.process = RecDataProcess(cfg['dataset']['train']['dataset'])
         self.converter = CTCLabelConverter(cfg['dataset']['alphabet'])
 
@@ -29,6 +39,7 @@ class RecInfer:
         img = self.process.normalize_img(img)
         tensor = torch.from_numpy(img.transpose([2, 0, 1])).float()
         tensor = tensor.unsqueeze(dim=0)
+        tensor = tensor.to(self.device)
         out = self.model(tensor)
         txt = self.converter.decode(out.softmax(dim=2).detach().cpu().numpy())
         return txt
@@ -36,7 +47,7 @@ class RecInfer:
 
 def init_args():
     import argparse
-    parser = argparse.ArgumentParser(description='DBNet.pytorch')
+    parser = argparse.ArgumentParser(description='PytorchOCR infer')
     parser.add_argument('--model_path', required=True, type=str,help='rec model path')
     parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
     args = parser.parse_args()

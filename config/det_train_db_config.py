@@ -24,17 +24,17 @@
 from addict import Dict
 
 config = Dict()
-config.exp_name = 'CRNN'
+config.exp_name = 'DBNet'
 config.train_options = {
     # for train
     'resume_from': '',  # 继续训练地址
     'third_party_name': '',  # 加载paddle模型可选
     'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint",  # 模型保存地址，log文件也保存在这里
     'device': 'cuda:0',
-    'epochs': 200,
+    'epochs': 1200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
-    'print_interval': 10,  # step为单位
-    'val_interval': 625,  # step为单位
+    'print_interval': 1,  # step为单位
+    'val_interval': 1,  # epoch为单位
     'ckpt_save_type': 'HighestAcc',  # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
@@ -46,63 +46,77 @@ config.optimizer = {
     'weight_decay': 1e-4,
 }
 
-config.lr_scheduler = {
-    'type': 'StepLR',
-    'step_size': 1,
-    'gamma': 0.5
-}
 config.model = {
-    'type': "RecModel",
+    'type': "DetModel",
     'backbone': {"type": "ResNet", 'layers': 18},
-    'neck': {"type": 'PPaddleRNN'},
-    'head': {"type": "CTC", 'n_class': 11},
+    'neck': {"type": 'FPN', 'out_channels': 256},
+    'head': {"type": "DBHead"},
     'in_channels': 3,
 }
 
 config.loss = {
-    'type': 'CTCLoss',
-    'blank_idx': 0,
+    'type': 'DBLoss',
+    'alpha': 1,
+    'beta': 10
+}
+
+config.post_process = {
+    'type': 'DBPostProcess',
+    'thresh': 0.3,  # 二值化输出map的阈值
+    'box_thresh': 0.7,  # 低于此阈值的box丢弃
+    'unclip_ratio': 1.5 # 扩大框的比例
 }
 
 # for dataset
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 config.dataset = {
-    'alphabet': r'torchocr/datasets/alphabets/digit.txt',
     'train': {
         'dataset': {
-            'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/train',  # LMDB 数据集路径
-            'input_h': 32,
-            'mean': 0.5,
-            'std': 0.5,
-            'augmentation': False,
+            'type': 'JsonDataset',
+            'file': r'train.json',
+            'mean': [0.485, 0.456, 0.406],
+            'std': [0.229, 0.224, 0.225],
+            # db 预处理，不需要修改
+            'pre_processes': [{'type': 'IaaAugment', 'args': [{'type': 'Fliplr', 'args': {'p': 0.5}},
+                                                              {'type': 'Affine', 'args': {'rotate': [-10, 10]}},
+                                                              {'type': 'Resize', 'args': {'size': [0.5, 3]}}]},
+                              {'type': 'EastRandomCropData', 'args': {'size': [640, 640], 'max_tries': 50, 'keep_ratio': True}},
+                              {'type': 'MakeBorderMap', 'args': {'shrink_ratio': 0.4, 'thresh_min': 0.3, 'thresh_max': 0.7}},
+                              {'type': 'MakeShrinkMap', 'args': {'shrink_ratio': 0.4, 'min_text_size': 8}}],
+            'filter_keys': ['img_path', 'img_name', 'text_polys', 'texts', 'ignore_tags', 'shape'],  # 需要从data_dict里过滤掉的key
+            'ignore_tags': ['*', '###'],
+            'img_mode': 'RGB'
         },
         'loader': {
             'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
-            'batch_size': 16,
+            'batch_size': 8,
             'shuffle': True,
             'num_workers': 1,
             'collate_fn': {
-                'type': 'RecCollateFn',
-                'img_w': 120
+                'type': ''
             }
         }
     },
     'eval': {
         'dataset': {
-            'type': 'RecLmdbDataset',
-            'file': r'path/lmdb/eval',  # LMDB 数据集路径
-            'input_h': 32,
-            'mean': 0.5,
-            'std': 0.5,
-            'augmentation': False,
+            'type': 'JsonDataset',
+            'file': r'test.json',
+            'mean': [0.485, 0.456, 0.406],
+            'std': [0.229, 0.224, 0.225],
+            'pre_processes': [{'type': 'ResizeShortSize', 'args': {'short_size': 736, 'resize_text_polys': False}}],
+            'filter_keys': [],  # 需要从data_dict里过滤掉的key
+            'ignore_tags': ['*', '###'],
+            'img_mode': 'RGB'
         },
         'loader': {
-            'type': 'RecDataLoader',
-            'batch_size': 4,
+            'type': 'DataLoader',
+            'batch_size': 1, # 必须为1
             'shuffle': False,
             'num_workers': 1,
+            'collate_fn': {
+                'type': 'DetCollectFN'
+            }
         }
     }
 }
