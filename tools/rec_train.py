@@ -263,7 +263,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
         save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net,
                         optimizer, epoch, logger, cfg)
     except:
-        error_msg = traceback.format_exc(limit=1)
+        error_msg = traceback.format_exc()
         logger.error(error_msg)
     finally:
         for k, v in best_model.items():
