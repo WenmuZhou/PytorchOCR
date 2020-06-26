@@ -49,7 +49,7 @@ PytorchOCR开源的文本检测算法列表：
 ## 文本识别算法
 
 PytorchOCR开源的文本识别算法列表：
-- [x]  CRNN([paper](https://arxiv.org/abs/1507.05717)
+- [x]  CRNN([paper](https://arxiv.org/abs/1507.05717))
 
 ## 结果展示
 
