@@ -214,9 +214,9 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     best_model = {'best_acc': 0, 'eval_loss': 0, 'model_path': '', 'eval_acc': 0., 'eval_ned': 0.}
     # 开始训练
     try:
-        start = time.time()
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
+            start = time.time()
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
                 current_lr = optimizer.param_groups[0]['lr']
                 cur_batch_size = batch_data['img'].shape[0]
