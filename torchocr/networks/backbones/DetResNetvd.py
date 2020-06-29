@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from collections import OrderedDict
+import os
 import torch
 from torch import nn
 
@@ -231,11 +232,11 @@ class ResNet(nn.Module):
             self.out_channels.append(in_ch)
             self.stages.append(nn.Sequential(*block_list))
         if pretrained:
-            if layers == 50:
-                ckpt_path = './weights/resnet50_vd_imagenet.pth'
+            ckpt_path = f'./weights/resnet{layers}_vd.pth'
+            if os.path.exists(ckpt_path):
                 self.load_state_dict(torch.load(ckpt_path))
             else:
-                print('pretrained weight only support resnet50 now')
+                print(f'{ckpt_path} not exists')
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':

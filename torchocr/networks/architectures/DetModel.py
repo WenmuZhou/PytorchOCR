@@ -7,11 +7,10 @@ from torch import nn
 from torchocr.networks.backbones.DetMobilenetV3 import MobileNetV3
 from torchocr.networks.backbones.DetResNetvd import ResNet
 from torchocr.networks.necks.FeaturePyramidNetwork import FeaturePyramidNetwork
-from torchocr.networks.necks.FPN import FPN
 from torchocr.networks.heads.DetDbHead import DBHead
 
 backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet}
-neck_dict = {'FPN': FPN}
+neck_dict = {'FPN': FeaturePyramidNetwork}
 head_dict = {'DBHead': DBHead}
 
 
@@ -43,20 +42,3 @@ class DetModel(nn.Module):
         x = self.neck(x)
         x = self.head(x)
         return x
-
-
-if __name__ == '__main__':
-    # from torchocr.model_config import AttrDict
-    import torch
-
-    db_config = AttrDict(
-        in_channels=3,
-        backbone=AttrDict(type='ResNet', layers=50, model_name='large',pretrained=True),
-        neck=AttrDict(type='FPN', out_channels=256),
-        head=AttrDict(type='DBHead')
-    )
-    x = torch.zeros(1, 3, 640, 640)
-    model = DetModel(db_config)
-    y = model(x)
-    print(model.name)
-    print(y.mean())
