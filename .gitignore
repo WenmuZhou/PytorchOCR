@@ -5,6 +5,7 @@
 *.log
 *.tmp
 *.pkl
+*_local*
 __pycache__/
 .idea/
 output/
