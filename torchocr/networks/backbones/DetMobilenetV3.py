@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import os
 import torch
 from torch import nn
 from torchocr.networks.CommonModules import ConvBNACT, SEBlock
@@ -147,8 +148,11 @@ class MobileNetV3(nn.Module):
         self.out_channels.append(self.make_divisible(scale * cls_ch_squeeze))
 
         if pretrained:
-            ckpt_path = './weights/mb3_imagenet.pth'
-            self.load_state_dict(torch.load(ckpt_path))
+            ckpt_path = f'./weights/MobileNetV3_{model_name}_x{str(scale).replace(".", "_")}.pth'
+            if os.path.exists(ckpt_path):
+                self.load_state_dict(torch.load(ckpt_path))
+            else:
+                print(f'{ckpt_path} not exists')
 
     def make_divisible(self, v, divisor=8, min_value=None):
         if min_value is None:

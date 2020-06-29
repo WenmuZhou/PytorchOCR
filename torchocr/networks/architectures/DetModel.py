@@ -42,20 +42,3 @@ class DetModel(nn.Module):
         x = self.neck(x)
         x = self.head(x)
         return x
-
-
-if __name__ == '__main__':
-    # from torchocr.model_config import AttrDict
-    import torch
-
-    db_config = AttrDict(
-        in_channels=3,
-        backbone=AttrDict(type='MobileNetV3', scale=0.5, model_name='large'),
-        neck=AttrDict(type='FPN', out_channels=256),
-        head=AttrDict(type='DBHead')
-    )
-    x = torch.zeros(1, 3, 640, 640)
-    model = DetModel(db_config)
-    y = model(x)
-    print(model.name)
-    print(y.shape)
