@@ -7,10 +7,11 @@ from torch import nn
 from torchocr.networks.backbones.DetMobilenetV3 import MobileNetV3
 from torchocr.networks.backbones.DetResNetvd import ResNet
 from torchocr.networks.necks.FeaturePyramidNetwork import FeaturePyramidNetwork
+from torchocr.networks.necks.FPN import FPN
 from torchocr.networks.heads.DetDbHead import DBHead
 
 backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet}
-neck_dict = {'FPN': FeaturePyramidNetwork}
+neck_dict = {'FPN': FPN}
 head_dict = {'DBHead': DBHead}
 
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
     db_config = AttrDict(
         in_channels=3,
-        backbone=AttrDict(type='MobileNetV3', scale=0.5, model_name='large'),
+        backbone=AttrDict(type='ResNet', layers=50, model_name='large',pretrained=True),
         neck=AttrDict(type='FPN', out_channels=256),
         head=AttrDict(type='DBHead')
     )
@@ -58,4 +59,4 @@ if __name__ == '__main__':
     model = DetModel(db_config)
     y = model(x)
     print(model.name)
-    print(y.shape)
+    print(y.mean())
