@@ -30,7 +30,7 @@ config.train_options = {
     'resume_from': '',  # 继续训练地址
     'third_party_name': '',  # 加载paddle模型可选
     'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint",  # 模型保存地址，log文件也保存在这里
-    'device': 'cuda:0',
+    'device': 'cuda:0',  # 不建议修改
     'epochs': 1200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
     'print_interval': 1,  # step为单位
@@ -48,7 +48,7 @@ config.optimizer = {
 
 config.model = {
     'type': "DetModel",
-    'backbone': {"type": "ResNet", 'layers': 18},
+    'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True}, # ResNet or MobileNetV3
     'neck': {"type": 'FPN', 'out_channels': 256},
     'head': {"type": "DBHead"},
     'in_channels': 3,
@@ -64,7 +64,7 @@ config.post_process = {
     'type': 'DBPostProcess',
     'thresh': 0.3,  # 二值化输出map的阈值
     'box_thresh': 0.7,  # 低于此阈值的box丢弃
-    'unclip_ratio': 1.5 # 扩大框的比例
+    'unclip_ratio': 1.5  # 扩大框的比例
 }
 
 # for dataset
@@ -111,7 +111,7 @@ config.dataset = {
         },
         'loader': {
             'type': 'DataLoader',
-            'batch_size': 1, # 必须为1
+            'batch_size': 1,  # 必须为1
             'shuffle': False,
             'num_workers': 1,
             'collate_fn': {

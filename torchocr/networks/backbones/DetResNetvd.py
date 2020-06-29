@@ -180,7 +180,7 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, in_channels, layers, **kwargs):
+    def __init__(self, in_channels, layers, pretrained=True, **kwargs):
         """
         the Resnet backbone network for detection module.
         Args:
@@ -230,6 +230,12 @@ class ResNet(nn.Module):
                 in_ch = block_list[-1].output_channels
             self.out_channels.append(in_ch)
             self.stages.append(nn.Sequential(*block_list))
+        if pretrained:
+            if layers == 50:
+                ckpt_path = './weights/resnet50_vd_imagenet.pth'
+                self.load_state_dict(torch.load(ckpt_path))
+            else:
+                print('pretrained weight only support resnet50 now')
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
