@@ -252,6 +252,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                         save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
                         if eval_dict['eval_acc'] > best_model['eval_acc']:
                             best_model.update(eval_dict)
+                            best_model['best_model_epoch'] = epoch
                             best_model['models'] = net_save_path
                             shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
                     elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
