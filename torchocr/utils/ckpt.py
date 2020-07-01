@@ -23,7 +23,7 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
         _model.load_state_dict(state['state_dict'])
         if _optimizers is not None:
             _optimizers.load_state_dict(state['optimizer'])
-        start_epoch = state['epoch']
+        start_epoch = state['epoch'] + 1
 
     elif third_name == 'paddle':
         import paddle.fluid as fluid
