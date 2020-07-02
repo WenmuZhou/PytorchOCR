@@ -40,6 +40,8 @@ class DBHead(nn.Module):
         self.k = k
         self.binarize = Head(in_channels)
         self.thresh = Head(in_channels)
+        self.binarize.apply(self.weights_init)
+        self.thresh.apply(self.weights_init)
 
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
@@ -55,3 +57,11 @@ class DBHead(nn.Module):
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = torch.cat((shrink_maps, threshold_maps, binary_maps), dim=1)
         return y
+
+    def weights_init(self, m):
+        classname = m.__class__.__name__
+        if classname.find('Conv') != -1:
+            nn.init.kaiming_normal_(m.weight.data)
+        elif classname.find('BatchNorm') != -1:
+            m.weight.data.fill_(1.)
+            m.bias.data.fill_(1e-4)
