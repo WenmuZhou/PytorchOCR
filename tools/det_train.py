@@ -86,9 +86,24 @@ def build_optimizer(params, config):
     return opt
 
 
-def adjust_learning_rate(optimizer, base_lr, epoch, epochs, factor):
+def adjust_learning_rate(optimizer, base_lr, iter, all_iters, factor, warmup_iters=0, warmup_factor=1.0 / 3):
+    """
+    带 warmup 的学习率衰减
+    :param optimizer: 优化器
+    :param base_lr: 开始的学习率
+    :param iter: 当前迭代次数
+    :param all_iters: 总的迭代次数
+    :param factor: 学习率衰减系数
+    :param warmup_iters: warmup 迭代数
+    :param warmup_factor: warmup 系数
+    :return:
+    """
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    rate = np.power(1.0 - epoch / float(epochs + 1), factor)
+    if iter < warmup_iters:
+        alpha = float(iter) / warmup_iters
+        rate = warmup_factor * (1 - alpha) + alpha
+    else:
+        rate = np.power(1.0 - iter / float(all_iters + 1), factor)
     lr = rate * base_lr
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -180,13 +195,16 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
     best_model = {'recall': 0, 'precision': 0, 'hmean': 0, 'best_model_epoch': 0}
     # 开始训练
     base_lr = optimizer.param_groups[0]['lr']
+    all_iters = all_step * train_options['epochs']
+    warmup_iters = 3 * all_step
     try:
         for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
             train_loss = 0.
             start = time.time()
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
-                current_lr = adjust_learning_rate(optimizer, base_lr, epoch, train_options['epochs'], 0.9)
+                global_step = epoch * all_step + i
+                current_lr = adjust_learning_rate(optimizer, base_lr, global_step, all_iters, 0.9, warmup_iters=warmup_iters)
                 # 数据进行转换和丢到gpu
                 for key, value in batch_data.items():
                     if value is not None:
@@ -224,6 +242,7 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                     save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
                     if eval_dict['hmean'] > best_model['hmean']:
                         best_model.update(eval_dict)
+                        best_model['best_model_epoch'] = epoch
                         best_model['models'] = net_save_path
                         shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
                 elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
@@ -263,7 +282,7 @@ def main():
     net = build_model(cfg['model'])
 
     # ===> 模型初始化及模型部署到对应的设备
-    net.apply(weight_init)
+    # net.apply(weight_init) # 使用 pretrained时，注释掉这句话
     # if torch.cuda.device_count() > 1:
     net = nn.DataParallel(net)
     net = net.to(to_use_device)
