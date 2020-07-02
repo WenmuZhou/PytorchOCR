@@ -43,13 +43,13 @@ class DBLoss(nn.Module):
 
         loss_shrink_maps = self.bce_loss(shrink_maps, batch['shrink_map'], batch['shrink_mask'])
         loss_threshold_maps = self.l1_loss(threshold_maps, batch['threshold_map'], batch['threshold_mask'])
-        metrics = dict(loss_shrink_maps=loss_shrink_maps, loss_threshold_maps=loss_threshold_maps)
+        loss_dict = dict(loss_shrink_maps=loss_shrink_maps, loss_threshold_maps=loss_threshold_maps)
         if pred.size()[1] > 2:
             loss_binary_maps = self.dice_loss(binary_maps, batch['shrink_map'], batch['shrink_mask'])
-            metrics['loss_binary_maps'] = loss_binary_maps
+            loss_dict['loss_binary_maps'] = loss_binary_maps
             loss_all = self.alpha * loss_shrink_maps + self.beta * loss_threshold_maps + loss_binary_maps
-            metrics['loss'] = loss_all
+            loss_dict['loss'] = loss_all
         else:
-            metrics['loss'] = loss_shrink_maps
+            loss_dict['loss'] = loss_shrink_maps
 
-        return metrics
+        return loss_dict
