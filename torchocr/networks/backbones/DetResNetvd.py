@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
 from collections import OrderedDict
 import os
 import torch
@@ -233,10 +234,12 @@ class ResNet(nn.Module):
             self.stages.append(nn.Sequential(*block_list))
         if pretrained:
             ckpt_path = f'./weights/resnet{layers}_vd.pth'
+            logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
+                logger.info('load imagenet weights')
                 self.load_state_dict(torch.load(ckpt_path))
             else:
-                print(f'{ckpt_path} not exists')
+                logger.info(f'{ckpt_path} not exists')
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
