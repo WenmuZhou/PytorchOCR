@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import logging
 import os
 import torch
 from torch import nn
@@ -149,10 +150,12 @@ class MobileNetV3(nn.Module):
 
         if pretrained:
             ckpt_path = f'./weights/MobileNetV3_{model_name}_x{str(scale).replace(".", "_")}.pth'
+            logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
+                logger.info('load imagenet weights')
                 self.load_state_dict(torch.load(ckpt_path))
             else:
-                print(f'{ckpt_path} not exists')
+                logger.info(f'{ckpt_path} not exists')
 
     def make_divisible(self, v, divisor=8, min_value=None):
         if min_value is None:
