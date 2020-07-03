@@ -3,7 +3,9 @@
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-
+"""
+out_channels=96时，和现有的fpn相比，这个fpn能提升0.01%的精度，但是模型尺寸会大500k
+"""
 class FeaturePyramidNetwork(nn.Module):
 
     def __init__(self, in_channels, out_channels=256):
