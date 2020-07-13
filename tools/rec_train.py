@@ -200,8 +200,6 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
 
     from torchocr.metrics import RecMetric
     from torchocr.utils import CTCLabelConverter
-    with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
-        cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
     converter = CTCLabelConverter(cfg.dataset.alphabet)
     train_options = cfg.train_options
     metric = RecMetric(converter)
@@ -316,8 +314,13 @@ def main():
     loss_func = build_loss(cfg['loss'])
     loss_func = loss_func.to(to_use_device)
 
+    with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
+        cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
+
     # ===> data loader
+    cfg.dataset.train.dataset.alphabet = cfg.dataset.alphabet
     train_loader = build_dataloader(cfg.dataset.train)
+    cfg.dataset.eval.dataset.alphabet = cfg.dataset.alphabet
     eval_loader = build_dataloader(cfg.dataset.eval)
 
     # ===> train
