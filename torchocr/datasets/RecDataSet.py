@@ -29,13 +29,15 @@ class RecTextLineDataset(Dataset):
         """
         self.augmentation = config.augmentation
         self.process = RecDataProcess(config)
-
+        self.str2idx = {c: i for i, c in enumerate(config.alphabet)}
         self.labels = []
         with open(config.file, 'r', encoding='utf-8') as f_reader:
             for m_line in f_reader.readlines():
                 params = m_line.strip().split('\t')
                 if len(params) == 2:
                     m_image_name, m_gt_text = params
+                    if True in [c not in self.str2idx for c in m_gt_text]:
+                        continue
                     self.labels.append((m_image_name, m_gt_text))
 
     def _find_max_length(self):
@@ -79,6 +81,7 @@ class RecLmdbDataset(Dataset):
         self.process = RecDataProcess(config)
         self.filtered_index_list = []
         self.labels = []
+        self.str2idx = {c: i for i, c in enumerate(config.alphabet)}
         with self.env.begin(write=False) as txn:
             nSamples = int(txn.get('num-samples'.encode()))
             self.nSamples = nSamples
@@ -86,15 +89,16 @@ class RecLmdbDataset(Dataset):
                 index += 1  # lmdb starts with 1
                 label_key = 'label-%09d'.encode() % index
                 label = txn.get(label_key).decode('utf-8')
-                self.labels.append(label)
                 # todo 添加 过滤最长
                 # if len(label) > config.max_len:
                 #     # print(f'The length of the label is longer than max_length: length
                 #     # {len(label)}, {label} in dataset {self.root}')
                 #     continue
-
+                if True in [c not in self.str2idx for c in label]:
+                    continue
                 # By default, images containing characters which are not in opt.character are filtered.
                 # You can add [UNK] token to `opt.character` in utils.py instead of this filtering.
+                self.labels.append(label)
                 self.filtered_index_list.append(index)
 
     def _find_max_length(self):
