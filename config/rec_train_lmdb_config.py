@@ -48,7 +48,7 @@ config.optimizer = {
 
 config.lr_scheduler = {
     'type': 'StepLR',
-    'step_size': 1,
+    'step_size': 60,
     'gamma': 0.5
 }
 config.model = {
