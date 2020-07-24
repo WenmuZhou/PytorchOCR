@@ -5,6 +5,7 @@
 import os
 import sys
 import pathlib
+
 # 将 torchocr路径加到python陆经里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
 sys.path.append(str(__dir__))
@@ -23,7 +24,7 @@ from torch import nn
 
 from torchocr.networks import build_model, build_loss
 from torchocr.datasets import build_dataloader
-from torchocr.utils import get_logger, weight_init, load_checkpoint,save_checkpoint
+from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkpoint
 
 
 def parse_args():
@@ -129,6 +130,7 @@ def get_fine_tune_params(net, finetune_stage):
             to_return_parameters.append(element)
     return to_return_parameters
 
+
 def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metric):
     """
     在验证集上评估模型
@@ -181,7 +183,7 @@ def evaluate(net, val_loader, loss_func, to_use_device, logger, converter, metri
 
 
 def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device,
-          cfg, _epoch, logger):
+          cfg, global_state, logger):
     """
     训练函数
 
@@ -193,7 +195,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     :param eval_loader: 验证数据集 dataloader
     :param to_use_device: device
     :param cfg: 当前训练所使用的配置
-    :param _epoch: 当前训练起始的 epoch
+    :param global_state: 训练过程中的一些全局状态，如cur_epoch,cur_iter,最优模型的相关信息
     :param logger: logger 对象
     :return: None
     """
@@ -209,10 +211,17 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
     all_step = len(train_loader)
     logger.info(f'train dataset has {train_loader.dataset.__len__()} samples,{all_step} in dataloader')
     logger.info(f'eval dataset has {eval_loader.dataset.__len__()} samples,{len(eval_loader)} in dataloader')
-    best_model = {'best_acc': 0, 'eval_loss': 0, 'model_path': '', 'eval_acc': 0., 'eval_ned': 0.}
+    if len(global_state) > 0:
+        best_model = global_state['best_model']
+        start_epoch = global_state['start_epoch']
+        global_step = global_state['global_step']
+    else:
+        best_model = {'best_acc': 0, 'eval_loss': 0, 'model_path': '', 'eval_acc': 0., 'eval_ned': 0.}
+        start_epoch = 0
+        global_step = 0
     # 开始训练
     try:
-        for epoch in range(_epoch, train_options['epochs']):  # traverse each epoch
+        for epoch in range(start_epoch, train_options['epochs']):  # traverse each epoch
             net.train()  # train mode
             start = time.time()
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
@@ -247,7 +256,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                     eval_dict = evaluate(net, eval_loader, loss_func, to_use_device, logger, converter, metric)
                     if train_options['ckpt_save_type'] == 'HighestAcc':
                         net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
-                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
+                        save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
                         if eval_dict['eval_acc'] > best_model['eval_acc']:
                             best_model.update(eval_dict)
                             best_model['best_model_epoch'] = epoch
@@ -255,18 +264,19 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                             shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
                     elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
                         net_save_path = f"{train_options['checkpoint_save_dir']}/{epoch}.pth"
-                        save_checkpoint(net_save_path, net, optimizer, epoch, logger, cfg)
+                        save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
+                global_step += 1
             scheduler.step()
     except KeyboardInterrupt:
         import os
-        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net,
-                        optimizer, epoch, logger, cfg)
+        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net, optimizer, logger, cfg, global_state=global_state)
     except:
         error_msg = traceback.format_exc()
         logger.error(error_msg)
     finally:
         for k, v in best_model.items():
             logger.info(f'{k}: {v}')
+
 
 def main():
     # ===> 获取配置文件参数
@@ -301,13 +311,13 @@ def main():
     # ===> whether to resume from checkpoint
     resume_from = train_options['resume_from']
     if resume_from:
-        net, current_epoch, _resumed_optimizer = load_checkpoint(net, resume_from, to_use_device, optimizer,
+        net, _resumed_optimizer,global_state = load_checkpoint(net, resume_from, to_use_device, optimizer,
                                                                  third_name=train_options['third_party_name'])
         if _resumed_optimizer:
             optimizer = _resumed_optimizer
         logger.info(f'net resume from {resume_from}')
     else:
-        current_epoch = 0
+        global_state = {}
         logger.info(f'net resume from scratch.')
 
     # ===> loss function
@@ -324,7 +334,7 @@ def main():
     eval_loader = build_dataloader(cfg.dataset.eval)
 
     # ===> train
-    train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device, cfg, current_epoch, logger)
+    train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_use_device, cfg, global_state, logger)
 
 
 if __name__ == '__main__':
