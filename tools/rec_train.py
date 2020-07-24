@@ -252,19 +252,18 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                                 f"time:{interval_batch_time:.4f}")
                     start = time.time()
                 if (i + 1) >= train_options['val_interval'] and (i + 1) % train_options['val_interval'] == 0:
-                    # val
-                    eval_dict = evaluate(net, eval_loader, loss_func, to_use_device, logger, converter, metric)
+                    net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
+                    save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
                     if train_options['ckpt_save_type'] == 'HighestAcc':
-                        net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
-                        save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
+                        # val
+                        eval_dict = evaluate(net, eval_loader, loss_func, to_use_device, logger, converter, metric)
                         if eval_dict['eval_acc'] > best_model['eval_acc']:
                             best_model.update(eval_dict)
                             best_model['best_model_epoch'] = epoch
                             best_model['models'] = net_save_path
-                            shutil.copy(net_save_path, net_save_path.replace('latest', 'best'))
+                            shutil.copy(net_save_path, net_save_path.replace('latest.pth', 'best.pth'))
                     elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
-                        net_save_path = f"{train_options['checkpoint_save_dir']}/{epoch}.pth"
-                        save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
+                        shutil.copy(net_save_path, net_save_path.replace('latest.pth', f'{epoch}.pth'))
                 global_step += 1
             scheduler.step()
     except KeyboardInterrupt:
