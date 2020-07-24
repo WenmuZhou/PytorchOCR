@@ -252,6 +252,9 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                                 f"time:{interval_batch_time:.4f}")
                     start = time.time()
                 if (i + 1) >= train_options['val_interval'] and (i + 1) % train_options['val_interval'] == 0:
+                    global_state['start_epoch'] = epoch
+                    global_state['best_model'] = best_model
+                    global_state['global_step'] = global_step
                     net_save_path = f"{train_options['checkpoint_save_dir']}/latest.pth"
                     save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
                     if train_options['ckpt_save_type'] == 'HighestAcc':
