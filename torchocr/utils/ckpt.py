@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/6/16 8:56
 # @Author  : zhoujun
+import os
 import torch
 
 
@@ -18,25 +19,27 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
 
     """
     start_epoch = 0
+    global_state = {}
     if not third_name:
         state = torch.load(resume_from, map_location=to_use_device)
         _model.load_state_dict(state['state_dict'])
         if _optimizers is not None:
             _optimizers.load_state_dict(state['optimizer'])
-        start_epoch = state['epoch'] + 1
+        if 'global_state' in state:
+            global_state = state['global_state']
 
     elif third_name == 'paddle':
         import paddle.fluid as fluid
         paddle_model = fluid.io.load_program_state(resume_from)
         _model.load_3rd_state_dict(third_name, paddle_model)
-    return _model, start_epoch, _optimizers
+    return _model, _optimizers, global_state
 
 
-def save_checkpoint(checkpoint_path, model, _optimizers, epoch, logger, cfg):
+def save_checkpoint(checkpoint_path, model, _optimizers, logger, cfg, **kwargs):
     state = {'state_dict': model.state_dict(),
              'optimizer': _optimizers.state_dict(),
-             'epoch': epoch,
              'cfg': cfg}
+    state.update(kwargs)
     torch.save(state, checkpoint_path)
     logger.info('models saved to %s' % checkpoint_path)
 
