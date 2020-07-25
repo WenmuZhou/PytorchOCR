@@ -19,7 +19,6 @@ from importlib import import_module
 import numpy as np
 import torch
 from tqdm import tqdm
-import torch.optim as optim
 from torch import nn
 
 from torchocr.networks import build_model, build_loss
