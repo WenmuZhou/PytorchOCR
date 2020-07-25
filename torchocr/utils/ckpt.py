@@ -18,7 +18,6 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
     Returns:
 
     """
-    start_epoch = 0
     global_state = {}
     if not third_name:
         state = torch.load(resume_from, map_location=to_use_device)
