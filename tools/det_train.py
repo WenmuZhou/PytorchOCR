@@ -252,7 +252,12 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                         best_model.update(eval_dict)
                         best_model['best_model_epoch'] = epoch
                         best_model['models'] = net_save_path
-                        shutil.copy(net_save_path, net_save_path.replace('latest.pth', 'best.pth'))
+
+                        global_state['start_epoch'] = epoch
+                        global_state['best_model'] = best_model
+                        global_state['global_step'] = global_step
+                        net_save_path = f"{train_options['checkpoint_save_dir']}/best.pth"
+                        save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
                 elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
                     shutil.copy(net_save_path, net_save_path.replace('latest.pth', f'{epoch}.pth'))
                 best_str = 'current best, '
