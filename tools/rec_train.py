@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from torch import nn
-
+from torch import optim
 from torchocr.networks import build_model, build_loss
 from torchocr.datasets import build_dataloader
 from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkpoint
@@ -77,7 +77,7 @@ def build_optimizer(params, config):
     优化器
     Returns:
     """
-    from torch import optim
+    
     opt_type = config.pop('type')
     opt = getattr(optim, opt_type)(params, **config)
     return opt
