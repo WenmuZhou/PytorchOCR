@@ -272,6 +272,7 @@ def train(net, optimizer, scheduler, loss_func, train_loader, eval_loader, to_us
                     elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
                         shutil.copy(net_save_path, net_save_path.replace('latest.pth', f'{epoch}.pth'))
                 global_step += 1
+                torch.cuda.empty_cache()
             scheduler.step()
     except KeyboardInterrupt:
         import os
