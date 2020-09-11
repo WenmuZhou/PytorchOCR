@@ -9,17 +9,13 @@ class HSwish(nn.Module):
         return out
 
 
-class HardSigmoid(nn.Module):
-    def __init__(self, slope=.2, offset=.5):
-        super().__init__()
-        self.slope = slope
-        self.offset = offset
 
+
+class HardSigmoid(nn.Module):
     def forward(self, x):
-        x = (self.slope * x) + self.offset
-        x = F.threshold(-x, -1, -1)
-        x = F.threshold(-x, 0, 0)
+        x = F.relu6(x + 3, inplace=True) / 6
         return x
+  
 
 
 class ConvBNACT(nn.Module):
