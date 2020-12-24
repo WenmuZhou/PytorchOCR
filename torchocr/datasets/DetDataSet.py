@@ -104,7 +104,7 @@ class JsonDataset(Dataset):
 
         if self.transform:
             data['img'] = self.transform(data['img'])
-        data['text_polys'] = data['text_polys'].tolist()
+        data['text_polys'] = data['text_polys']
         if len(self.filter_keys):
             data_dict = {}
             for k, v in data.items():

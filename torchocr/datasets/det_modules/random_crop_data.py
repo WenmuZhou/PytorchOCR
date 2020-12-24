@@ -47,16 +47,19 @@ class EastRandomCropData():
         text_polys_crop = []
         ignore_tags_crop = []
         texts_crop = []
-        for poly, text, tag in zip(text_polys, texts, ignore_tags):
-            poly = ((poly - (crop_x, crop_y)) * scale).tolist()
-            if not self.is_poly_outside_rect(poly, 0, 0, w, h):
-                text_polys_crop.append(poly)
-                ignore_tags_crop.append(tag)
-                texts_crop.append(text)
-        data['img'] = img
-        data['text_polys'] = np.float32(text_polys_crop)
-        data['ignore_tags'] = ignore_tags_crop
-        data['texts'] = texts_crop
+        try:
+            for poly, text, tag in zip(text_polys, texts, ignore_tags):
+                poly = ((np.array(poly) - (crop_x, crop_y)) * scale).astype('float32')
+                if not self.is_poly_outside_rect(poly, 0, 0, w, h):
+                    text_polys_crop.append(poly)
+                    ignore_tags_crop.append(tag)
+                    texts_crop.append(text)
+            data['img'] = img
+            data['text_polys'] = text_polys_crop
+            data['ignore_tags'] = ignore_tags_crop
+            data['texts'] = texts_crop
+        except:
+            a = 1
         return data
 
     def is_poly_in_rect(self, poly, x, y, w, h):
