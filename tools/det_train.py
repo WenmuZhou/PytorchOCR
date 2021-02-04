@@ -6,7 +6,7 @@ import os
 import sys
 import pathlib
 
-# 将 torchocr路径加到python陆经里
+# 将 torchocr路径加到python路径里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
 sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
