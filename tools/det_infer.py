@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torchvision import transforms
 from torchocr.networks import build_model
-from torchocr.datasets.det_modules import ResizeShortSize
+from torchocr.datasets.det_modules import ResizeShortSize,ResizeFixedSize
 from torchocr.postprocess import build_post_process
 
 
@@ -32,7 +32,7 @@ class DetInfer:
         self.model.to(self.device)
         self.model.eval()
 
-        self.resize = ResizeShortSize(736, False)
+        self.resize = ResizeFixedSize(736, False)
         self.post_proess = build_post_process(cfg['post_process'])
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -45,6 +45,8 @@ class DetInfer:
         data = self.resize(data)
         tensor = self.transform(data['img'])
         tensor = tensor.unsqueeze(dim=0)
+        import numpy  as np
+        tensor=torch.from_numpy(np.load('input.npy'))
         tensor = tensor.to(self.device)
         out = self.model(tensor)
         box_list, score_list = self.post_proess(out, data['shape'], is_output_polygon=is_output_polygon)
@@ -61,8 +63,8 @@ class DetInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path', required=True, type=str, help='rec model path')
-    parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
+    parser.add_argument('--model_path',  type=str, help='rec model path',default='C:/Users/Bourne/Desktop/pre_det_db_res18.pth')
+    parser.add_argument('--img_path',  type=str, help='img path for predict',default='C:/Users/Bourne/Desktop/00077949.jpg')
     args = parser.parse_args()
     return args
 
