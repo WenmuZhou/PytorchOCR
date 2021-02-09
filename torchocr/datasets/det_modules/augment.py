@@ -10,7 +10,8 @@ import cv2
 import numpy as np
 from skimage.util import random_noise
 
-__all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip', 'VerticallFlip','ResizeFixedSize']
+__all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip',
+           'VerticallFlip', 'ResizeFixedSize']
 
 
 class RandomNoise:
@@ -310,13 +311,34 @@ class ResizeFixedSize:
         """
         im = data['img']
         text_polys = data['text_polys']
-        resize_h, resize_w=736,1280
-        ori_h, ori_w = im.shape[:2]  # (h, w, c)
-        ratio_h = float(resize_h) / ori_h
-        ratio_w = float(resize_w) / ori_w
-        img = cv2.resize(im, (int(resize_w), int(resize_h)))
-        # text_polys[:, 0] *= ratio_h
-        # text_polys[:, 1] *= ratio_w
+        h, w, _ = im.shape
+        if min(h, w) < self.short_size:
+            if h < w:
+                ratio = float(self.short_size) / h
+            else:
+                ratio = float(self.short_size) / w
+        else:
+            ratio = 1.
+        resize_h = int(h * ratio)
+        resize_w = int(w * ratio)
+
+        resize_h = int(round(resize_h / 32) * 32)
+        resize_w = int(round(resize_w / 32) * 32)
+
+        try:
+            if int(resize_w) <= 0 or int(resize_h) <= 0:
+                return None, (None, None)
+            img = cv2.resize(im, (int(resize_w), int(resize_h)))
+        except:
+            print(img.shape, resize_w, resize_h)
+            import sys
+            sys.exit(0)
+
+        ratio_h = resize_h / float(h)
+        ratio_w = resize_w / float(w)
+        if self.resize_text_polys:
+            text_polys[:, 0] *= ratio_h
+            text_polys[:, 1] *= ratio_w
 
         data['img'] = img
         data['text_polys'] = text_polys
