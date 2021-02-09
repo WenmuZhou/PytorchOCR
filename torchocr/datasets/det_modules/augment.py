@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from skimage.util import random_noise
 
-__all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip', 'VerticallFlip']
+__all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip', 'VerticallFlip','ResizeFixedSize']
 
 
 class RandomNoise:
@@ -290,4 +290,34 @@ class VerticallFlip:
         flip_text_polys[:, :, 1] = h - flip_text_polys[:, :, 1]
         data['img'] = flip_im
         data['text_polys'] = flip_text_polys
+        return data
+
+
+class ResizeFixedSize:
+    def __init__(self, short_size, resize_text_polys=True):
+        """
+        :param size: resize尺寸,数字或者list的形式，如果为list形式，就是[w,h]
+        :return:
+        """
+        self.short_size = short_size
+        self.resize_text_polys = resize_text_polys
+
+    def __call__(self, data: dict) -> dict:
+        """
+        对图片和文本框进行缩放
+        :param data: {'img':,'text_polys':,'texts':,'ignore_tags':}
+        :return:
+        """
+        im = data['img']
+        text_polys = data['text_polys']
+        resize_h, resize_w=736,1280
+        ori_h, ori_w = im.shape[:2]  # (h, w, c)
+        ratio_h = float(resize_h) / ori_h
+        ratio_w = float(resize_w) / ori_w
+        img = cv2.resize(im, (int(resize_w), int(resize_h)))
+        # text_polys[:, 0] *= ratio_h
+        # text_polys[:, 1] *= ratio_w
+
+        data['img'] = img
+        data['text_polys'] = text_polys
         return data
