@@ -5,11 +5,12 @@ from torch import nn
 
 from torchocr.networks.backbones.RecMobileNetV3 import MobileNetV3
 from torchocr.networks.backbones.RecResNetvd import ResNet
-from torchocr.networks.necks.RecSequenceDecoder import SequenceDecoder, Reshape
+from torchocr.networks.necks.RNN import SequenceEncoder, Im2Seq
+
 from torchocr.networks.heads.RecCTCHead import CTC
 
 backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet}
-neck_dict = {'PPaddleRNN': SequenceDecoder, 'None': Reshape}
+neck_dict = {'PPaddleRNN': SequenceEncoder, 'None': Im2Seq}
 head_dict = {'CTC': CTC}
 
 

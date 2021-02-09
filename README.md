@@ -46,12 +46,12 @@ PytorchOCR开源的文本检测算法列表：
 
 在ICDAR2015文本检测公开数据集上，算法效果如下：
 
-
 | 模型 | 骨干网络 | precision | recall | Hmean | 下载链接 |
 |  ----  | ----  |  ----  | ----  |  ----  | ----  |
 |DB|MobileNetV3|85.09%|67.98%|75.58%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
 |DB|ResNet50_vd|88.76%|79.9%|82.4%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
 |DB|ResNet18_vd| | | |[提取码 r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
+|DB|ResNet50_vd| 86.41%|78.72%|	82.38% |[提取码 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
 
 
 

@@ -50,8 +50,8 @@ class RecInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path', required=True, type=str, help='rec model path')
-    parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
+    parser.add_argument('--model_path',  type=str, help='rec model path',default='C:/Users/Bourne/Desktop/rec_crnn_res34.pth')
+    parser.add_argument('--img_path',  type=str, help='img path for predict',default='D:/testproj/PytorchOCR-master/doc/imgs/word_3.jpg')
     args = parser.parse_args()
     return args
 
