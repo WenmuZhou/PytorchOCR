@@ -34,14 +34,6 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 pip3 install -r requirements.txt
 ```
 
-## 模型下载
-
-链接：https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA 
-提取码：vvvx
-
-链接：https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg 
-提取码：r26k 
-
 ## 文档教程
 * [文字检测](doc/检测.md)
 * [文字识别](doc/识别.md)
@@ -57,9 +49,9 @@ PytorchOCR开源的文本检测算法列表：
 
 | 模型 | 骨干网络 | precision | recall | Hmean | 下载链接 |
 |  ----  | ----  |  ----  | ----  |  ----  | ----  |
-|DB|MobileNetV3|85.09%|67.98%|75.58%|见百度网盘|
-|DB|ResNet50_vd|88.76%|79.9%|82.4%|见百度网盘|
-|DB|ResNet18_vd| | | |见百度网盘|
+|DB|MobileNetV3|85.09%|67.98%|75.58%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
+|DB|ResNet50_vd|88.76%|79.9%|82.4%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
+|DB|ResNet18_vd| | | |[提取码 r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
 
 
 
