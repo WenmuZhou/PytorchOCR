@@ -6,6 +6,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 **添加微信z572459439或者nsnovio，然后进群讨论。备注ocr进群。**
 
 ## 更新日志
+* 2021.02.09 添加CRNN模型文件 
 * 2021.02.09 添加DBNet模型，修改DBNet网络结构的fpn，inference时候的缩放及后处理
 * 2020.07.01 添加 添加新算法文档
 * 2020.06.29 添加检测的mb3和resnet50_vd预训练模型
@@ -58,6 +59,9 @@ PytorchOCR开源的文本检测算法列表：
 
 
 ## 文本识别算法
+| 模型 | 骨干网络 |  下载链接 |
+|  ----  | ----  | ----  |
+|CRNN|ResNet34_vd|[提取码 5zje](https://pan.baidu.com/s/1Y9LoZc2-IBTg08xBmnjkVw)|
 
 PytorchOCR开源的文本识别算法列表：
 - [x]  CRNN([paper](https://arxiv.org/abs/1507.05717))
