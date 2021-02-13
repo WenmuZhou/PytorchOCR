@@ -60,8 +60,8 @@ class DetInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path',  type=str, help='rec model path',default='')
-    parser.add_argument('--img_path',  type=str, help='img path for predict',default='')
+    parser.add_argument('--model_path',  type=str, help='rec model path',default='C:/Users/Bourne/Desktop/cvt_model/det_db_res18.pth')
+    parser.add_argument('--img_path',  type=str, help='img path for predict',default='C:/Users/Bourne/Desktop/lines-box2.jpg')
     args = parser.parse_args()
     return args
 
