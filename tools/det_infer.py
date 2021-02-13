@@ -28,7 +28,7 @@ class DetInfer:
             state_dict[k.replace('module.', '')] = v
         self.model.load_state_dict(state_dict)
 
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         self.model.eval()
         self.resize = ResizeFixedSize(736, False)
@@ -42,9 +42,10 @@ class DetInfer:
         # 预处理根据训练来
         data = {'img': img, 'shape': [img.shape[:2]], 'text_polys': []}
         data = self.resize(data)
+        cv2.imwrite('tor.png',data['img'])
+
         tensor = self.transform(data['img'])
         tensor = tensor.unsqueeze(dim=0)
-
         tensor = tensor.to(self.device)
         out = self.model(tensor)
         box_list, score_list = self.post_proess(out, data['shape'], is_output_polygon=is_output_polygon)
@@ -61,8 +62,8 @@ class DetInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path',  type=str, help='rec model path',default='C:/Users/Bourne/Desktop/det_db_res18.pth')
-    parser.add_argument('--img_path',  type=str, help='img path for predict',default='C:/Users/Bourne/Desktop/00111002.jpg')
+    parser.add_argument('--model_path',  type=str, help='rec model path',default='')
+    parser.add_argument('--img_path',  type=str, help='img path for predict',default='')
     args = parser.parse_args()
     return args
 
@@ -74,10 +75,9 @@ if __name__ == '__main__':
 
     args = init_args()
     img = cv2.imread(args.img_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     model = DetInfer(args.model_path)
     box_list, score_list = model.predict(img, is_output_polygon=False)
-    # img = draw_ocr_box_txt(img, box_list)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = draw_bbox(img, box_list)
     plt.imshow(img)
     plt.show()
