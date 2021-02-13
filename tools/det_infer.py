@@ -42,8 +42,6 @@ class DetInfer:
         # 预处理根据训练来
         data = {'img': img, 'shape': [img.shape[:2]], 'text_polys': []}
         data = self.resize(data)
-        cv2.imwrite('tor.png',data['img'])
-
         tensor = self.transform(data['img'])
         tensor = tensor.unsqueeze(dim=0)
         tensor = tensor.to(self.device)
