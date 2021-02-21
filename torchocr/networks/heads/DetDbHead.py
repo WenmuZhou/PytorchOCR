@@ -9,22 +9,30 @@ from torch import nn
 class Head(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.out = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels // 4, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(in_channels // 4),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=in_channels // 4, kernel_size=2, stride=2),
-            nn.BatchNorm2d(in_channels // 4),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2),
-            nn.Sigmoid()
-        )
+
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels // 4, kernel_size=3, padding=1,
+                               bias=False)
+        self.conv_bn1 = nn.BatchNorm2d(in_channels // 4)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=in_channels // 4, kernel_size=2,
+                                        stride=2)
+        self.conv_bn2 = nn.BatchNorm2d(in_channels // 4)
+        self.conv3 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2)
+        nn.Sigmoid()
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         pass
 
     def forward(self, x):
-        return self.out(x)
+        x = self.conv1(x)
+        x = self.conv_bn1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.conv_bn2(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = torch.sigmoid(x)
+        return x
 
 
 class DBHead(nn.Module):
