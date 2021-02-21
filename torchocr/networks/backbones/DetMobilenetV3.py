@@ -58,6 +58,7 @@ class MobileNetV3(nn.Module):
         super().__init__()
         self.scale = kwargs.get('scale', 0.5)
         model_name = kwargs.get('model_name', 'large')
+        self.disable_se=kwargs.get('disable_se','True')
         self.inplanes = 16
         if model_name == "large":
             self.cfg = [
@@ -123,6 +124,7 @@ class MobileNetV3(nn.Module):
         block_list = []
         self.out_channels = []
         for layer_cfg in cfg:
+            se = layer_cfg[3] and not self.disable_se
             if layer_cfg[5] == 2 and i > 2:
                 self.out_channels.append(inplanes)
                 self.stages.append(nn.Sequential(*block_list))
@@ -133,19 +135,19 @@ class MobileNetV3(nn.Module):
                                  act=layer_cfg[4],
                                  stride=layer_cfg[5],
                                  kernel_size=layer_cfg[0],
-                                 use_se=layer_cfg[3])
+                                 use_se=se)
             block_list.append(block)
             inplanes = self.make_divisible(scale * layer_cfg[2])
             i += 1
-        self.stages.append(nn.Sequential(*block_list))
-        self.conv2 = ConvBNACT(
+        block_list.append(ConvBNACT(
             in_channels=inplanes,
             out_channels=self.make_divisible(scale * cls_ch_squeeze),
             kernel_size=1,
             stride=1,
             padding=0,
             groups=1,
-            act='hard_swish')
+            act='hard_swish'))
+        self.stages.append(nn.Sequential(*block_list))
         self.out_channels.append(self.make_divisible(scale * cls_ch_squeeze))
 
         if pretrained:
@@ -183,5 +185,5 @@ class MobileNetV3(nn.Module):
         for stage in self.stages:
             x = stage(x)
             out.append(x)
-        out[-1] = self.conv2(out[-1])
+
         return out

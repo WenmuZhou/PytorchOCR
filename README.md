@@ -6,6 +6,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 **添加微信z572459439或者nsnovio，然后进群讨论。备注ocr进群。**
 
 ## 更新日志
+* 2021.02.09 添加DBNet模型，修改DBNet网络结构的fpn，inference时候的缩放及后处理
 * 2020.07.01 添加 添加新算法文档
 * 2020.06.29 添加检测的mb3和resnet50_vd预训练模型
 * 2020.06.25 检测模块的训练和预测ok
@@ -33,11 +34,6 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 pip3 install -r requirements.txt
 ```
 
-## 模型下载
-
-链接：https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA 
-提取码：vvvx
-
 ## 文档教程
 * [文字检测](doc/检测.md)
 * [文字识别](doc/识别.md)
@@ -50,11 +46,12 @@ PytorchOCR开源的文本检测算法列表：
 
 在ICDAR2015文本检测公开数据集上，算法效果如下：
 
-
 | 模型 | 骨干网络 | precision | recall | Hmean | 下载链接 |
 |  ----  | ----  |  ----  | ----  |  ----  | ----  |
-|DB|MobileNetV3|85.09%|67.98%|75.58%|见百度网盘|
-|DB|ResNet50_vd|88.76%|79.9%|82.4%|见百度网盘|
+|DB|MobileNetV3|85.09%|67.98%|75.58%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
+|DB|ResNet50_vd|88.76%|79.9%|82.4%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
+|DB|ResNet18_vd| | | |[提取码 r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
+|DB|ResNet50_vd| 86.41%|78.72%|	82.38% |[提取码 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
 
 
 ## 文本识别算法
@@ -65,6 +62,8 @@ PytorchOCR开源的文本识别算法列表：
 ## 结果展示
 
 ![检测](doc/imgs/exampl1.png)
+
+![检测](doc/imgs/exampl2.png)
 
 ## 贡献代码
 我们非常欢迎你为PytorchOCR贡献代码，也十分感谢你的反馈。

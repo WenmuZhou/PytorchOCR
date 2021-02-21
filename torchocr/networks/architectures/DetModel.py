@@ -7,10 +7,11 @@ from torch import nn
 from torchocr.networks.backbones.DetMobilenetV3 import MobileNetV3
 from torchocr.networks.backbones.DetResNetvd import ResNet
 from torchocr.networks.necks.FPN import FPN
+from torchocr.networks.necks.DB_fpn import DB_fpn
 from torchocr.networks.heads.DetDbHead import DBHead
 
 backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet}
-neck_dict = {'FPN': FPN}
+neck_dict = {'DB_fpn': DB_fpn}
 head_dict = {'DBHead': DBHead}
 
 

@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torchvision import transforms
 from torchocr.networks import build_model
-from torchocr.datasets.det_modules import ResizeShortSize
+from torchocr.datasets.det_modules import ResizeShortSize,ResizeFixedSize
 from torchocr.postprocess import build_post_process
 
 
@@ -31,8 +31,7 @@ class DetInfer:
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         self.model.eval()
-
-        self.resize = ResizeShortSize(736, False)
+        self.resize = ResizeFixedSize(736, False)
         self.post_proess = build_post_process(cfg['post_process'])
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -74,10 +73,9 @@ if __name__ == '__main__':
 
     args = init_args()
     img = cv2.imread(args.img_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     model = DetInfer(args.model_path)
     box_list, score_list = model.predict(img, is_output_polygon=False)
-    # img = draw_ocr_box_txt(img, box_list)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = draw_bbox(img, box_list)
     plt.imshow(img)
     plt.show()
