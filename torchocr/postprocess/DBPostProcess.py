@@ -25,7 +25,8 @@ class DBPostProcess():
         scores_batch = []
         for batch_index in range(pred.shape[0]):
             height, width = h_w_list[batch_index]
-            boxes, scores = self.post_p(pred[batch_index], segmentation[batch_index], width, height, is_output_polygon=is_output_polygon)
+            boxes, scores = self.post_p(pred[batch_index], segmentation[batch_index], width, height,
+                                        is_output_polygon=is_output_polygon)
             boxes_batch.append(boxes)
             scores_batch.append(scores)
         return boxes_batch, scores_batch
@@ -43,32 +44,18 @@ class DBPostProcess():
         new_scores = []
         contours, _ = cv2.findContours((bitmap * 255).astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours[:self.max_candidates]:
-            epsilon = 0.005 * cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, epsilon, True)
-            points = approx.reshape((-1, 2))
-            if points.shape[0] < 4:
+            points, sside = self.get_mini_boxes(contour)
+            points = np.array(points)
+            if sside < 3:
                 continue
-            score = self.box_score_fast(pred, contour.squeeze(1))
+            score = self.box_score_fast(pred, points.reshape(-1, 2))
             if self.box_thresh > score:
                 continue
-
-            if points.shape[0] > 2:
-                box = self.unclip(points, unclip_ratio=self.unclip_ratio)
-                if len(box) > 1:
-                    continue
-            else:
-                continue
-            four_point_box, sside = self.get_mini_boxes(box.reshape((-1, 1, 2)))
+            box = self.unclip(points).reshape(-1, 1, 2)
+            box, sside = self.get_mini_boxes(box)
             if sside < self.min_size + 2:
                 continue
-
-            if not isinstance(dest_width, int):
-                dest_width = dest_width.item()
-                dest_height = dest_height.item()
-            if not is_output_polygon:
-                box = np.array(four_point_box)
-            else:
-                box = box.reshape(-1, 2)
+            box = np.array(box)
             box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
             box[:, 1] = np.clip(np.round(box[:, 1] / height * dest_height), 0, dest_height)
             boxes.append(box)
