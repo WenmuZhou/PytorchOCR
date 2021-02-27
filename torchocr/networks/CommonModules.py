@@ -3,19 +3,18 @@ from torch import nn
 from torch.nn import functional as F
 from collections import OrderedDict
 
+
 class HSwish(nn.Module):
     def forward(self, x):
         out = x * F.relu6(x + 3, inplace=True) / 6
         return out
 
 
-
-
 class HardSigmoid(nn.Module):
     def forward(self, x):
-        x = F.relu6(x + 3, inplace=True) / 6
+        # x = F.relu6(x + 3, inplace=True) / 6
+        x = (1.2 * x).add_(3.).clamp_(0., 6.).div_(6.)
         return x
-  
 
 
 class ConvBNACT(nn.Module):
@@ -50,6 +49,7 @@ class ConvBNACT(nn.Module):
         if self.act is not None:
             x = self.act(x)
         return x
+
 
 class SEBlock(nn.Module):
     def __init__(self, in_channels, out_channels, ratio=4):
