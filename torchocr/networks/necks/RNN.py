@@ -36,7 +36,7 @@ class EncoderWithRNN(nn.Module):
 
 
 class SequenceEncoder(nn.Module):
-    def __init__(self, in_channels, encoder_type='rnn', hidden_size=48, **kwargs):
+    def __init__(self, in_channels, encoder_type='rnn',  **kwargs):
         super(SequenceEncoder, self).__init__()
         self.encoder_reshape = Im2Seq(in_channels)
         self.out_channels = self.encoder_reshape.out_channels
@@ -51,7 +51,7 @@ class SequenceEncoder(nn.Module):
                 encoder_type, support_encoder_dict.keys())
 
             self.encoder = support_encoder_dict[encoder_type](
-                self.encoder_reshape.out_channels)
+                self.encoder_reshape.out_channels,**kwargs)
             self.out_channels = self.encoder.out_channels
             self.only_reshape = False
 
@@ -59,4 +59,8 @@ class SequenceEncoder(nn.Module):
         x = self.encoder_reshape(x)
         if not self.only_reshape:
             x = self.encoder(x)
+
         return x
+
+
+
