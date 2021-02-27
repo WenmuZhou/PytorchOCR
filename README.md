@@ -6,6 +6,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 **添加微信z572459439或者nsnovio，然后进群讨论。备注ocr进群。**
 
 ## 更新日志
+* 2021.02.27 添加移动端识别模型文件、移动端DBNet模型文件
 * 2021.02.25 添加服务器端识别模型文件
 * 2021.02.09 添加DBNet模型，修改DBNet网络结构的fpn，inference时候的缩放及后处理
 * 2020.07.01 添加 添加新算法文档
@@ -19,7 +20,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 * [x] DB训练与python版预测
 * [x] imagenet预训练模型
 * [x] 服务器端识别模型文件
-* [ ] DB通用模型
+* [x] DB通用模型
 * [ ] 手机端部署
 * [ ] With Triton
 
@@ -45,14 +46,11 @@ pip3 install -r requirements.txt
 PytorchOCR开源的文本检测算法列表：
 - [x]  DB([paper](https://arxiv.org/abs/1911.08947))
 
-在ICDAR2015文本检测公开数据集上，算法效果如下：
-
-| 模型 | 骨干网络 | precision | recall | Hmean | 下载链接 |
-|  ----  | ----  |  ----  | ----  |  ----  | ----  |
-|DB|MobileNetV3|85.09%|67.98%|75.58%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
-|DB|ResNet50_vd|88.76%|79.9%|82.4%|[提取码 vvvx](https://pan.baidu.com/s/1oCWJVyEpGAeagE4EwoV0kA)|
-|DB|ResNet18_vd| | | |[提取码 r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
-|DB|ResNet50_vd| 86.41%|78.72%|	82.38% |[提取码 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
+| 模型简介 | 骨干网络 | 推荐场景 |  下载链接 |
+|  ----  | ----  |  ----  | ----  |
+|预训练模型|ResNet50| 服务器端|[ 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
+|原始超轻量模型，支持中英文、多语种文本检测|MoblieNet| 移动端|[c9ko](https://pan.baidu.com/s/1DpM_HzwYFgAJhjgUtQ7CCw)|
+|通用模型，支持中英文、多语种文本检测，比超轻量模型更大，但效果更好|ResNet18| 服务器端|[r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
 
 
 ## 文本识别算法
@@ -61,7 +59,8 @@ PytorchOCR开源的文本识别算法列表：
 
 | 模型简介 | 骨干网络 | 推荐场景 |  下载链接 |
 |  ----  | ----  |  ----  | ----  |
-|中英文通用OCR模型（143.4M）|ResNet34| 服务器端|[提取码 sdnc](https://pan.baidu.com/s/1gnFVXHW-nOz1r8c53u-QFQ)|
+|原始超轻量模型，支持中英文、数字识别|MoblieNet| 移动端|[7x9q](https://pan.baidu.com/s/1l2BhmrjO1ZtmNw5yWCdPZQ)|
+|通用模型，支持中英文、数字识别|ResNet34| 服务器端|[sdnc](https://pan.baidu.com/s/1gnFVXHW-nOz1r8c53u-QFQ)|
 
 
 ## 结果展示
