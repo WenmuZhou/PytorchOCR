@@ -46,21 +46,21 @@ pip3 install -r requirements.txt
 PytorchOCR开源的文本检测算法列表：
 - [x]  DB([paper](https://arxiv.org/abs/1911.08947))
 
-| 模型简介 | 骨干网络 | 推荐场景 |  下载链接 |
-|  ----  | ----  |  ----  | ----  |
-|预训练模型|ResNet50| 服务器端|[ 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
-|原始超轻量模型，支持中英文、多语种文本检测|MoblieNet| 移动端|[c9ko](https://pan.baidu.com/s/1DpM_HzwYFgAJhjgUtQ7CCw)|
-|通用模型，支持中英文、多语种文本检测，比超轻量模型更大，但效果更好|ResNet18| 服务器端|[r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
+| 模型简介 | 骨干网络 | 推荐场景 |大小|  下载链接 |
+|  ----  | ----  |  ----  | ----  |----  |
+|预训练模型|ResNet50| 服务器端|97.3M|[ 3cmz](https://pan.baidu.com/s/1l4T0KX4W-PFy1EH5Nh9HSA)|
+|原始超轻量模型，支持中英文、多语种文本检测|MoblieNet| 移动端|2.3M|[c9ko](https://pan.baidu.com/s/1DpM_HzwYFgAJhjgUtQ7CCw)|
+|通用模型，支持中英文、多语种文本检测，比超轻量模型更大，但效果更好|ResNet18| 服务器端|47.2M|[r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)|
 
 
 ## 文本识别算法
 PytorchOCR开源的文本识别算法列表：
 - [x]  CRNN([paper](https://arxiv.org/abs/1507.05717))
 
-| 模型简介 | 骨干网络 | 推荐场景 |  下载链接 |
-|  ----  | ----  |  ----  | ----  |
-|原始超轻量模型，支持中英文、数字识别|MoblieNet| 移动端|[7x9q](https://pan.baidu.com/s/1l2BhmrjO1ZtmNw5yWCdPZQ)|
-|通用模型，支持中英文、数字识别|ResNet34| 服务器端|[sdnc](https://pan.baidu.com/s/1gnFVXHW-nOz1r8c53u-QFQ)|
+| 模型简介 | 骨干网络 | 推荐场景 |大小 |  下载链接 |
+|  ----  | ----  |  ----  | ----  | ----  |
+|原始超轻量模型，支持中英文、数字识别|MoblieNet| 移动端|4.2M|[7x9q](https://pan.baidu.com/s/1l2BhmrjO1ZtmNw5yWCdPZQ)|
+|通用模型，支持中英文、数字识别|ResNet34| 服务器端|106.4M|[sdnc](https://pan.baidu.com/s/1gnFVXHW-nOz1r8c53u-QFQ)|
 
 
 ## 结果展示
