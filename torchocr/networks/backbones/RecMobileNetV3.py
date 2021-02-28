@@ -10,48 +10,47 @@ from torchocr.networks.CommonModules import ConvBNACT, SEBlock
 class ResidualUnit(nn.Module):
     def __init__(self, num_in_filter, num_mid_filter, num_out_filter, stride, kernel_size, act=None, use_se=False):
         super().__init__()
-        self.conv0 = ConvBNACT(in_channels=num_in_filter, out_channels=num_mid_filter, kernel_size=1, stride=1,
+        self.expand_conv = ConvBNACT(in_channels=num_in_filter, out_channels=num_mid_filter, kernel_size=1, stride=1,
                                padding=0, act=act)
 
-        self.conv1 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size,
+        self.bottleneck_conv = ConvBNACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size,
                                stride=stride,
                                padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
-            self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
+            self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter,hsigmoid_type='paddle')
         else:
             self.se = None
 
-        self.conv2 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1,
+        self.linear_conv = ConvBNACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1,
                                padding=0)
         self.not_add = num_in_filter != num_out_filter or stride != 1
 
     def load_3rd_state_dict(self, _3rd_name, _state, _convolution_index):
         if _3rd_name == 'paddle':
-            self.conv0.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_expand')
-            self.conv1.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_depthwise')
+            self.expand_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_expand')
+            self.bottleneck_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_depthwise')
             if self.se is not None:
                 self.se.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_se')
-            self.conv2.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_linear')
+            self.linear_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_linear')
         else:
             pass
         pass
 
     def forward(self, x):
-        y = self.conv0(x)
-        y = self.conv1(y)
+        y = self.expand_conv(x)
+        y = self.bottleneck_conv(y)
         if self.se is not None:
             y = self.se(y)
-        y = self.conv2(y)
+        y = self.linear_conv(y)
         if not self.not_add:
             y = x + y
         return y
 
-
 class MobileNetV3(nn.Module):
-    def __init__(self, in_channels, **kwargs):
+    def __init__(self, in_channels=3, **kwargs):
         super().__init__()
         self.scale = kwargs.get('scale', 0.5)
-        model_name = kwargs.get('model_name', 'large')
+        model_name = kwargs.get('model_name', 'small')
         self.inplanes = 16
         if model_name == "large":
             self.cfg = [
@@ -77,7 +76,7 @@ class MobileNetV3(nn.Module):
         elif model_name == "small":
             self.cfg = [
                 # k, exp, c,  se,     nl,  s,
-                [3, 16, 16, True, 'relu', (2, 1)],
+                [3, 16, 16, True, 'relu', (1, 1)],
                 [3, 72, 24, False, 'relu', (2, 1)],
                 [3, 88, 24, False, 'relu', 1],
                 [5, 96, 40, True, 'hard_swish', (2, 1)],
@@ -124,7 +123,7 @@ class MobileNetV3(nn.Module):
             block_list.append(block)
             inplanes = self.make_divisible(scale * layer_cfg[2])
 
-        self.block_list = nn.Sequential(*block_list)
+        self.blocks = nn.Sequential(*block_list)
         self.conv2 = ConvBNACT(in_channels=inplanes,
                                out_channels=self.make_divisible(scale * cls_ch_squeeze),
                                kernel_size=1,
@@ -147,7 +146,7 @@ class MobileNetV3(nn.Module):
     def load_3rd_state_dict(self, _3rd_name, _state):
         if _3rd_name == 'paddle':
             self.conv1.load_3rd_state_dict(_3rd_name, _state, 'conv1')
-            for m_block_index, m_block in enumerate(self.block_list, 2):
+            for m_block_index, m_block in enumerate(self.blocks, 2):
                 m_block.load_3rd_state_dict(_3rd_name, _state, m_block_index)
             self.conv2.load_3rd_state_dict(_3rd_name, _state, 'conv_last')
         else:
@@ -155,7 +154,7 @@ class MobileNetV3(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.block_list(x)
+        x = self.blocks(x)
         x = self.conv2(x)
         x = self.pool(x)
         return x

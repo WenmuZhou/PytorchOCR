@@ -3,12 +3,19 @@
 # @Author  : zhoujun
 import torch
 
+
 class CTCLabelConverter(object):
     """ Convert between text-label and text-index """
 
     def __init__(self, character):
         # character (str): set of the possible characters.
-        dict_character = list(character)
+        dict_character = []
+        with open(character, "rb") as fin:
+            lines = fin.readlines()
+            for line in lines:
+                line = line.decode('utf-8').strip("\n").strip("\r\n")
+                dict_character += list(line)
+        # dict_character = list(character)
 
         self.dict = {}
         for i, char in enumerate(dict_character):
