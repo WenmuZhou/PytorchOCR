@@ -33,7 +33,7 @@ class RecTextLineDataset(Dataset):
         self.labels = []
         with open(config.file, 'r', encoding='utf-8') as f_reader:
             for m_line in f_reader.readlines():
-                params = m_line.strip().split('\t')
+                params = m_line.split('\t')
                 if len(params) == 2:
                     m_image_name, m_gt_text = params
                     if True in [c not in self.str2idx for c in m_gt_text]:
