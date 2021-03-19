@@ -1,5 +1,5 @@
 numpy==1.18.4
-Pillow==6.2.2
+Pillow==7.1.0
 tqdm==4.46.0
 opencv-python==4.2.0.34
 addict==2.2.1
