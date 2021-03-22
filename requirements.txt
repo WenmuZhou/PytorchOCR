@@ -6,8 +6,8 @@ addict==2.2.1
 termcolor==1.1.0
 pyclipper==1.1.0.post3
 shapely==1.7.0
-torch>=1.4.0
-torchvision>=0.5.0
+torch>=1.7.0
+torchvision>=0.8.0
 python-Levenshtein>=0.12.0
 lmdb>=0.98
 imgaug>=0.4.0
