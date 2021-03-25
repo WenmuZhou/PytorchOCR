@@ -54,8 +54,9 @@ class RecCollateFn:
         for i in range(len(batch)):
             _label = batch[i]['label']
             labels.append(_label)
-            img = self.process.width_pad_img(all_same_height_images[i], max_img_w)
-            img = self.process.normalize_img(img)
+            img = self.process.normalize_img(all_same_height_images[i])
+            img = self.process.width_pad_img(img, max_img_w)
+            
             img = img.transpose([2, 0, 1])
             resize_images.append(torch.tensor(img, dtype=torch.float))
         resize_images = torch.stack(resize_images)
