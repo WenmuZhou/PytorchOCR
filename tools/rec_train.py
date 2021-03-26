@@ -330,8 +330,6 @@ def main():
     loss_func = build_loss(cfg['loss'])
     loss_func = loss_func.to(to_use_device)
 
-    with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
-        cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
 
     # ===> data loader
     cfg.dataset.train.dataset.alphabet = cfg.dataset.alphabet

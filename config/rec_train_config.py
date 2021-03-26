@@ -27,10 +27,10 @@ config = Dict()
 config.exp_name = 'CRNN'
 config.train_options = {
     # for train
-    'resume_from': '', # 继续训练地址
-    'third_party_name': '', # 加载paddle模型可选
-    'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint", # 模型保存地址，log文件也保存在这里
-    'device': 'cuda:0',# 不建议修改
+    'resume_from': '',  # 继续训练地址
+    'third_party_name': '',  # 加载paddle模型可选
+    'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint",  # 模型保存地址，log文件也保存在这里
+    'device': 'cuda:0',  # 不建议修改
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
     'print_interval': 10,  # step为单位
@@ -53,9 +53,14 @@ config.lr_scheduler = {
 }
 config.model = {
     'type': "RecModel",
-    'backbone': {"type": "ResNet", 'layers': 18},
-    'neck': {"type": 'PPaddleRNN'},
-    'head': {"type": "CTC", 'n_class': 11},
+    # 'backbone': {"type": "ResNet", 'layers': 34},
+    # 'neck': {"type": 'PPaddleRNN',"hidden_size": 256},
+    # 'head': {"type": "CTC", 'n_class': 93},
+    # 'in_channels': 3,
+
+    'backbone': {"type": "MobileNetV3", 'model_name': 'small'},
+    'neck': {"type": 'PPaddleRNN', "hidden_size": 48},
+    'head': {"type": "CTC", 'n_class': 93},
     'in_channels': 3,
 }
 

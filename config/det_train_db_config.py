@@ -49,7 +49,7 @@ config.optimizer = {
 config.model = {
     'type': "DetModel",
     'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True}, # ResNet or MobileNetV3
-    'neck': {"type": 'FPN', 'out_channels': 256},
+    'neck': {"type": 'DB_fpn', 'out_channels': 256},
     'head': {"type": "DBHead"},
     'in_channels': 3,
 }
