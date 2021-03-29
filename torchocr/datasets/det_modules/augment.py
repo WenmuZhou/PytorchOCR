@@ -218,21 +218,24 @@ class ResizeShortSize:
         """
         im = data['img']
         text_polys = data['text_polys']
-
         h, w, _ = im.shape
-        short_edge = min(h, w)
-        if short_edge < self.short_size:
-            # 保证短边 >= short_size
-            scale = self.short_size / short_edge
-            im = cv2.resize(im, dsize=None, fx=scale, fy=scale)
-            scale = (scale, scale)
-            # im, scale = resize_image(im, self.short_size)
-            if self.resize_text_polys:
-                # text_polys *= scale
-                text_polys[:, 0] *= scale[0]
-                text_polys[:, 1] *= scale[1]
-
-        data['img'] = im
+        if min(h, w) < self.short_size:
+            if h < w:
+                ratio = float(self.short_size) / h
+            else:
+                ratio = float(self.short_size) / w
+        else:
+            ratio = 1.
+        resize_h = int(h * ratio)
+        resize_w = int(w * ratio)
+        resize_h = max(int(round(resize_h / 32) * 32), 32)
+        resize_w = max(int(round(resize_w / 32) * 32), 32)
+        img = cv2.resize(im, (int(resize_w), int(resize_h)))
+        if self.resize_text_polys:
+            # text_polys *= scale
+            text_polys[:, 0] *= ratio
+            text_polys[:, 1] *= ratio
+        data['img'] = img
         data['text_polys'] = text_polys
         return data
 
