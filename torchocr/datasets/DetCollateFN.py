@@ -4,6 +4,7 @@
 import PIL
 import numpy as np
 import torch
+from torchvision import transforms
 
 __all__ = ['DetCollectFN']
 
@@ -22,6 +23,8 @@ class DetCollectFN:
                 if isinstance(v, (np.ndarray, torch.Tensor, PIL.Image.Image)):
                     if k not in to_tensor_keys:
                         to_tensor_keys.append(k)
+                    if not isinstance(v,torch.Tensor):
+                        v=torch.tensor(v)
                 data_dict[k].append(v)
         for k in to_tensor_keys:
             data_dict[k] = torch.stack(data_dict[k], 0)
