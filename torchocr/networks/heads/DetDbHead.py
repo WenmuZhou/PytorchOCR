@@ -60,7 +60,7 @@ class DBHead(nn.Module):
     def forward(self, x):
         shrink_maps = self.binarize(x)
         if not self.training:
-            return shrink_maps.detach().cpu().numpy()
+            return shrink_maps
         threshold_maps = self.thresh(x)
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = torch.cat((shrink_maps, threshold_maps, binary_maps), dim=1)
