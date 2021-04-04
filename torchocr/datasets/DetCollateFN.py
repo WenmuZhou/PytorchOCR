@@ -4,6 +4,7 @@
 import PIL
 import numpy as np
 import torch
+from torchvision import transforms
 
 __all__ = ['DetCollectFN']
 
