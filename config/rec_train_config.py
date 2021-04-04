@@ -52,6 +52,7 @@ config.lr_scheduler = {
     'gamma': 0.5
 }
 config.model = {
+    # backbone 可以设置'pretrained': False/True
     'type': "RecModel",
     # 'backbone': {"type": "ResNet", 'layers': 34},
     # 'neck': {"type": 'PPaddleRNN',"hidden_size": 256},

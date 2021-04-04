@@ -302,7 +302,8 @@ def main():
     net = build_model(cfg['model'])
 
     # ===> 模型初始化及模型部署到对应的设备
-    net.apply(weight_init)
+    if not cfg['model']['backbone']['pretrained']:  # 使用 pretrained
+        net.apply(weight_init)
     # if torch.cuda.device_count() > 1:
     net = nn.DataParallel(net)
     net = net.to(to_use_device)

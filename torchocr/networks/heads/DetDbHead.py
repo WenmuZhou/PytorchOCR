@@ -18,7 +18,6 @@ class Head(nn.Module):
                                         stride=2)
         self.conv_bn2 = nn.BatchNorm2d(in_channels // 4)
         self.conv3 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2)
-        nn.Sigmoid()
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         pass
@@ -60,7 +59,7 @@ class DBHead(nn.Module):
     def forward(self, x):
         shrink_maps = self.binarize(x)
         if not self.training:
-            return shrink_maps.detach().cpu().numpy()
+            return shrink_maps
         threshold_maps = self.thresh(x)
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = torch.cat((shrink_maps, threshold_maps, binary_maps), dim=1)

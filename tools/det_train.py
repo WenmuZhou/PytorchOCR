@@ -157,7 +157,8 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
             raw_metrics.append(raw_metric)
     metrics = metric.gather_measure(raw_metrics)
     net.train()
-    result_dict = {'recall': metrics['recall'].avg, 'precision': metrics['precision'].avg, 'hmean': metrics['fmeasure'].avg}
+    result_dict = {'recall': metrics['recall'].avg, 'precision': metrics['precision'].avg,
+                   'hmean': metrics['fmeasure'].avg}
     for k, v in result_dict.items():
         logger.info(f'{k}:{v}')
     logger.info('FPS:{}'.format(total_frame / total_time))
@@ -209,7 +210,8 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
             train_loss = 0.
             start = time.time()
             for i, batch_data in enumerate(train_loader):  # traverse each batch in the epoch
-                current_lr = adjust_learning_rate(optimizer, base_lr, global_step, all_iters, 0.9, warmup_iters=warmup_iters)
+                current_lr = adjust_learning_rate(optimizer, base_lr, global_step, all_iters, 0.9,
+                                                  warmup_iters=warmup_iters)
                 # 数据进行转换和丢到gpu
                 for key, value in batch_data.items():
                     if value is not None:
@@ -258,7 +260,8 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                         global_state['global_step'] = global_step
                         net_save_path = f"{train_options['checkpoint_save_dir']}/best.pth"
                         save_checkpoint(net_save_path, net, optimizer, logger, cfg, global_state=global_state)
-                elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options['ckpt_save_epoch'] == 0:
+                elif train_options['ckpt_save_type'] == 'FixedEpochStep' and epoch % train_options[
+                    'ckpt_save_epoch'] == 0:
                     shutil.copy(net_save_path, net_save_path.replace('latest.pth', f'{epoch}.pth'))
                 best_str = 'current best, '
                 for k, v in best_model.items():
@@ -266,7 +269,8 @@ def train(net, optimizer, loss_func, train_loader, eval_loader, to_use_device,
                 logger.info(best_str)
     except KeyboardInterrupt:
         import os
-        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net, optimizer, logger, cfg, global_state=global_state)
+        save_checkpoint(os.path.join(train_options['checkpoint_save_dir'], 'final.pth'), net, optimizer, logger, cfg,
+                        global_state=global_state)
     except:
         error_msg = traceback.format_exc()
         logger.error(error_msg)
@@ -293,7 +297,8 @@ def main():
     net = build_model(cfg['model'])
 
     # ===> 模型初始化及模型部署到对应的设备
-    # net.apply(weight_init) # 使用 pretrained时，注释掉这句话
+    if not cfg['model']['backbone']['pretrained']:  # 使用 pretrained
+        net.apply(weight_init)
     # if torch.cuda.device_count() > 1:
     net = nn.DataParallel(net)
     net = net.to(to_use_device)
