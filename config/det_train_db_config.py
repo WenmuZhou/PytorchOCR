@@ -47,6 +47,7 @@ config.optimizer = {
 }
 
 config.model = {
+    # backbone 可以设置'pretrained': False/True
     'type': "DetModel",
     'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True}, # ResNet or MobileNetV3
     'neck': {"type": 'DB_fpn', 'out_channels': 256},
