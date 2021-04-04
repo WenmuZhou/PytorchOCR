@@ -63,6 +63,9 @@ PytorchOCR开源的文本识别算法列表：
 |通用模型，支持中英文、数字识别|ResNet34| 服务器端|106.4M|[sdnc](https://pan.baidu.com/s/1gnFVXHW-nOz1r8c53u-QFQ)|
 
 
+## 预训练模型下载地址
+链接: https://pan.baidu.com/s/1uMWys5lQ5ZfhnaOCPBVqZw  密码: i9du
+
 ## 结果展示
 
 ![检测](doc/imgs/exampl1.png)
