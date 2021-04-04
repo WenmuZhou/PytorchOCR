@@ -18,7 +18,6 @@ class Head(nn.Module):
                                         stride=2)
         self.conv_bn2 = nn.BatchNorm2d(in_channels // 4)
         self.conv3 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2)
-        nn.Sigmoid()
 
     def load_3rd_state_dict(self, _3rd_name, _state):
         pass
