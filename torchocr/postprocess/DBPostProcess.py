@@ -1,3 +1,9 @@
+import cv2
+import numpy as np
+import pyclipper
+from shapely.geometry import Polygon
+from pyclipper import PyclipperOffset
+
 class DBPostProcess:
     def __init__(self, thresh=0.3, unclip_ratio=1.5, box_thresh=0.6):
         self.min_size = 3
@@ -23,7 +29,7 @@ class DBPostProcess:
         else:
             raise NotImplementedError(f'opencv {cv2.__version__} not support')
         tmp_points = []
-        tmp_socre = []
+        tmp_score = []
         for m_contour in contours:
             if len(m_contour) < 4 and cv2.contourArea(m_contour) < 16:
                 continue
@@ -41,10 +47,10 @@ class DBPostProcess:
             cv2.drawContours(m_available_mask, [m_contour, ], 0, 255, thickness=-1)
             m_region_mask = cv2.bitwise_and(available_region, available_region, mask=m_available_mask)
             m_mask_count = np.count_nonzero(m_available_mask)
-            tmp_socre.append(float(np.sum(m_region_mask) / m_mask_count))
+            tmp_score.append(float(np.sum(m_region_mask) / m_mask_count))
 
         to_return_boxes.append(tmp_points)
-        to_return_scores.append(tmp_socre)
+        to_return_scores.append(tmp_score)
 
         return to_return_boxes, to_return_scores
 
