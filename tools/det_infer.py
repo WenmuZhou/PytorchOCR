@@ -46,7 +46,7 @@ class DetInfer:
         tensor = tensor.unsqueeze(dim=0)
         tensor = tensor.to(self.device)
         out = self.model(tensor)
-        box_list, score_list = self.post_proess(out, data['shape'], is_output_polygon=is_output_polygon)
+        box_list, score_list = self.post_proess(out, data['shape'])
         box_list, score_list = box_list[0], score_list[0]
         if len(box_list) > 0:
             idx = [x.sum() > 0 for x in box_list]
