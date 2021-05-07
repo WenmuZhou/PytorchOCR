@@ -22,7 +22,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 * [x] 服务器端识别模型文件
 * [x] DB通用模型
 * [ ] 手机端部署
-* [ ] With Triton
+* [x] With Triton,[推荐使用Savior](https://github.com/novioleo/Savior)
 
 ## 环境配置
 
