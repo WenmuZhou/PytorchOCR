@@ -42,8 +42,11 @@ class RecInfer:
         tensor = torch.from_numpy(img.transpose([2, 0, 1])).float()
         tensor = tensor.unsqueeze(dim=0)
         tensor = tensor.to(self.device)
-        out = self.model(tensor)
-        txt = self.converter.decode(out.softmax(dim=2).detach().cpu().numpy())
+        with torch.no_grad():
+            out = self.model(tensor)
+            out = out.softmax(dim=2)
+        out = out.cpu().numpy()
+        txt = self.converter.decode(out)
         return txt
 
 
