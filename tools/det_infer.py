@@ -32,7 +32,7 @@ class DetInfer:
         self.model.to(self.device)
         self.model.eval()
         self.resize = ResizeFixedSize(736, False)
-        self.post_proess = build_post_process(cfg['post_process'])
+        self.post_process = build_post_process(cfg['post_process'])
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=cfg['dataset']['train']['dataset']['mean'], std=cfg['dataset']['train']['dataset']['std'])
@@ -45,8 +45,10 @@ class DetInfer:
         tensor = self.transform(data['img'])
         tensor = tensor.unsqueeze(dim=0)
         tensor = tensor.to(self.device)
-        out = self.model(tensor)
-        box_list, score_list = self.post_proess(out, data['shape'], is_output_polygon=is_output_polygon)
+        with torch.no_grad():
+            out = self.model(tensor)
+        out = out.cpu().numpy()
+        box_list, score_list = self.post_process(out, data['shape'])
         box_list, score_list = box_list[0], score_list[0]
         if len(box_list) > 0:
             idx = [x.sum() > 0 for x in box_list]
