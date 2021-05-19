@@ -7,6 +7,9 @@ import pathlib
 
 # 将 torchocr路径加到python陆经里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
+
+import numpy as np
+
 sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
 
@@ -34,20 +37,21 @@ class RecInfer:
         self.process = RecDataProcess(cfg['dataset']['train']['dataset'])
         self.converter = CTCLabelConverter(cfg['dataset']['alphabet'])
 
-    def predict(self, img):
+    def predict(self, imgs):
         # 预处理根据训练来
-        img = self.process.resize_with_specific_height(img)
-        # img = self.process.width_pad_img(img, 120)
-        img = self.process.normalize_img(img)
-        tensor = torch.from_numpy(img.transpose([2, 0, 1])).float()
-        tensor = tensor.unsqueeze(dim=0)
+        if not isinstance(imgs,list):
+            imgs = [imgs]
+        imgs = [self.process.normalize_img(self.process.resize_with_specific_height(img)) for img in imgs]
+        imgs = [self.process.width_pad_img(img, 256) for img in imgs]
+        imgs = np.stack(imgs)
+        tensor = torch.from_numpy(imgs.transpose([0,3, 1, 2])).float()
         tensor = tensor.to(self.device)
         with torch.no_grad():
             out = self.model(tensor)
             out = out.softmax(dim=2)
         out = out.cpu().numpy()
-        txt = self.converter.decode(out)
-        return txt
+        txts = [self.converter.decode(np.expand_dims(txt, 0)) for txt in out]
+        return txts
 
 
 def init_args():

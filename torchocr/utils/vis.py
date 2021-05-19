@@ -4,9 +4,18 @@
 import math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import os
 
 
-def draw_ocr_box_txt(image, boxes, txts = None):
+def get_font_file():
+    searchs = ["./doc/田氏颜体大字库2.0.ttf", "../doc/田氏颜体大字库2.0.ttf"]
+    for path in searchs:
+        if os.path.exists(path):
+            return path
+    assert False,"can't find 田氏颜体大字库2.0.ttf"
+
+
+def draw_ocr_box_txt(image, boxes, txts = None, pos="horizontal"):
     if isinstance(image,np.ndarray):
         image = Image.fromarray(image)
     h, w = image.height, image.width
@@ -31,7 +40,7 @@ def draw_ocr_box_txt(image, boxes, txts = None):
             box_width = math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
             if box_height > 2 * box_width:
                 font_size = max(int(box_width * 0.9), 10)
-                font = ImageFont.truetype("./doc/田氏颜体大字库2.0.ttf", font_size, encoding="utf-8")
+                font = ImageFont.truetype(get_font_file(), font_size, encoding="utf-8")
                 cur_y = box[0][1]
                 for c in txt:
                     char_size = font.getsize(c)
@@ -39,13 +48,18 @@ def draw_ocr_box_txt(image, boxes, txts = None):
                     cur_y += char_size[1]
             else:
                 font_size = max(int(box_height * 0.8), 10)
-                font = ImageFont.truetype("./doc/田氏颜体大字库2.0.ttf", font_size, encoding="utf-8")
+                font = ImageFont.truetype(get_font_file(), font_size, encoding="utf-8")
                 draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
     img_left = Image.blend(image, img_left, 0.5)
     if txts is not None:
-        img_show = Image.new('RGB', (w * 2, h), (255, 255, 255))
-        img_show.paste(img_left, (0, 0, w, h))
-        img_show.paste(img_right, (w, 0, w * 2, h))
+        if pos == "horizontal":
+            img_show = Image.new('RGB', (w * 2, h), (255, 255, 255))
+            img_show.paste(img_left, (0, 0, w, h))
+            img_show.paste(img_right, (w, 0, w * 2, h))
+        else:
+            img_show = Image.new('RGB', (w, h * 2), (255, 255, 255))
+            img_show.paste(img_left, (0, 0, w, h))
+            img_show.paste(img_right, (0, h, w , h * 2))
     else:
         img_show = np.array(img_left)
     return np.array(img_show)
