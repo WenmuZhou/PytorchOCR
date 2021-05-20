@@ -42,10 +42,10 @@ def get_rotate_crop_image(img, points):
 
 
 class OCRInfer(object):
-    def __init__(self, det_path, rec_path, time_profile=False, mem_profile=False, **kwargs):
+    def __init__(self, det_path, rec_path, rec_batch_size=16, time_profile=False, mem_profile=False ,**kwargs):
         super().__init__()
         self.det_model = DetInfer(det_path)
-        self.rec_model = RecInfer(rec_path)
+        self.rec_model = RecInfer(rec_path, rec_batch_size)
         assert not(time_profile and mem_profile),"can not profile memory and time at the same time"
         self.line_profiler = None
         if time_profile:
@@ -73,10 +73,13 @@ class OCRInfer(object):
         return wapper(img)
 
     def predict_time_profile(self, img):
-        lp = LineProfiler()
-        lp_wrapper = lp(self.do_predict)
-        ret = lp_wrapper(img)
-        lp.print_stats()
+        # run multi time
+        for i in range(8):
+            print("*********** {} profile time *************".format(i))
+            lp = LineProfiler()
+            lp_wrapper = lp(self.do_predict)
+            ret = lp_wrapper(img)
+            lp.print_stats()
         return ret
 
 
@@ -86,6 +89,7 @@ def init_args():
     parser.add_argument('--det_path', required=True, type=str, help='det model path')
     parser.add_argument('--rec_path', required=True, type=str, help='rec model path')
     parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
+    parser.add_argument('--rec_batch_size', type=int, help='rec batch_size', default=16)
     parser.add_argument('-time_profile', action='store_true', help='enable time profile mode')
     parser.add_argument('-mem_profile', action='store_true', help='enable memory profile mode')
     args = parser.parse_args()
@@ -94,13 +98,15 @@ def init_args():
 
 if __name__ == '__main__':
     import cv2
-    from matplotlib import pyplot as plt
     args = init_args()
     img = cv2.imread(args['img_path'])
     model = OCRInfer(**args)
     txts, boxes, debug_img = model.predict(img)
     h,w,_, = debug_img.shape
-    debug_img = cv2.resize(debug_img, (int(w*0.7), int(h*0.7)))
+    raido = 1
+    if w > 1200:
+        raido = 600.0/w
+    debug_img = cv2.resize(debug_img, (int(w*raido), int(h*raido)))
     if not(args['mem_profile'] or args['time_profile']):
         cv2.imshow("debug", debug_img)
         cv2.waitKey()

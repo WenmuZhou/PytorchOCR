@@ -21,7 +21,7 @@ from torchocr.utils import CTCLabelConverter
 
 
 class RecInfer:
-    def __init__(self, model_path):
+    def __init__(self, model_path, batch_size=16):
         ckpt = torch.load(model_path, map_location='cpu')
         cfg = ckpt['cfg']
         self.model = build_model(cfg['model'])
@@ -36,22 +36,31 @@ class RecInfer:
 
         self.process = RecDataProcess(cfg['dataset']['train']['dataset'])
         self.converter = CTCLabelConverter(cfg['dataset']['alphabet'])
+        self.batch_size = batch_size
 
     def predict(self, imgs):
         # 预处理根据训练来
         if not isinstance(imgs,list):
             imgs = [imgs]
         imgs = [self.process.normalize_img(self.process.resize_with_specific_height(img)) for img in imgs]
-        imgs = [self.process.width_pad_img(img, 256) for img in imgs]
-        imgs = np.stack(imgs)
-        tensor = torch.from_numpy(imgs.transpose([0,3, 1, 2])).float()
-        tensor = tensor.to(self.device)
-        with torch.no_grad():
-            out = self.model(tensor)
-            out = out.softmax(dim=2)
-        out = out.cpu().numpy()
-        txts = [self.converter.decode(np.expand_dims(txt, 0)) for txt in out]
-        return txts
+        widths = np.array([img.shape[1] for img in imgs])
+        idxs = np.argsort(widths)
+        txts = []
+        for idx in range(0, len(imgs), self.batch_size):
+            batch_idxs = idxs[idx:min(len(imgs), idx+self.batch_size)]
+            batch_imgs = [self.process.width_pad_img(imgs[idx], imgs[batch_idxs[-1]].shape[1]) for idx in batch_idxs]
+            batch_imgs = np.stack(batch_imgs)
+            tensor = torch.from_numpy(batch_imgs.transpose([0,3, 1, 2])).float()
+            tensor = tensor.to(self.device)
+            with torch.no_grad():
+                out = self.model(tensor)
+                out = out.softmax(dim=2)
+            out = out.cpu().numpy()
+            txts.extend([self.converter.decode(np.expand_dims(txt, 0)) for txt in out])
+        #按输入图像的顺序排序
+        idxs = np.argsort(idxs)
+        out_txts = [txts[idx] for idx in idxs]
+        return out_txts
 
 
 def init_args():
