@@ -150,7 +150,7 @@ def evaluate(net, val_loader, to_use_device, logger, post_process, metric):
         for batch_data in tqdm(val_loader):
             start = time.time()
             output = net.forward(batch_data['img'].to(to_use_device))
-            boxes, scores = post_process(output.cpu().numpy(), batch_data['shape'], is_output_polygon=metric.is_output_polygon if hasattr(metric,'is_output_polygon') else False)
+            boxes, scores = post_process(output.cpu().numpy(), batch_data['shape'])
             total_frame += batch_data['img'].size()[0]
             total_time += time.time() - start
             raw_metric = metric(batch_data, (boxes, scores))
