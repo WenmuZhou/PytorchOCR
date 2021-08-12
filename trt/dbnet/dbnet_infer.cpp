@@ -325,6 +325,7 @@ int main(int argc, char** argv) {
         cv::Mat tmpimg = cv::imread(img_dir + "/" + file_names[f - fcount + 1]);
         if (tmpimg.empty()) continue;
         //cv::cvtColor(tmpimg, tmpimg, cv::COLOR_BGR2RGB);
+        resize(tmpimg,tmpimg,Size(INPUT_H, INPUT_W),0,0, INTER_LINEAR);
         cv::Mat src_img = tmpimg.clone();
         float scale = paddimg(tmpimg, SHORT_INPUT); // resize the image
         std::cout << "letterbox shape: " << tmpimg.cols << ", " << tmpimg.rows << std::endl;
@@ -349,9 +350,53 @@ int main(int argc, char** argv) {
             }
         }
 
+        // Extracting minimum circumscribed rectangle
+        std::vector<std::vector<cv::Point>> contours;
+        std::vector<cv::Vec4i> hierarcy;
+        cv::findContours(map, contours, hierarcy, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+
+        std::vector<cv::Rect> boundRect(contours.size());
+        std::vector<cv::RotatedRect> box(contours.size());
+        cv::Point2f rect[4];
+        cv::Point2f order_rect[4];
+
+        for (int i = 0; i < contours.size(); i++) {
+            cv::RotatedRect rotated_rect = cv::minAreaRect(cv::Mat(contours[i]));
+            if (!get_mini_boxes(rotated_rect, rect, BOX_MINI_SIZE)) {
+                std::cout << "box too small" <<  std::endl;
+                continue;
+            }
+
+            // drop low score boxes
+            float score = get_box_score(prob, rect, tmpimg.cols, tmpimg.rows,
+                                        SCORE_THRESHOLD);
+            if (score < BOX_THRESHOLD) {
+                std::cout << "score too low =  " << score << ", threshold = " << BOX_THRESHOLD <<  std::endl;
+                continue;
+            }
+
+            // Scaling the predict boxes depend on EXPANDRATIO
+            cv::RotatedRect expandbox = expandBox(rect, EXPANDRATIO);
+            expandbox.points(rect);
+            if (!get_mini_boxes(expandbox, rect, BOX_MINI_SIZE + 2)) {
+                continue;
+            }
+
+            // Restore the coordinates to the original image
+            for (int k = 0; k < 4; k++) {
+                order_rect[k] = rect[k];
+                order_rect[k].x = int(order_rect[k].x / tmpimg.cols * src_img.cols);
+                order_rect[k].y = int(order_rect[k].y / tmpimg.rows * src_img.rows);
+            }
+
+            cv::rectangle(src_img, cv::Point(order_rect[0].x,order_rect[0].y), cv::Point(order_rect[2].x,order_rect[2].y), cv::Scalar(0, 0, 255), 2, 8);
+            //std::cout << "After LT =  " << order_rect[0] << ", After RD = " << order_rect[2] <<  std::endl;
+        }
+
         std::cout << "row : " << tmpimg.rows << " los : " << tmpimg.cols << std::endl;
 
-	    cv::imwrite("./hrnet_out/_" + file_names[f - fcount + 1], map);
+	    cv::imwrite("./dbnet_out/_" + file_names[f - fcount + 1], map);
+	    cv::imwrite("./dbnet_out/__" + file_names[f - fcount + 1], src_img);
         fcount = 0;
     }
 
