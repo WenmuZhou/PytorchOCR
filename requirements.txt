@@ -1,5 +1,5 @@
 numpy==1.18.4
-Pillow==8.1.1
+Pillow==8.2.0
 tqdm==4.46.0
 opencv-python==4.2.0.34
 addict==2.2.1
@@ -11,3 +11,6 @@ torchvision>=0.8.0
 python-Levenshtein>=0.12.0
 lmdb>=0.98
 imgaug>=0.4.0
+line-profiler==3.2.6
+memory-profiler==0.58.0
+

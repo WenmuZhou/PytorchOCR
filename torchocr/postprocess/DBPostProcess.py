@@ -107,7 +107,7 @@ def get_min_area_bbox(_image, _contour, _scale_ratio=1.0):
     Returns:    最小面积矩形的相关信息
     """
     h, w = _image.shape[:2]
-    if _scale_ratio != 1:
+    if abs(_scale_ratio -1) > 0.001:
         reshaped_contour = _contour.reshape(-1, 2)
         current_polygon = Polygon(reshaped_contour)
         distance = current_polygon.area * _scale_ratio / current_polygon.length
