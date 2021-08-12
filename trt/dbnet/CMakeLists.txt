@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project( visionLanding )
+project( dbnet )
 
 # 设置可执行文件输出目录
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -14,11 +14,6 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 set(OpenCV_DIR /home/jun/ProgramFiles/opencv3.4/share/OpenCV/)
 find_package(OpenCV 3.4.0 REQUIRED)
-
-
-# 链接darknet yolo 库
-set(LINK_DIR ${PROJECT_SOURCE_DIR}/lib)
-link_directories(${LINK_DIR})
 
 # tensorrt
 include_directories(/usr/include/x86_64-linux-gnu/)
