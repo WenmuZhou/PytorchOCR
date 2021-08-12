@@ -27,7 +27,7 @@ config = Dict()
 config.exp_name = 'DBNet'
 config.train_options = {
     # for train
-    'resume_from': '',  # 继续训练地址
+    'resume_from': f'./output/{config.exp_name}/checkpoint/latest.pth',  # 继续训练地址
     'third_party_name': '',  # 加载paddle模型可选
     'checkpoint_save_dir': f"./output/{config.exp_name}/checkpoint",  # 模型保存地址，log文件也保存在这里
     'device': 'cuda:0',  # 不建议修改
@@ -75,7 +75,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'train.json',
+            'file': r'/home/wwe/ocr/opendata/art/train_torchocr.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             # db 预处理，不需要修改
@@ -102,7 +102,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'test.json',
+            'file': r'/home/wwe/ocr/opendata/art/train_torchocr.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             'pre_processes': [{'type': 'ResizeShortSize', 'args': {'short_size': 736, 'resize_text_polys': False}}],

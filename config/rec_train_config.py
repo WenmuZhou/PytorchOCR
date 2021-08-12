@@ -33,8 +33,8 @@ config.train_options = {
     'device': 'cuda:0',  # 不建议修改
     'epochs': 200,
     'fine_tune_stage': ['backbone', 'neck', 'head'],
-    'print_interval': 10,  # step为单位
-    'val_interval': 300,  # step为单位
+    'print_interval': 100,  # step为单位
+    'val_interval': 1000,  # step为单位
     'ckpt_save_type': 'HighestAcc',  # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
     'ckpt_save_epoch': 4,  # epoch为单位, 只有ckpt_save_type选择FixedEpochStep时，该参数才有效
 }
@@ -43,7 +43,7 @@ config.SEED = 927
 config.optimizer = {
     'type': 'Adam',
     'lr': 0.001,
-    'weight_decay': 1e-4,
+    'weight_decay': 1e-5,
 }
 
 config.lr_scheduler = {
@@ -54,15 +54,15 @@ config.lr_scheduler = {
 config.model = {
     # backbone 可以设置'pretrained': False/True
     'type': "RecModel",
-    # 'backbone': {"type": "ResNet", 'layers': 34},
-    # 'neck': {"type": 'PPaddleRNN',"hidden_size": 256},
+    'backbone': {"type": "ResNet", 'layers': 34},
+    'neck': {"type": 'PPaddleRNN',"hidden_size": 256},
+    'head': {"type": "CTC", 'n_class': 6624},
+    'in_channels': 3,
+
+    # 'backbone': {"type": "MobileNetV3", 'model_name': 'small'},
+    # 'neck': {"type": 'PPaddleRNN', "hidden_size": 48},
     # 'head': {"type": "CTC", 'n_class': 93},
     # 'in_channels': 3,
-
-    'backbone': {"type": "MobileNetV3", 'model_name': 'small'},
-    'neck': {"type": 'PPaddleRNN', "hidden_size": 48},
-    'head': {"type": "CTC", 'n_class': 93},
-    'in_channels': 3,
 }
 
 config.loss = {
@@ -74,11 +74,11 @@ config.loss = {
 # ##lable文件
 ### 存在问题，gt中str-->label 是放在loss中还是放在dataloader中
 config.dataset = {
-    'alphabet': r'torchocr/datasets/alphabets/digit.txt',
+    'alphabet': r'../torchocr/datasets/alphabets/ppocr_keys_v1.txt',
     'train': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'path/train.txt',
+            'file': r'/home/wwe/ocr/chinesedata/1_data/crnndata_train.txt',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
@@ -86,7 +86,7 @@ config.dataset = {
         },
         'loader': {
             'type': 'DataLoader',  # 使用torch dataloader只需要改为 DataLoader
-            'batch_size': 16,
+            'batch_size': 64,
             'shuffle': True,
             'num_workers': 1,
             'collate_fn': {
@@ -98,14 +98,14 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'RecTextLineDataset',
-            'file': r'path/eval.txt',
+            'file': r'/home/wwe/ocr/chinesedata/1_data/crnndata_val.txt',
             'input_h': 32,
             'mean': 0.5,
             'std': 0.5,
             'augmentation': False,
         },
         'loader': {
-            'type': 'RecDataLoader',
+            'type': 'DataLoader',
             'batch_size': 4,
             'shuffle': False,
             'num_workers': 1,

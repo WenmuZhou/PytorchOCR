@@ -11,7 +11,7 @@ class DBPostProcess:
         self.bbox_scale_ratio = unclip_ratio
         self.shortest_length = 5
 
-    def __call__(self, _predict_score, _ori_img_shape):
+    def __call__(self, _predict_score, _ori_img_shape, is_output_polygon=False):
         instance_score = _predict_score.squeeze()
         h, w = instance_score.shape[:2]
         height, width = _ori_img_shape[0]
@@ -51,8 +51,10 @@ class DBPostProcess:
 
         to_return_boxes.append(tmp_points)
         to_return_scores.append(tmp_socre)
-
-        return to_return_boxes, to_return_scores
+        if is_output_polygon:
+            return to_return_boxes, to_return_scores, refined_mask_region
+        else:
+            return to_return_boxes, to_return_scores
 
 
 def rotate_points(_points, _degree=0, _center=(0, 0)):

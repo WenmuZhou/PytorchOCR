@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 from shapely.geometry import Polygon
 import cv2
-
+import torchsnooper
 
 def iou_rotate(box_a, box_b, method='union'):
     rect_a = cv2.minAreaRect(box_a)
@@ -109,6 +109,7 @@ class DetectionIoUEvaluator(object):
             # transcription = gt[n]['text']
             dontCare = gt[n]['ignore']
 
+            #with torchsnooper.snoop():
             if not Polygon(points).is_valid or not Polygon(points).is_simple:
                 continue
 

@@ -48,7 +48,7 @@ class DetInfer:
         with torch.no_grad():
             out = self.model(tensor)
         out = out.cpu().numpy()
-        box_list, score_list = self.post_process(out, data['shape'])
+        box_list, score_list, out_mask = self.post_process(out, data['shape'], True)
         box_list, score_list = box_list[0], score_list[0]
         if len(box_list) > 0:
             idx = [x.sum() > 0 for x in box_list]
@@ -56,7 +56,10 @@ class DetInfer:
             score_list = [score_list[i] for i, v in enumerate(idx) if v]
         else:
             box_list, score_list = [], []
-        return box_list, score_list
+        if is_output_polygon:
+            return box_list, score_list, out_mask
+        else:
+            return box_list, score_list
 
 
 def init_args():
@@ -76,8 +79,9 @@ if __name__ == '__main__':
     args = init_args()
     img = cv2.imread(args.img_path)
     model = DetInfer(args.model_path)
-    box_list, score_list = model.predict(img, is_output_polygon=False)
+    box_list, score_list, omask = model.predict(img, is_output_polygon=True)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = draw_bbox(img, box_list)
     plt.imshow(img)
+    plt.imshow(omask)
     plt.show()

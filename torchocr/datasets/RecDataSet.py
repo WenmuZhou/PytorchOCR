@@ -39,6 +39,7 @@ class RecTextLineDataset(Dataset):
                 params = m_line.split('\t')
                 if len(params) == 2:
                     m_image_name, m_gt_text = params
+                    m_gt_text = m_gt_text.replace("\n", '')
                     if True in [c not in self.str2idx for c in m_gt_text]:
                         continue
                     self.labels.append((m_image_name, m_gt_text))
@@ -165,6 +166,9 @@ class RecDataLoader:
         batch = {'img': [], 'label': []}
         # img tensor current shape: B,H,W,C
         all_same_height_images = [self.process.resize_with_specific_height(_['img'][0].numpy()) for _ in batch_data]
+        # #print(len(all_same_height_images))
+        # if len(all_same_height_images) == 0:
+        #     return batch
         max_img_w = max({m_img.shape[1] for m_img in all_same_height_images})
         # make sure max_img_w is integral multiple of 8
         max_img_w = int(np.ceil(max_img_w / 8) * 8)

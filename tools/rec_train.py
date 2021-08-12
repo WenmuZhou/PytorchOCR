@@ -29,7 +29,7 @@ from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkp
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/rec_train_config.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='../config/rec_train_config.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
