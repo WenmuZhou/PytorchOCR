@@ -2,11 +2,9 @@ import os
 import tensorrt as trt
 import onnx
 import torchvision.transforms as transforms
-# import infer_common as comm
 import cv2, time
 import torch
 import pycuda.driver as cuda
-import pycuda.autoinit
 import numpy as np
 import shutil
 from torchocr.postprocess import build_post_process
@@ -131,7 +129,6 @@ def do_infer_test(test_engine, imgpath):
     count = 0
 
     while 1:
-        total_now = time.time()
         img_ori = cv2.imread(imgpath.format(str(count)))
         img = cv2.resize(img_ori, (640, 640), interpolation=cv2.INTER_CUBIC)
         # img_input = img[..., ::-1].copy()  # BGR to RGB
@@ -159,7 +156,6 @@ def do_infer_test(test_engine, imgpath):
         plt.imshow(out_mask)
         plt.show()
 
-        # csv_output_rows.append(new_csv_row)
         img_filem = os.path.join(pose_dir, 'pose_{:08d}_m.jpg'.format(count))
         img_files = os.path.join(pose_dir, 'pose_{:08d}_s.jpg'.format(count))
         count = count + 1
@@ -171,8 +167,7 @@ if __name__ == '__main__':
     model_path = './dbnet.onnx'
     trt_engine = './dbnet.engine'
 
-    # imgspath = '/home/xunyi/work/Lite-HRNet/data/target/LG01/val/augment_{}.jpg'
-    imgspath = '/home/wwe/ocr/opendata/art/test_part1_images/gt_{}.jpg'
+    imgspath = './testimages/gt_{}.jpg'
     test_engine = get_engine(model_path,trt_engine)
 
     do_infer_test(test_engine, imgspath)

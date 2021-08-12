@@ -69,7 +69,7 @@ class JsonDataset(Dataset):
             illegibility_list = []
             language_list = []
             for annotation in gt['annotations']:
-                if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
+                if len(annotation['polygon']) < 4 or len(annotation['text']) == 0:
                     continue
                 polygons.append(annotation['polygon'])
                 texts.append(annotation['text'])
@@ -83,7 +83,7 @@ class JsonDataset(Dataset):
                         texts.append(char_annotation['char'])
                         illegibility_list.append(char_annotation['illegibility'])
                         language_list.append(char_annotation['language'])
-            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
+            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': polygons,
                               'texts': texts, 'ignore_tags': illegibility_list})
         return data_list
 

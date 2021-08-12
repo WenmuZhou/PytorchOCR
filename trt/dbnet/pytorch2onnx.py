@@ -27,14 +27,12 @@ def pytorch2onnx(model,
 
 
 if __name__ == '__main__':
-    # args = parse_args()
-    model_path = "../../tools/output/DBNet/checkpoint/latest.pth"
+    model_path = "./dbnet.pth"
     output_file = "./dbnet.onnx"
     sshape = [1, 3, 640, 640]
 
     ckpt = torch.load(model_path, map_location='cpu')
     cfg = ckpt['cfg']
-    # build the model
     model = build_model(cfg['model'])
 
     state_dict = {}
