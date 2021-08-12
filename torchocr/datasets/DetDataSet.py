@@ -69,7 +69,7 @@ class JsonDataset(Dataset):
             illegibility_list = []
             language_list = []
             for annotation in gt['annotations']:
-                if len(annotation['polygon']) < 4 or len(annotation['text']) == 0:
+                if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
                     continue
                 polygons.append(annotation['polygon'])
                 texts.append(annotation['text'])
@@ -83,7 +83,7 @@ class JsonDataset(Dataset):
                         texts.append(char_annotation['char'])
                         illegibility_list.append(char_annotation['illegibility'])
                         language_list.append(char_annotation['language'])
-            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': polygons,
+            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
                               'texts': texts, 'ignore_tags': illegibility_list})
         return data_list
 
@@ -127,17 +127,17 @@ if __name__ == '__main__':
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt
-    dataset = JsonDataset(config.dataset.eval.dataset)
+    dataset = JsonDataset(config.dataset.train.dataset)
     train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):
         img = data['img']
-        # shrink_label = data['shrink_map']
-        # threshold_label = data['threshold_map']
+        shrink_label = data['shrink_map']
+        threshold_label = data['threshold_map']
 
-        # print(threshold_label.shape, threshold_label.shape, img.shape)
+        print(threshold_label.shape, threshold_label.shape, img.shape)
         show_img(img[0].numpy().transpose(1, 2, 0), title='img')
-        # show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
-        # show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
+        show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
+        show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
         img = draw_bbox(img[0].numpy().transpose(1, 2, 0), np.array(data['text_polys']))
         show_img(img, title='draw_bbox')
         plt.show()
