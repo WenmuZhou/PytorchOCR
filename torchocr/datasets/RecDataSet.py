@@ -36,9 +36,11 @@ class RecTextLineDataset(Dataset):
         self.labels = []
         with open(config.file, 'r', encoding='utf-8') as f_reader:
             for m_line in f_reader.readlines():
-                params = m_line.split('\t')
+                m_line=m_line.strip()
+                params = m_line.split(' ')
                 if len(params) == 2:
                     m_image_name, m_gt_text = params
+                    m_image_name ='/home/Work/DataSet/360/images/'+ m_image_name
                     if True in [c not in self.str2idx for c in m_gt_text]:
                         continue
                     self.labels.append((m_image_name, m_gt_text))
@@ -84,10 +86,7 @@ class RecLmdbDataset(Dataset):
         self.process = RecDataProcess(config)
         self.filtered_index_list = []
         self.labels = []
-        with open(config.alphabet, 'r', encoding='utf-8') as file:
-            alphabet = ''.join([s.strip('\n') for s in file.readlines()])
-        alphabet += ' '
-        self.str2idx = {c: i for i, c in enumerate(alphabet)}
+        self.str2idx = {c: i for i, c in enumerate(config.alphabet)}
         with self.env.begin(write=False) as txn:
             nSamples = int(txn.get('num-samples'.encode()))
             self.nSamples = nSamples
@@ -178,7 +177,8 @@ class RecDataLoader:
         return batch
 
     def build(self):
-        self.dataiter = DataLoader(self.dataset, batch_size=1, shuffle=self.shuffle, num_workers=self.num_workers).__iter__()
+        self.dataiter = DataLoader(self.dataset, batch_size=1, shuffle=self.shuffle,
+                                   num_workers=self.num_workers).__iter__()
 
     def __next__(self):
         if self.dataiter == None:
@@ -219,6 +219,8 @@ class RecDataLoader:
                     return self.pack(batch_data)
         # deal with last batch
         except StopIteration:
+            if self.queue_1 == []:
+                raise StopIteration
             batch_data = self.queue_1
             self.queue_1 = list()
             return self.pack(batch_data)

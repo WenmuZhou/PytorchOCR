@@ -32,11 +32,6 @@ class RecModel(nn.Module):
 
         self.name = f'RecModel_{backbone_type}_{neck_type}_{head_type}'
 
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        self.backbone.load_3rd_state_dict(_3rd_name, _state)
-        self.neck.load_3rd_state_dict(_3rd_name, _state)
-        self.head.load_3rd_state_dict(_3rd_name, _state)
-
     def forward(self, x):
         x = self.backbone(x)
         x = self.neck(x)

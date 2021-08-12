@@ -31,7 +31,7 @@ from torchocr.metrics import DetMetric
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/det_train_db_config_local.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/cfg_det_db.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))

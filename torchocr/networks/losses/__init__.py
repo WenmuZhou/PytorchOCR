@@ -5,10 +5,11 @@ import copy
 
 from .DBLoss import DBLoss
 from .CTCLoss import CTCLoss
+from .PSELoss import PSELoss
 
 __all__ = ['build_loss']
 
-support_loss = ['DBLoss', 'CTCLoss']
+support_loss = ['DBLoss', 'CTCLoss','PSELoss']
 
 
 def build_loss(config):

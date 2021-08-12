@@ -123,7 +123,7 @@ class JsonDataset(Dataset):
 if __name__ == '__main__':
     import torch
     from torch.utils.data import DataLoader
-    from config.det_train_db_config import config
+    from config.cfg_det_db import config
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt

@@ -43,18 +43,6 @@ class ConvBNACT(nn.Module):
         elif act is None:
             self.act = None
 
-    def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
-        to_load_state_dict = OrderedDict()
-        if _3rd_name == 'paddle':
-            to_load_state_dict['conv.weight'] = torch.Tensor(_state[f'{_name_prefix}_weights'])
-            to_load_state_dict['bn.weight'] = torch.Tensor(_state[f'{_name_prefix}_bn_scale'])
-            to_load_state_dict['bn.bias'] = torch.Tensor(_state[f'{_name_prefix}_bn_offset'])
-            to_load_state_dict['bn.running_mean'] = torch.Tensor(_state[f'{_name_prefix}_bn_mean'])
-            to_load_state_dict['bn.running_var'] = torch.Tensor(_state[f'{_name_prefix}_bn_variance'])
-            self.load_state_dict(to_load_state_dict)
-        else:
-            pass
-
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
@@ -72,17 +60,6 @@ class SEBlock(nn.Module):
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels=num_mid_filter, kernel_size=1, out_channels=out_channels, bias=True)
         self.relu2 = HardSigmoid(hsigmoid_type)
-
-    def load_3rd_state_dict(self, _3rd_name, _state, _name_prefix):
-        to_load_state_dict = OrderedDict()
-        if _3rd_name == 'paddle':
-            to_load_state_dict['conv1.weight'] = torch.Tensor(_state[f'{_name_prefix}_1_weights'])
-            to_load_state_dict['conv2.weight'] = torch.Tensor(_state[f'{_name_prefix}_2_weights'])
-            to_load_state_dict['conv1.bias'] = torch.Tensor(_state[f'{_name_prefix}_1_offset'])
-            to_load_state_dict['conv2.bias'] = torch.Tensor(_state[f'{_name_prefix}_2_offset'])
-            self.load_state_dict(to_load_state_dict)
-        else:
-            pass
 
     def forward(self, x):
         attn = self.pool(x)

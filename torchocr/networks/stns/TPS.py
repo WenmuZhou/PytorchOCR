@@ -27,17 +27,6 @@ class TPS(nn.Module):
         self.LocalizationNetwork = LocalizationNetwork(self.F, self.I_channel_num)
         self.GridGenerator = GridGenerator(self.F, self.I_r_size)
 
-    def load_3rd_state_dict(self, _3rd_name, _state_dict):
-        """
-        根据第三方pretrained model进行适配
-        :param _3rd_name:   第三方的名称
-        :param _state_dict:     模型参数
-        """
-        if _3rd_name == 'paddle':
-            self.LocalizationNetwork.load_3rd_state_dict(_3rd_name, _state_dict)
-        else:
-            pass
-
     def forward(self, batch_I):
         batch_C_prime = self.LocalizationNetwork(batch_I)  # batch_size x K x 2
         build_P_prime = self.GridGenerator.build_P_prime(batch_C_prime)  # batch_size x n (= I_r_width x I_r_height) x 2
@@ -83,37 +72,6 @@ class LocalizationNetwork(nn.Module):
         ctrl_pts_bottom = np.stack([ctrl_pts_x, ctrl_pts_y_bottom], axis=1)
         initial_bias = np.concatenate([ctrl_pts_top, ctrl_pts_bottom], axis=0)
         self.localization_fc2.bias.data = torch.from_numpy(initial_bias).float().view(-1)
-
-    def load_3rd_state_dict(self, _3rd_name, _state_dict):
-        """
-        根据第三方pretrained model进行适配
-        :param _3rd_name:   第三方的名称
-        :param _state_dict:     模型参数
-        """
-        if _3rd_name == 'paddle':
-            to_load_state_dict = OrderedDict()
-            for i in range(4):
-                to_load_state_dict[f'conv.{i * 4}.weight'] = \
-                    torch.Tensor(_state_dict[f'loc_conv{i}_weights'])
-                to_load_state_dict[f'conv.{i * 4 + 1}.weight'] = \
-                    torch.Tensor(_state_dict[f'bn_loc_conv{i}_scale'])
-                to_load_state_dict[f'conv.{i * 4 + 1}.bias'] = \
-                    torch.Tensor(_state_dict[f'bn_loc_conv{i}_offset'])
-                to_load_state_dict[f'conv.{i * 4 + 1}.running_mean'] = \
-                    torch.Tensor(_state_dict[f'bn_loc_conv{i}_mean'])
-                to_load_state_dict[f'conv.{i * 4 + 1}.running_var'] = \
-                    torch.Tensor(_state_dict[f'bn_loc_conv{i}_variance'])
-            to_load_state_dict[f'localization_fc1.0.weight'] = \
-                torch.Tensor(_state_dict['loc_fc1_w'].T)
-            to_load_state_dict[f'localization_fc1.0.bias'] = \
-                torch.Tensor(_state_dict['loc_fc1.b_0'])
-            to_load_state_dict[f'localization_fc2.weight'] = \
-                torch.Tensor(_state_dict['loc_fc2_w'].T)
-            to_load_state_dict[f'localization_fc2.bias'] = \
-                torch.Tensor(_state_dict['loc_fc2_b'])
-            self.load_state_dict(to_load_state_dict)
-        else:
-            pass
 
     def forward(self, batch_I):
         """

@@ -8,6 +8,22 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 
+
+def weights_init(m):
+    import torch.nn.init as init
+    if isinstance(m, nn.Conv2d):
+        init.kaiming_normal_(m.weight.data)
+        if m.bias is not None:
+            init.normal_(m.bias.data)
+    elif isinstance(m, nn.ConvTranspose2d):
+        init.kaiming_normal_(m.weight.data)
+        if m.bias is not None:
+            init.normal_(m.bias.data)
+    elif isinstance(m, nn.BatchNorm2d):
+        init.normal_(m.weight.data, mean=1, std=0.02)
+        init.constant_(m.bias.data, 0)
+
+
 class DB_fpn(nn.Module):
     def __init__(self, in_channels, out_channels=256, **kwargs):
         """
@@ -27,6 +43,15 @@ class DB_fpn(nn.Module):
         self.p4_conv = nn.Conv2d(self.out_channels, self.out_channels // 4, kernel_size=3, padding=1, bias=False)
         self.p3_conv = nn.Conv2d(self.out_channels, self.out_channels // 4, kernel_size=3, padding=1, bias=False)
         self.p2_conv = nn.Conv2d(self.out_channels, self.out_channels // 4, kernel_size=3, padding=1, bias=False)
+
+        self.in2_conv.apply(weights_init)
+        self.in3_conv.apply(weights_init)
+        self.in4_conv.apply(weights_init)
+        self.in5_conv.apply(weights_init)
+        self.p5_conv.apply(weights_init)
+        self.p4_conv.apply(weights_init)
+        self.p3_conv.apply(weights_init)
+        self.p2_conv.apply(weights_init)
 
     def _upsample_add(self, x, y):
         return F.interpolate(x, scale_factor=2) + y
@@ -55,8 +80,3 @@ class DB_fpn(nn.Module):
 
         x = self._upsample_cat(p2, p3, p4, p5)
         return x
-
-
-
-
-

@@ -29,7 +29,7 @@ from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkp
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/rec_train_config.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/cfg_rec_crnn.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
@@ -331,6 +331,8 @@ def main():
     loss_func = build_loss(cfg['loss'])
     loss_func = loss_func.to(to_use_device)
 
+    # with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
+    #     cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
 
     # ===> data loader
     cfg.dataset.train.dataset.alphabet = cfg.dataset.alphabet

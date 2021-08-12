@@ -4,8 +4,9 @@
 
 import copy
 from .DBPostProcess import DBPostProcess
+# from .pse import pse_postprocess
 
-support_post_process = ['DBPostProcess', 'DetModel']
+support_post_process = ['DBPostProcess', 'DetModel','pse_postprocess']
 
 
 def build_post_process(config):
