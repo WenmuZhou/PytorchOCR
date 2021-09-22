@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/6/22 10:53
 # @Author  : zhoujun
-import copy
-
+import os
 import cv2
 import json
+import copy
 import numpy as np
-import os
+from tqdm import tqdm
 from torch.utils.data import Dataset
 from torchvision import transforms
-from tqdm import tqdm
+from torchocr.datasets.det_modules import *
 
 
 def load_json(file_path: str):
