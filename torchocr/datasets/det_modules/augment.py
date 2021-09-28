@@ -26,7 +26,7 @@ class RandomNoise:
         """
         if random.random() > self.random_rate:
             return data
-        data['img'] = (random_noise(data['img'], mode='gaussian', clip=True) * 255).astype(im.dtype)
+        data['img'] = (random_noise(data['img'], mode='gaussian', clip=True) * 255).astype(data['img'].dtype)
         return data
 
 
