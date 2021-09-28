@@ -210,6 +210,8 @@ def do_infer_test(test_engine, imgpath, batchsize=1):
         cv2.imwrite(img_filem, out_mask)
         cv2.imwrite(img_files, img)
 
+    del stream
+
 
 if __name__ == '__main__':
     model_path = './dbnet.onnx'
