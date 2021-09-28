@@ -1,0 +1,40 @@
+#if defined(DBATCH_SIZE)
+    #define BATCH_SIZE @BATCH_SIZE@
+#else
+    #define BATCH_SIZE 1
+#endif
+#if defined(DEXPANDRATIO)
+    #define EXPANDRATIO @EXPANDRATIO@
+#else
+    #define EXPANDRATIO 1.5
+#endif
+#if defined(DBOX_MINI_SIZE)
+    #define BOX_MINI_SIZE @BOX_MINI_SIZE@
+#else
+    #define BOX_MINI_SIZE 5
+#endif
+#if defined(DSCORE_THRESHOLD)
+    #define SCORE_THRESHOLD @SCORE_THRESHOLD@
+#else
+    #define SCORE_THRESHOLD 0.3
+#endif
+#if defined(DBOX_THRESHOLD)
+    #define BOX_THRESHOLD @BOX_THRESHOLD@
+#else
+    #define BOX_THRESHOLD 0.7
+#endif
+#if defined(DSHORT_INPUT)
+    #define SHORT_INPUT @SHORT_INPUT@
+#else
+    #define SHORT_INPUT 640
+#endif
+#if defined(DSCORE_THRESHOLD)
+    #define SCORE_THRESHOLD @SCORE_THRESHOLD@
+#else
+    #define SCORE_THRESHOLD 0.3
+#endif
+#if defined(DDEVICE)
+    #define DEVICE @DEVICE@
+#else
+    #define DEVICE 0
+#endif

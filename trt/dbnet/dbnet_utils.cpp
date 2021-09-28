@@ -33,6 +33,12 @@ void _normalize(cv::Mat& img){
 	}
 }
 
+void normalize(Pixel &pixel){
+    pixel.x = (pixel.x - mean1[0]) / std1[0];
+    pixel.y = (pixel.y - mean1[1]) / std1[1];
+    pixel.z = (pixel.z - mean1[2]) / std1[2];
+}
+
 void convertMat2pointer(cv::Mat& img, float* x){
 	for (int i = 0; i < img.rows; ++i) {
 

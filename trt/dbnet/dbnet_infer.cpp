@@ -6,59 +6,34 @@
 #include <NvOnnxParser.h>
 #include "cuda_utils.h"
 #include "logging.h"
+
+#define OPENCV_TRAITS_ENABLE_DEPRECATED
 #include "dbnet_utils.hpp"
 #include "utils.h"
 #include "calibrator.h"
 #include "clipper.hpp"
+#include "Config.h"
 
-#define USE_FP16  // set USE_INT8 or USE_FP16 or USE_FP32
-#define DEVICE 0  // GPU id
-#define BATCH_SIZE 1
-#define EXPANDRATIO 1.5
-#define BOX_MINI_SIZE 5
-#define SCORE_THRESHOLD 0.3
-#define BOX_THRESHOLD 0.7
 
-static int SHORT_INPUT = 640;
-static int INPUT_H = 640;
-static int INPUT_W = 640;
-static int OUTPUT_S = 409600;
+static int INPUT_H = SHORT_INPUT;
+static int INPUT_W = SHORT_INPUT;
+static int OUTPUT_S = INPUT_W * INPUT_H;
 const char* INPUT_BLOB_NAME = "input_1";
 const char* OUTPUT_BLOB_NAME = "output_1";
 static Logger gLogger;
 
 using namespace nvinfer1;
+using namespace ClipperLib;
 
-
-cv::RotatedRect expandBox(cv::Point2f temp[], float ratio)
+void get_coordinates_of_rotated_box(cv::RotatedRect _rotated_box, int _height, int _width, cv::Point2f (&order_rect)[4])
 {
-    ClipperLib::Path path = {
-        {ClipperLib::cInt(temp[0].x), ClipperLib::cInt(temp[0].y)},
-        {ClipperLib::cInt(temp[1].x), ClipperLib::cInt(temp[1].y)},
-        {ClipperLib::cInt(temp[2].x), ClipperLib::cInt(temp[2].y)},
-        {ClipperLib::cInt(temp[3].x), ClipperLib::cInt(temp[3].y)}};
-    double area = ClipperLib::Area(path);
-    double distance;
-    double length = 0.0;
-    for (int i = 0; i < 4; i++) {
-        length = length + sqrtf(powf((temp[i].x - temp[(i + 1) % 4].x), 2) +
-                                powf((temp[i].y - temp[(i + 1) % 4].y), 2));
-    }
+    float center_x = _rotated_box.center.x;
+    float center_y = _rotated_box.center.y;
 
-    distance = area * ratio / length;
-
-    ClipperLib::ClipperOffset offset;
-    offset.AddPath(path, ClipperLib::JoinType::jtRound,
-                   ClipperLib::EndType::etClosedPolygon);
-    ClipperLib::Paths paths;
-    offset.Execute(paths, distance);
-
-    std::vector<cv::Point> contour;
-    for (int i = 0; i < paths[0].size(); i++) {
-        contour.emplace_back(paths[0][i].X, paths[0][i].Y);
-    }
-    offset.Clear();
-    return cv::minAreaRect(contour);
+    cv::RotatedRect tmp_rect = RotatedRect(Point2f(center_x * _width,center_y * _height),
+    Size2f(_rotated_box.size.width * _width,_rotated_box.size.height * _height), _rotated_box.angle);
+    tmp_rect.points(order_rect);
+    return;
 }
 
 float paddimg(cv::Mat& In_Out_img, int shortsize = 960) {
@@ -88,52 +63,49 @@ float paddimg(cv::Mat& In_Out_img, int shortsize = 960) {
 }
 
 
-bool get_mini_boxes(cv::RotatedRect& rotated_rect, cv::Point2f rect[],
-                    int min_size)
+cv::RotatedRect get_min_area_bbox(cv::Mat _image, cv::Mat _contour, float _scale_ratio=1.0)
 {
+    int _image_W = _image.rows;
+    int _image_H = _image.cols;
+    cv::Mat scaled_contour;
+    if (abs(_scale_ratio -1) > 0.001)
+    {
+        cv::Mat reshaped_contour = _contour.reshape(-1, 2);
+        float _contour_area = contourArea(_contour, false);
+        float _contour_length = arcLength(_contour, true);
+        float distance = _contour_area * _scale_ratio / _contour_length;
+        ClipperOffset offset = ClipperOffset();
+        offset.AddPath(reshaped_contour, jtRound, etClosedPolygon);
 
-    cv::Point2f temp_rect[4];
-    rotated_rect.points(temp_rect);
-    for (int i = 0; i < 4; i++) {
-        for (int j = i + 1; j < 4; j++) {
-            if (temp_rect[i].x > temp_rect[j].x) {
-                cv::Point2f temp;
-                temp = temp_rect[i];
-                temp_rect[i] = temp_rect[j];
-                temp_rect[j] = temp;
-            }
-        }
+        Paths box;
+        offset.Execute(box, distance);
+        if (box.size() == 0 || box.size() > 1)
+            return cv::RotatedRect();
+        //scaled_contour = np.array(box).reshape(-1, 1, 2);
     }
-    int index0 = 0;
-    int index1 = 1;
-    int index2 = 2;
-    int index3 = 3;
-    if (temp_rect[1].y > temp_rect[0].y) {
-        index0 = 0;
-        index3 = 1;
-    } else {
-        index0 = 1;
-        index3 = 0;
+    else
+        scaled_contour = _contour;
+
+    cv::RotatedRect rotated_box = cv::minAreaRect(scaled_contour);
+
+    float to_rotate_degree = 0;
+    float bbox_height = 0, bbox_width = 0;
+    if (rotated_box.angle >=-90 && rotated_box.angle <= -45)
+    {
+        to_rotate_degree = rotated_box.angle + 90;
+        bbox_height  = rotated_box.size.width;
+        bbox_width = rotated_box.size.height;
     }
-    if (temp_rect[3].y > temp_rect[2].y) {
-        index1 = 2;
-        index2 = 3;
-    } else {
-        index1 = 3;
-        index2 = 2;
+    else
+    {
+        to_rotate_degree = rotated_box.angle;
+        bbox_width  = rotated_box.size.width;
+        bbox_height = rotated_box.size.height;
     }
 
-    rect[0] = temp_rect[index0];  // Left top coordinate
-    rect[1] = temp_rect[index1];  // Left bottom coordinate
-    rect[2] = temp_rect[index2];  // Right bottom coordinate
-    rect[3] = temp_rect[index3];  // Right top coordinate
-
-    if (rotated_rect.size.width < min_size ||
-        rotated_rect.size.height < min_size) {
-        return false;
-    } else {
-        return true;
-    }
+    cv::RotatedRect rotated_box_normal = cv::RotatedRect(Point2f(rotated_box.center.x / _image_W,rotated_box.center.y / _image_H),
+    Size2f(bbox_width / _image_W,bbox_height / _image_H), to_rotate_degree);
+    return rotated_box_normal;
 }
 
 float get_box_score(float* map, cv::Point2f rect[], int width, int height,
@@ -197,11 +169,17 @@ void APIToModel(unsigned int maxBatchSize, IHostMemory** modelStream, std::strin
         return;
     }
 
-    builder->setMaxBatchSize(maxBatchSize);
+    //builder->setMaxBatchSize(maxBatchSize);
     config->setMaxWorkspaceSize(16 * (1 << 20));
     config->setFlag(BuilderFlag::kFP16);
 
     //samplesCommon::enableDLA(builder.get(), config.get(), mParams.dlaCore);
+
+    IOptimizationProfile* profile = builder->createOptimizationProfile();
+    profile->setDimensions(INPUT_BLOB_NAME, OptProfileSelector::kMIN, Dims4(1,3,640,640));
+    profile->setDimensions(INPUT_BLOB_NAME, OptProfileSelector::kOPT, Dims4(1,3,1280,768));
+    profile->setDimensions(INPUT_BLOB_NAME, OptProfileSelector::kMAX, Dims4(4,3,1280,1280));
+    config->addOptimizationProfile(profile);
 
     // Create model to populate the network, then set the outputs and create an engine
     ICudaEngine *engine = nullptr;
@@ -268,6 +246,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+
     // deserialize the .engine and run inference
     std::ifstream file(engine_name, std::ios::binary);
     if (!file.good()) {
@@ -291,16 +270,21 @@ int main(int argc, char** argv) {
     }
 
     // prepare input data ---------------------------
-    float data[BATCH_SIZE * 3 * INPUT_H * INPUT_W];
+    float *data = new float[BATCH_SIZE * 3 * INPUT_H * INPUT_W];
     //for (int i = 0; i < 3 * INPUT_H * INPUT_W; i++)
     //    data[i] = 1.0;
-    float prob[BATCH_SIZE * OUTPUT_S];
+    float *prob = new float[BATCH_SIZE * OUTPUT_S];
+    
+
     IRuntime* runtime = createInferRuntime(gLogger);
     assert(runtime != nullptr);
     ICudaEngine* engine = runtime->deserializeCudaEngine(trtModelStream, size);
     assert(engine != nullptr);
     IExecutionContext* context = engine->createExecutionContext();
     assert(context != nullptr);
+
+    context->setBindingDimensions(0, Dims4(1,3,640,640));
+
     delete[] trtModelStream;
     assert(engine->getNbBindings() == 2);
     void* buffers[2];
@@ -324,17 +308,20 @@ int main(int argc, char** argv) {
 
         cv::Mat tmpimg = cv::imread(img_dir + "/" + file_names[f - fcount + 1]);
         if (tmpimg.empty()) continue;
-        //cv::cvtColor(tmpimg, tmpimg, cv::COLOR_BGR2RGB);
         resize(tmpimg,tmpimg,Size(INPUT_H, INPUT_W),0,0, INTER_LINEAR);
         cv::Mat src_img = tmpimg.clone();
+        cv::imshow("a", tmpimg);
         float scale = paddimg(tmpimg, SHORT_INPUT); // resize the image
         std::cout << "letterbox shape: " << tmpimg.cols << ", " << tmpimg.rows << std::endl;
-        //if (tmpimg.cols < MIN_INPUT_SIZE || tmpimg.rows < MIN_INPUT_SIZE) continue;
 
-        _normalize(tmpimg);
+        tmpimg.convertTo(tmpimg, CV_32F);
 
+         tmpimg.forEach<Pixel>([](Pixel &pixel, const int * position) -> void
+         {
+             normalize(pixel);
+         });
+//        _normalize(tmpimg);
         convertMat2pointer(tmpimg, data);
-
 
         // Run inference
         auto start = std::chrono::system_clock::now();
@@ -349,7 +336,8 @@ int main(int argc, char** argv) {
                 ptr[w] = (prob[h * tmpimg.cols + w] > 0.3) ? 255 : 0;
             }
         }
-
+        cv::imshow("mask", map);
+        cv::waitKey(0);
         // Extracting minimum circumscribed rectangle
         std::vector<std::vector<cv::Point>> contours;
         std::vector<cv::Vec4i> hierarcy;
@@ -357,40 +345,24 @@ int main(int argc, char** argv) {
 
         std::vector<cv::Rect> boundRect(contours.size());
         std::vector<cv::RotatedRect> box(contours.size());
-        cv::Point2f rect[4];
+
         cv::Point2f order_rect[4];
 
         for (int i = 0; i < contours.size(); i++) {
-            cv::RotatedRect rotated_rect = cv::minAreaRect(cv::Mat(contours[i]));
-            if (!get_mini_boxes(rotated_rect, rect, BOX_MINI_SIZE)) {
-                std::cout << "box too small" <<  std::endl;
+            if (contours[i].size() < 4 && cv::contourArea(contours[i]) < 16)
+            {
+                std::cout << "area too small" <<  std::endl;
                 continue;
             }
+            cv::RotatedRect rotated_rect = get_min_area_bbox(tmpimg, cv::Mat(contours[i]));
+            get_coordinates_of_rotated_box(rotated_rect, src_img.cols, src_img.rows, order_rect);
 
-            // drop low score boxes
-            float score = get_box_score(prob, rect, tmpimg.cols, tmpimg.rows,
-                                        SCORE_THRESHOLD);
-            if (score < BOX_THRESHOLD) {
-                std::cout << "score too low =  " << score << ", threshold = " << BOX_THRESHOLD <<  std::endl;
-                continue;
-            }
+//            float score = get_box_score(prob, rect, src_img.cols, src_img.rows,
+//                                        SCORE_THRESHOLD);
 
-            // Scaling the predict boxes depend on EXPANDRATIO
-            cv::RotatedRect expandbox = expandBox(rect, EXPANDRATIO);
-            expandbox.points(rect);
-            if (!get_mini_boxes(expandbox, rect, BOX_MINI_SIZE + 2)) {
-                continue;
-            }
-
-            // Restore the coordinates to the original image
-            for (int k = 0; k < 4; k++) {
-                order_rect[k] = rect[k];
-                order_rect[k].x = int(order_rect[k].x / tmpimg.cols * src_img.cols);
-                order_rect[k].y = int(order_rect[k].y / tmpimg.rows * src_img.rows);
-            }
-
+            for (int i = 0; i < 4; i++)
+                cv::line(src_img, cv::Point(order_rect[i].x,order_rect[i].y), cv::Point(order_rect[(i+1)%4].x,order_rect[(i+1)%4].y), cv::Scalar(0, 255, 255), 2, 8);
             cv::rectangle(src_img, cv::Point(order_rect[0].x,order_rect[0].y), cv::Point(order_rect[2].x,order_rect[2].y), cv::Scalar(0, 0, 255), 2, 8);
-            //std::cout << "After LT =  " << order_rect[0] << ", After RD = " << order_rect[2] <<  std::endl;
         }
 
         std::cout << "row : " << tmpimg.rows << " los : " << tmpimg.cols << std::endl;
