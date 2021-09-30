@@ -97,7 +97,10 @@ class JsonDataset(Dataset):
         data = copy.deepcopy(self.data_list[index])
         im = cv2.imread(data['img_path'], 1 if self.img_mode != 'GRAY' else 0)
         if self.img_mode == 'RGB':
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            try:
+                im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            except:
+                print(data['img_path'])
         data['img'] = im
         data['shape'] = [im.shape[0], im.shape[1]]
         data = self.apply_pre_processes(data)
@@ -123,23 +126,25 @@ class JsonDataset(Dataset):
 if __name__ == '__main__':
     import torch
     from torch.utils.data import DataLoader
-    from config.cfg_det_db import config
+    # from config.cfg_det_db import config
+    from local.cfg.cfg_det_db_all import config
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt
     dataset = JsonDataset(config.dataset.train.dataset)
     train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):
+        print(data['img_path'])
         img = data['img']
         shrink_label = data['shrink_map']
         threshold_label = data['threshold_map']
 
-        print(threshold_label.shape, threshold_label.shape, img.shape)
-        show_img(img[0].numpy().transpose(1, 2, 0), title='img')
-        show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
-        show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
-        img = draw_bbox(img[0].numpy().transpose(1, 2, 0), np.array(data['text_polys']))
-        show_img(img, title='draw_bbox')
-        plt.show()
+        # print(threshold_label.shape, threshold_label.shape, img.shape)
+        # show_img(img[0].numpy().transpose(1, 2, 0), title='img')
+        # show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
+        # show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
+        # img = draw_bbox(img[0].numpy().transpose(1, 2, 0), np.array(data['text_polys']))
+        # show_img(img, title='draw_bbox')
+        # plt.show()
 
         pass

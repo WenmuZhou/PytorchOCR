@@ -188,6 +188,15 @@ class ResNet(nn.Module):
                 self.load_state_dict(torch.load(ckpt_path))
             else:
                 logger.info(f'{ckpt_path} not exists')
+        if 1:
+            ckpt_path = f'./weights/res_supervised.pth'
+            logger = logging.getLogger('torchocr')
+            if os.path.exists(ckpt_path):
+                logger.info('load supervised weights')
+                self.load_state_dict(torch.load(ckpt_path))
+            else:
+                logger.info(f'{ckpt_path} not exists')
+
 
     def forward(self, x):
         x = self.conv1(x)

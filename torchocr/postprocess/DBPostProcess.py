@@ -23,6 +23,34 @@ def clockwise_sort_points(_point_coordinates):
         math.atan2(*tuple(map(operator.sub, coord, center_point))[::-1]))) % 360)
 
 
+class DistillationDBPostProcess(object):
+    def __init__(self, model_name=None,
+                 key=None,
+                 thresh=0.3,
+                 box_thresh=0.6,
+                 max_candidates=1000,
+                 unclip_ratio=1.5,
+                 use_dilation=False,
+                 score_mode="fast",
+                 **kwargs):
+        if model_name is None:
+            model_name = ["student"]
+        self.model_name = model_name
+        self.key = key
+        self.post_process = DBPostProcess(thresh=thresh,
+                                          box_thresh=box_thresh,
+                                          max_candidates=max_candidates,
+                                          unclip_ratio=unclip_ratio,
+                                          use_dilation=use_dilation,
+                                          score_mode=score_mode)
+
+    def __call__(self, predicts, shape_list):
+        results = {}
+        for k in self.model_name:
+            results[k] = self.post_process(predicts[k].detach().cpu().numpy(), shape_list=shape_list)
+        return results
+
+
 class DBPostProcess(object):
     """
     The post process for Differentiable Binarization (DB).
@@ -56,7 +84,7 @@ class DBPostProcess(object):
         structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
 
-        # cv2.imwrite('/mnt/zhouyufei/test/res/q.jpg', bitmap)
+        # cv2.imwrite('/mnt/resource/zhouyufei/test/res/q.jpg', bitmap)
 
         if cv2.__version__.startswith('3'):
             _, contours, _ = cv2.findContours(bitmap, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -139,7 +167,6 @@ class DBPostProcess(object):
             else:
                 mask = segmentation[batch_index]
             boxes, scores = self.boxes_from_bitmap(pred[batch_index], mask, src_w, src_h, )
-
             boxes_batch.append(boxes)
             scores_batch.append(scores)
         return boxes_batch, scores_batch

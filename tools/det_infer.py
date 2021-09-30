@@ -28,7 +28,8 @@ class DetInfer:
             state_dict[k.replace('module.', '')] = v
         self.model.load_state_dict(state_dict)
 
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cpu')
         self.model.to(self.device)
         self.model.eval()
         self.resize = ResizeFixedSize(736, False)
@@ -62,22 +63,31 @@ class DetInfer:
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
-    parser.add_argument('--model_path', required=True, type=str, help='rec model path')
-    parser.add_argument('--img_path', required=True, type=str, help='img path for predict')
+    parser.add_argument('--model_path',  type=str, help='rec model path',default='./output/DBNet_res18_dice_newall_fast/checkpoint/best.pth')
+    parser.add_argument('--img_path',type=str, help='img path for predict',default='/mnt/resource/zhouyufei/test/')
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
     import cv2
+    import time
     from matplotlib import pyplot as plt
     from torchocr.utils import draw_ocr_box_txt, draw_bbox
 
     args = init_args()
-    img = cv2.imread(args.img_path)
+
     model = DetInfer(args.model_path)
-    box_list, score_list = model.predict(img, is_output_polygon=False)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = draw_bbox(img, box_list)
-    plt.imshow(img)
-    plt.show()
+    names = next(os.walk(args.img_path))[2]
+    st = time.time()
+    for name in names:
+        print(name)
+        path = os.path.join(args.img_path, name)
+        # path = os.path.join(args.img_path, '150344531_1.jpg')
+        img = cv2.imread(path)
+
+        box_list, score_list = model.predict(img, is_output_polygon=False)
+        out_path = os.path.join(args.img_path, 'res', name)
+        img = draw_bbox(img, box_list)
+        cv2.imwrite(out_path[:-4] + '.out.jpg', img)
+    print((time.time() - st) / len(names))
