@@ -312,7 +312,7 @@ def main():
     # ===> get fine tune layers
     params_to_train = get_fine_tune_params(net, train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
-    optimizer = build_optimizer(net.parameters(), cfg['optimizer'])
+    optimizer = build_optimizer(params_to_train, cfg['optimizer'])
     scheduler = build_scheduler(optimizer, cfg['lr_scheduler'])
 
     # ===> whether to resume from checkpoint
