@@ -6,7 +6,7 @@ import os
 import sys
 import pathlib
 
-# 将 torchocr路径加到python陆经里
+# 将 torchocr路径加到python路径里
 __dir__ = pathlib.Path(os.path.abspath(__file__))
 sys.path.append(str(__dir__))
 sys.path.append(str(__dir__.parent.parent))
@@ -29,7 +29,7 @@ from torchocr.utils import get_logger, weight_init, load_checkpoint, save_checkp
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--config', type=str, default='config/cfg_rec_crnn.py', help='train config file path')
+    parser.add_argument('--config', type=str, default='config/rec_train_config.py', help='train config file path')
     args = parser.parse_args()
     # 解析.py文件
     config_path = os.path.abspath(os.path.expanduser(args.config))
@@ -312,7 +312,7 @@ def main():
     # ===> get fine tune layers
     params_to_train = get_fine_tune_params(net, train_options['fine_tune_stage'])
     # ===> solver and lr scheduler
-    optimizer = build_optimizer(net.parameters(), cfg['optimizer'])
+    optimizer = build_optimizer(params_to_train, cfg['optimizer'])
     scheduler = build_scheduler(optimizer, cfg['lr_scheduler'])
 
     # ===> whether to resume from checkpoint
@@ -331,8 +331,6 @@ def main():
     loss_func = build_loss(cfg['loss'])
     loss_func = loss_func.to(to_use_device)
 
-    # with open(cfg.dataset.alphabet, 'r', encoding='utf-8') as file:
-    #     cfg.dataset.alphabet = ''.join([s.strip('\n') for s in file.readlines()])
 
     # ===> data loader
     cfg.dataset.train.dataset.alphabet = cfg.dataset.alphabet

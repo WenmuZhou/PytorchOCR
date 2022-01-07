@@ -11,11 +11,7 @@ import numpy as np
 from skimage.util import random_noise
 
 __all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip',
-           'VerticallFlip', 'ResizeFixedSize','ResizeLongSize']
-
-
-
-
+           'VerticallFlip', 'ResizeFixedSize', 'ResizeLongSize']
 
 
 class RandomNoise:
