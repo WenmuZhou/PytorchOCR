@@ -63,28 +63,39 @@ class JsonDataset(Dataset):
         data_list = []
         content = load_json(path)
         for gt in tqdm(content['data_list'], desc='read file {}'.format(path)):
-            img_path = os.path.join(content['data_root'], gt['img_name'])
-            polygons = []
-            texts = []
-            illegibility_list = []
-            language_list = []
-            for annotation in gt['annotations']:
-                if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
-                    continue
-                polygons.append(annotation['polygon'])
-                texts.append(annotation['text'])
-                illegibility_list.append(annotation['illegibility'])
-                language_list.append(annotation['language'])
-                if self.load_char_annotation:
-                    for char_annotation in annotation['chars']:
-                        if len(char_annotation['polygon']) == 0 or len(char_annotation['char']) == 0:
-                            continue
-                        polygons.append(char_annotation['polygon'])
-                        texts.append(char_annotation['char'])
-                        illegibility_list.append(char_annotation['illegibility'])
-                        language_list.append(char_annotation['language'])
-            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
-                              'texts': texts, 'ignore_tags': illegibility_list})
+            try:
+                img_path = os.path.join(content['data_root'], gt['img_name'])
+                polygons = []
+                texts = []
+                illegibility_list = []
+                language_list = []
+                for annotation in gt['annotations']:
+                    if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
+                        continue
+                    if len(annotation['polygon']) != 4:
+                        a = np.array(annotation['polygon'], dtype=np.int32)
+                        x, y, w, h = cv2.boundingRect(a)
+                        polygons.append([[x, y], [x + w, y], [x + w, y + h], [x, y + h]])
+                        texts.append('ignore')
+                        illegibility_list.append(True)
+                        language_list.append(annotation['language'])
+                    else:
+                        polygons.append(annotation['polygon'])
+                        texts.append(annotation['text'])
+                        illegibility_list.append(annotation['illegibility'])
+                        language_list.append(annotation['language'])
+                    if self.load_char_annotation:
+                        for char_annotation in annotation['chars']:
+                            if len(char_annotation['polygon']) == 0 or len(char_annotation['char']) == 0:
+                                continue
+                            polygons.append(char_annotation['polygon'])
+                            texts.append(char_annotation['char'])
+                            illegibility_list.append(char_annotation['illegibility'])
+                            language_list.append(char_annotation['language'])
+                data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
+                                  'texts': texts, 'ignore_tags': illegibility_list})
+            except:
+                print(f'error gt:{img_path}')
         return data_list
 
     def apply_pre_processes(self, data):

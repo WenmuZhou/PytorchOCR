@@ -81,10 +81,10 @@ class DBPostProcess(object):
         height, width = bitmap.shape
 
         bitmap = (bitmap > 0).astype(np.uint8) * 255
-        structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
+        # structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        # bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
 
-        # cv2.imwrite('/mnt/resource/zhouyufei/test/res/q.jpg', bitmap)
+        # cv2.imwrite('/path/to/your/workspace/test/db/res/q.jpg', bitmap)
 
         if cv2.__version__.startswith('3'):
             _, contours, _ = cv2.findContours(bitmap, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)

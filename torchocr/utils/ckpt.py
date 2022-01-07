@@ -21,8 +21,8 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
     global_state = {}
     if not third_name:
         state = torch.load(resume_from, map_location=to_use_device)
-        # _model.load_state_dict({'module.'+k: v for k, v in state['state_dict'].items()})
-        _model.load_state_dict(state['state_dict'])
+        _model.load_state_dict({'module.'+k: v for k, v in state['state_dict'].items()},strict=False)
+        # _model.load_state_dict(state['state_dict'])
         if 'optimizer' in state and _optimizers is not None:
             _optimizers.load_state_dict(state['optimizer'])
         if 'global_state' in state:
@@ -32,7 +32,11 @@ def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_
 
 
 def save_checkpoint(checkpoint_path, model, _optimizers, logger, cfg, **kwargs):
-    state = {'state_dict': model.state_dict(),
+    # if isinstance(model, torch.nn.DataParallel()):
+    #     mode_state_dict = model.module.state_dict()
+    # else:
+    mode_state_dict = model.module.state_dict()
+    state = {'state_dict': mode_state_dict,
              'optimizer': _optimizers.state_dict(),
              'cfg': cfg}
     state.update(kwargs)

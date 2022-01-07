@@ -64,7 +64,7 @@ def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='PytorchOCR infer')
     parser.add_argument('--model_path',  type=str, help='rec model path',default='./output/DBNet_res18_dice_newall_fast/checkpoint/best.pth')
-    parser.add_argument('--img_path',type=str, help='img path for predict',default='/mnt/resource/zhouyufei/test/')
+    parser.add_argument('--img_path',type=str, help='img path for predict',default='/path/to/your/workspace/test/')
     args = parser.parse_args()
     return args
 

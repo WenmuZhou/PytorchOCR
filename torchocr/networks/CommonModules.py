@@ -70,26 +70,42 @@ class SEBlock(nn.Module):
         return x * attn
 
 
+def global_avg_pool(x: torch.Tensor) -> torch.Tensor:
+    N, C, H, W = x.shape
+    y = x.view([N, C, H * W]).contiguous()
+    y = y.sum(2)
+    y = torch.unsqueeze(y, 2)
+    y = torch.unsqueeze(y, 3)
+    y = y / (H * W)
+    return y
+
+
+def global_max_pool(x: torch.Tensor) -> torch.Tensor:
+    N, C, H, W = x.shape
+    y = x.view([N, C, H * W]).contiguous()
+    y = torch.max(y, 2).values
+    y = torch.unsqueeze(y, 2)
+    y = torch.unsqueeze(y, 3)
+    return y
+
+
 class ChannelAttention(nn.Module):
-    def __init__(self, in_channels, out_channels, ratio=4):
+    def __init__(self, channels, ratio=16):
         super(ChannelAttention, self).__init__()
-        self.__avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.__max_pool = nn.AdaptiveMaxPool2d((1, 1))
-        self.__fc = nn.Sequential(nn.Conv2d(in_channels, in_channels // ratio, 1, bias=False),
-                                  nn.ReLU(True),
-                                  nn.Conv2d(in_channels // ratio, out_channels, 1, bias=False), )
-        self.__sigmoid = nn.Sigmoid()
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.max_pool = nn.AdaptiveMaxPool2d((1, 1))
+        self.fc = nn.Sequential(nn.Conv2d(channels, channels // ratio, 1, bias=False),
+                                nn.ReLU(),
+                                nn.Conv2d(channels // ratio, channels, 1, bias=False), )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # avg_out = torch.mean(x, dim=1, keepdim=True)
-        # max_out, _ = torch.max(x, dim=1, keepdim=True)
-        # x = torch.cat([avg_out, max_out], dim=1)
-        y1 = self.__avg_pool(x)
-        y1 = self.__fc(y1)
-        y2 = self.__max_pool(x)
-        y2 = self.__fc(y2)
-        y = self.__sigmoid(y1 + y2)
-        return x * y
+        y1 = self.avg_pool(x)
+        y1 = self.fc(y1)
+        y2 = self.max_pool(x)
+        y2 = self.fc(y2)
+        y = self.sigmoid(y1 + y2)
+        return y
 
 
 class SpatialAttention(nn.Module):
@@ -111,12 +127,32 @@ class SpatialAttention(nn.Module):
 
 
 class CBAM(nn.Module):
-    def __init__(self, in_channels, out_channels, ratio=4):
+    def __init__(self, in_channels, ratio=16):
         super(CBAM, self).__init__()
-        self.cam = ChannelAttention(in_channels, out_channels, ratio)
+        self.cam = ChannelAttention(in_channels, ratio)
         self.sam = SpatialAttention()
 
     def forward(self, x):
-        x = self.cam(x)
-        x = x*self.sam(x)
+        x = x * self.cam(x)
+        x = x * self.sam(x)
         return x
+
+
+class eca_layer(nn.Module):
+    def __init__(self, channel, k_size=3):
+        super(eca_layer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # feature descriptor on the global spatial information
+        y = self.avg_pool(x)
+
+        # Two different branches of ECA module
+        y = self.conv(y.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+
+        # Multi-scale information fusion
+        y = self.sigmoid(y)
+
+        return x * y.expand_as(x)

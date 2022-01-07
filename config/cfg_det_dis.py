@@ -34,7 +34,7 @@ config.model = {
             'neck': {"type": 'DB_fpn', 'out_channels': 256},
             'head': {"type": "DBHead"},
             'in_channels': 3,
-            'pretrained': '/mnt/resource/zhouyufei/work/PytorchOCR/models/dismodels/DBNet_icdar_res18_fast_pre.pth'
+            'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/DBNet_icdar_res18_fast_pre.pth'
         },
         'Student': {
             'type': "DetModel",
@@ -43,7 +43,7 @@ config.model = {
             'neck': {"type": 'DB_fpn', 'out_channels': 96},
             'head': {"type": "DBHead"},
             'in_channels': 3,
-            'pretrained': '/mnt/resource/zhouyufei/work/PytorchOCR/models/dismodels/mbv3.pth'
+            'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/mbv3.pth'
         },
         # 'Student2': {
         #     'type': "DetModel",
@@ -52,7 +52,7 @@ config.model = {
         #     'neck': {"type": 'DB_fpn', 'out_channels': 96},
         #     'head': {"type": "DBHead"},
         #     'in_channels': 3,
-        #     'pretrained': '/mnt/resource/zhouyufei/work/PytorchOCR/models/dismodels/mbv3.pth'
+        #     'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/mbv3.pth'
         # }
 
     }
@@ -120,7 +120,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'/mnt/resource/zhouyufei/dataset/icdar15-detection/train.json',
+            'file': r'/path/to/your/workspace/dataset/icdar15-detection/train.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             # db 预处理，不需要修改
@@ -149,7 +149,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'JsonDataset',
-            'file': r'/mnt/resource/zhouyufei/dataset/icdar15-detection/test.json',
+            'file': r'/path/to/your/workspace/dataset/icdar15-detection/test.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             'pre_processes': [{'type': 'ResizeShortSize', 'args': {'short_size': 736, 'resize_text_polys': False}}],

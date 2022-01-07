@@ -44,7 +44,7 @@ def build_loader(dataset, config):
         collate_fn = build_collate_fn(config.pop('collate_fn'))
     else:
         collate_fn = None
-    dataloader_class = eval(dataloader_type)(dataset=dataset, collate_fn=collate_fn, **config)
+    dataloader_class = eval(dataloader_type)(dataset=dataset, collate_fn=collate_fn, **config ,pin_memory=True)
     return dataloader_class
 
 
