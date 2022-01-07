@@ -57,10 +57,10 @@ class DBPostProcess(object):
     """
 
     def __init__(self,
-                 thresh=0.3,
-                 box_thresh=0.3,
+                 thresh=0.6,
+                 box_thresh=0.6,
                  max_candidates=1000,
-                 unclip_ratio=2.5,
+                 unclip_ratio=1.5,
                  use_dilation=False,
                  **kwargs):
         self.thresh = thresh
@@ -83,8 +83,6 @@ class DBPostProcess(object):
         bitmap = (bitmap > 0).astype(np.uint8) * 255
         # structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         # bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
-
-        # cv2.imwrite('/path/to/your/workspace/test/db/res/q.jpg', bitmap)
 
         if cv2.__version__.startswith('3'):
             _, contours, _ = cv2.findContours(bitmap, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -205,7 +203,6 @@ class DBPostProcess(object):
 #         structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 #         bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
 #
-#         # cv2.imwrite('/home/works/zhouyufei/test/res/q.jpg', bitmap)
 #
 #         if cv2.__version__.startswith('3'):
 #             _, contours, _ = cv2.findContours(bitmap, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)

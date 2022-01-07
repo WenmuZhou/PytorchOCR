@@ -1,7 +1,7 @@
 from addict import Dict
 
 config = Dict()
-config.exp_name = 'DBNet_icdar_distill_fast_only_teacher_two_loss'
+config.exp_name = 'DBNet_icdar_distill'
 config.train_options = {
     # for train
     'resume_from': '',  # 继续训练地址
@@ -45,28 +45,27 @@ config.model = {
             'in_channels': 3,
             'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/mbv3.pth'
         },
-        # 'Student2': {
-        #     'type': "DetModel",
-        #     'freeze_params': False,
-        #     'backbone': {"type": "MobileNetV3", 'pretrained': False, 'disable_se': False},
-        #     'neck': {"type": 'DB_fpn', 'out_channels': 96},
-        #     'head': {"type": "DBHead"},
-        #     'in_channels': 3,
-        #     'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/mbv3.pth'
-        # }
+        'Student2': {
+            'type': "DetModel",
+            'freeze_params': False,
+            'backbone': {"type": "MobileNetV3", 'pretrained': False, 'disable_se': False},
+            'neck': {"type": 'DB_fpn', 'out_channels': 96},
+            'head': {"type": "DBHead"},
+            'in_channels': 3,
+            'pretrained': '/path/to/your/workspace/work/PytorchOCR/models/dismodels/mbv3.pth'
+        }
 
     }
 
 }
-
 
 config.loss = {
     'type': 'CombinedLoss',
     'combine_list': {
         'DistillationDilaDBLoss': {
             'weight': 2.0,
-            # 'model_name_pairs': [("Student", "Teacher"), ("Student2", "Teacher")],
-            'model_name_pairs': [("Student", "Teacher")],
+            'model_name_pairs': [("Student", "Teacher"), ("Student2", "Teacher")],
+            # 'model_name_pairs': [("Student", "Teacher")],
             'key': 'maps',
             'balance_loss': True,
             'main_loss_type': 'DiceLoss',
@@ -75,13 +74,13 @@ config.loss = {
             'ohem_ratio': 3,
         },
 
-    #     'DistillationDMLLoss': {
-    #         'maps_name': "thrink_maps",
-    #         'weight': 1.0,
-    #         'model_name_pairs': ["Student", "Student2"],
-    #         'key': 'maps'
-    #     },
-    #
+        'DistillationDMLLoss': {
+            'maps_name': "thrink_maps",
+            'weight': 1.0,
+            'model_name_pairs': ["Student", "Student2"],
+            'key': 'maps'
+        },
+
         'DistillationDBLoss': {
             'weight': 1.0,
             'model_name_list': ["Student"],
@@ -97,14 +96,13 @@ config.loss = {
 
 config.post_process = {
     'type': 'DistillationDBPostProcess',
-    # 'model_name': ["Student", "Student2", "Teacher"],
-    'model_name': ["Student",  "Teacher"],
+    'model_name': ["Student", "Student2", "Teacher"],
+    # 'model_name': ["Student", "Teacher"],
     'thresh': 0.3,  # 二值化输出map的阈值
     'box_thresh': 0.5,  # 低于此阈值的box丢弃
     'unclip_ratio': 1.5  # 扩大框的比例
 
 }
-
 
 config.metric = {
     'name': 'DistillationMetric',
@@ -130,7 +128,6 @@ config.dataset = {
                               {'type': 'EastRandomCropData', 'args': {'size': [640, 640], 'max_tries': 50, 'keep_ratio': True}},
                               {'type': 'MakeBorderMap', 'args': {'shrink_ratio': 0.4, 'thresh_min': 0.3, 'thresh_max': 0.7}},
                               {'type': 'MakeShrinkMap', 'args': {'shrink_ratio': 0.4, 'min_text_size': 8}}],
-            # 'filter_keys': ['img_path', 'img_name', 'text_polys', 'texts', 'ignore_tags', 'shape'],
             'filter_keys': ['img_name', 'text_polys', 'texts', 'ignore_tags', 'shape'],
             # 需要从data_dict里过滤掉的key
             'ignore_tags': ['*', '###', ' '],
