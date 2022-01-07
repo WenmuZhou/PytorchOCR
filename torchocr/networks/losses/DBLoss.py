@@ -3,11 +3,11 @@
 # @Author  : zhoujun
 from torch import nn
 
-from torchocr.networks.losses.DetBasicLoss import BalanceCrossEntropyLoss, MaskL1Loss, DiceLoss
+from torchocr.networks.losses.DetBasicLoss import BalanceCrossEntropyLoss, MaskL1Loss, DiceLoss,BalanceLoss
 
 
 class DBLoss(nn.Module):
-    def __init__(self, alpha=1.0, beta=10, ohem_ratio=3, reduction='mean', eps=1e-6):
+    def __init__(self, balance_loss=True,main_loss_type='DiceLoss',alpha=1.0, beta=10, ohem_ratio=3, reduction='mean', eps=1e-6):
         """
         Implement PSE Loss.
         :param alpha: binary_map loss 前面的系数
@@ -19,10 +19,13 @@ class DBLoss(nn.Module):
         assert reduction in ['mean', 'sum'], " reduction must in ['mean','sum']"
         self.alpha = alpha
         self.beta = beta
-        self.bce_loss = BalanceCrossEntropyLoss(negative_ratio=ohem_ratio)
+        # self.bce_loss = BalanceCrossEntropyLoss(negative_ratio=ohem_ratio)
+        self.bce_loss = BalanceLoss(
+            balance_loss=balance_loss,
+            main_loss_type=main_loss_type,
+            negative_ratio=ohem_ratio)
         self.dice_loss = DiceLoss(eps=eps)
         self.l1_loss = MaskL1Loss(eps=eps)
-        self.ohem_ratio = ohem_ratio
         self.reduction = reduction
 
     def forward(self, pred, batch):

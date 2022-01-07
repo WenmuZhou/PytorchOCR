@@ -25,17 +25,6 @@ class ResidualUnit(nn.Module):
                                padding=0)
         self.not_add = num_in_filter != num_out_filter or stride != 1
 
-    def load_3rd_state_dict(self, _3rd_name, _state, _convolution_index):
-        if _3rd_name == 'paddle':
-            self.expand_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_expand')
-            self.bottleneck_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_depthwise')
-            if self.se is not None:
-                self.se.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_se')
-            self.linear_conv.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_linear')
-        else:
-            pass
-        pass
-
     def forward(self, x):
         y = self.expand_conv(x)
         y = self.bottleneck_conv(y)
@@ -142,15 +131,6 @@ class MobileNetV3(nn.Module):
         if new_v < 0.9 * v:
             new_v += divisor
         return new_v
-
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        if _3rd_name == 'paddle':
-            self.conv1.load_3rd_state_dict(_3rd_name, _state, 'conv1')
-            for m_block_index, m_block in enumerate(self.blocks, 2):
-                m_block.load_3rd_state_dict(_3rd_name, _state, m_block_index)
-            self.conv2.load_3rd_state_dict(_3rd_name, _state, 'conv_last')
-        else:
-            pass
 
     def forward(self, x):
         x = self.conv1(x)

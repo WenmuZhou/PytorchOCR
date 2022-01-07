@@ -6,10 +6,11 @@ from .RecDataSet import RecDataLoader, RecTextLineDataset, RecLmdbDataset
 from .DetDataSet import JsonDataset
 from .RecCollateFn import RecCollateFn
 from .DetCollateFN import DetCollectFN
+from .DetDateSetPse import MyDataset
 
 __all__ = ['build_dataloader']
 
-support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset','JsonDataset']
+support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset','JsonDataset','MyDataset']
 support_loader = ['RecDataLoader', 'DataLoader']
 
 
@@ -43,7 +44,7 @@ def build_loader(dataset, config):
         collate_fn = build_collate_fn(config.pop('collate_fn'))
     else:
         collate_fn = None
-    dataloader_class = eval(dataloader_type)(dataset=dataset, collate_fn=collate_fn, **config)
+    dataloader_class = eval(dataloader_type)(dataset=dataset, collate_fn=collate_fn, **config ,pin_memory=True)
     return dataloader_class
 
 

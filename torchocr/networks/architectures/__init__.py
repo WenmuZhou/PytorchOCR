@@ -5,8 +5,9 @@ from addict import Dict
 import copy
 from .RecModel import RecModel
 from .DetModel import DetModel
+from .DistillationDetModel import DistillationModel
 
-support_model = ['RecModel', 'DetModel']
+support_model = ['RecModel', 'DetModel','DistillationModel']
 
 
 def build_model(config):

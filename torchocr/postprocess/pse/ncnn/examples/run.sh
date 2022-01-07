@@ -1,0 +1,1 @@
+/home/zj/project/ncnn/build/examples/psenet /home/zj/project/ncnn/examples/psenet.bin /home/zj/project/ncnn/examples/psenet.param /home/zj/card/8_6217921001182693.jpg 600

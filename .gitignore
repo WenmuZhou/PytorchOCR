@@ -10,3 +10,5 @@ __pycache__/
 .idea/
 output/
 test/*.jpg
+local/
+.DS_Store/

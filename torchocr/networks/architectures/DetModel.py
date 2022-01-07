@@ -8,11 +8,14 @@ from torchocr.networks.backbones.DetMobilenetV3 import MobileNetV3
 from torchocr.networks.backbones.DetResNetvd import ResNet
 from torchocr.networks.necks.FPN import FPN
 from torchocr.networks.necks.DB_fpn import DB_fpn
+from torchocr.networks.necks.pse_fpn import PSEFpn
 from torchocr.networks.heads.DetDbHead import DBHead
+from torchocr.networks.heads.DetPseHead import PseHead
+from torchocr.networks.backbones.DetGhostNet import GhostNet
 
-backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet}
-neck_dict = {'DB_fpn': DB_fpn}
-head_dict = {'DBHead': DBHead}
+backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet,'GhostNet':GhostNet}
+neck_dict = {'DB_fpn': DB_fpn, 'pse_fpn': PSEFpn}
+head_dict = {'DBHead': DBHead, 'PseHead': PseHead}
 
 
 class DetModel(nn.Module):
@@ -33,11 +36,6 @@ class DetModel(nn.Module):
 
         self.name = f'DetModel_{backbone_type}_{neck_type}_{head_type}'
 
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        self.backbone.load_3rd_state_dict(_3rd_name, _state)
-        self.neck.load_3rd_state_dict(_3rd_name, _state)
-        self.head.load_3rd_state_dict(_3rd_name, _state)
-
     def forward(self, x):
         x = self.backbone(x)
         x = self.neck(x)
@@ -48,11 +46,20 @@ class DetModel(nn.Module):
 if __name__ == '__main__':
     import torch
 
+    # db_config = AttrDict(
+    #     in_channels=3,
+    #     backbone=AttrDict(type='MobileNetV3', layers=50, model_name='large',pretrained=True),
+    #     neck=AttrDict(type='FPN', out_channels=256),
+    #     head=AttrDict(type='DBHead')
+    # )
+    # x = torch.zeros(1, 3, 640, 640)
+    # model = DetModel(db_config)
+
     db_config = AttrDict(
         in_channels=3,
-        backbone=AttrDict(type='MobileNetV3', layers=50, model_name='large',pretrained=True),
-        neck=AttrDict(type='FPN', out_channels=256),
-        head=AttrDict(type='DBHead')
+        backbone=AttrDict(type='ResNet', layers=50, pretrained=True),
+        neck=AttrDict(type='pse_fpn', out_channels=256),
+        head=AttrDict(type='PseHead', H=640, W=640, scale=1)
     )
     x = torch.zeros(1, 3, 640, 640)
     model = DetModel(db_config)

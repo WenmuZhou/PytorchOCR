@@ -31,6 +31,7 @@ class EncoderWithRNN(nn.Module):
         self.lstm = nn.LSTM(in_channels, hidden_size, bidirectional=True, num_layers=2,batch_first=True)
 
     def forward(self, x):
+        self.lstm.flatten_parameters()
         x, _ = self.lstm(x)
         return x
 

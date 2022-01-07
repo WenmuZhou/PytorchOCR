@@ -20,23 +20,6 @@ class DecoderWithRNN(nn.Module):
         self.layers = 2
         self.lstm = nn.LSTM(in_channels, rnn_hidden_size, bidirectional=True, batch_first=True, num_layers=self.layers)
 
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        to_load_state_dict = OrderedDict()
-        if _3rd_name == 'paddle':
-            for i in range(self.layers):
-                # fc与ih对应
-                to_load_state_dict[f'lstm.weight_ih_l{i}'] = torch.Tensor(_state[f'lstm_st{i + 1}_fc1_w'])
-                to_load_state_dict[f'lstm.weight_ih_l{i}_reverse'] = torch.Tensor(_state[f'lstm_st{i + 1}_fc2_w'])
-                to_load_state_dict[f'lstm.bias_ih_l{i}'] = torch.Tensor(_state[f'lstm_st{i + 1}_fc1_b'])
-                to_load_state_dict[f'lstm.bias_ih_l{i}_reverse'] = torch.Tensor(_state[f'lstm_st{i + 1}_fc2_b'])
-                # out与hh对应
-                to_load_state_dict[f'lstm.weight_hh_l{i}'] = torch.Tensor(_state[f'lstm_st{i + 1}_out1_w'])
-                to_load_state_dict[f'lstm.weight_hh_l{i}_reverse'] = torch.Tensor(_state[f'lstm_st{i + 1}_out2_w'])
-                to_load_state_dict[f'lstm.bias_hh_l{i}'] = torch.Tensor(_state[f'lstm_st{i + 1}_out1_b'])
-                to_load_state_dict[f'lstm.bias_hh_l{i}_reverse'] = torch.Tensor(_state[f'lstm_st{i + 1}_out2_b'])
-        else:
-            pass
-
     def forward(self, x):
         x = self.lstm(x)[0]
         return x
@@ -60,10 +43,6 @@ class SequenceDecoder(nn.Module):
         self.reshape = Reshape(in_channels)
         self.decoder = DecoderWithRNN(in_channels, **kwargs)
         self.out_channels = self.decoder.out_channels
-
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        if self.decoder:
-            self.decoder.load_3rd_state_dict(_3rd_name, _state)
 
     def forward(self, x):
         x = self.reshape(x)

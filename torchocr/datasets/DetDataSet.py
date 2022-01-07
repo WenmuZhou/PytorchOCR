@@ -63,28 +63,39 @@ class JsonDataset(Dataset):
         data_list = []
         content = load_json(path)
         for gt in tqdm(content['data_list'], desc='read file {}'.format(path)):
-            img_path = os.path.join(content['data_root'], gt['img_name'])
-            polygons = []
-            texts = []
-            illegibility_list = []
-            language_list = []
-            for annotation in gt['annotations']:
-                if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
-                    continue
-                polygons.append(annotation['polygon'])
-                texts.append(annotation['text'])
-                illegibility_list.append(annotation['illegibility'])
-                language_list.append(annotation['language'])
-                if self.load_char_annotation:
-                    for char_annotation in annotation['chars']:
-                        if len(char_annotation['polygon']) == 0 or len(char_annotation['char']) == 0:
-                            continue
-                        polygons.append(char_annotation['polygon'])
-                        texts.append(char_annotation['char'])
-                        illegibility_list.append(char_annotation['illegibility'])
-                        language_list.append(char_annotation['language'])
-            data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
-                              'texts': texts, 'ignore_tags': illegibility_list})
+            try:
+                img_path = os.path.join(content['data_root'], gt['img_name'])
+                polygons = []
+                texts = []
+                illegibility_list = []
+                language_list = []
+                for annotation in gt['annotations']:
+                    if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
+                        continue
+                    if len(annotation['polygon']) != 4:
+                        a = np.array(annotation['polygon'], dtype=np.int32)
+                        x, y, w, h = cv2.boundingRect(a)
+                        polygons.append([[x, y], [x + w, y], [x + w, y + h], [x, y + h]])
+                        texts.append('ignore')
+                        illegibility_list.append(True)
+                        language_list.append(annotation['language'])
+                    else:
+                        polygons.append(annotation['polygon'])
+                        texts.append(annotation['text'])
+                        illegibility_list.append(annotation['illegibility'])
+                        language_list.append(annotation['language'])
+                    if self.load_char_annotation:
+                        for char_annotation in annotation['chars']:
+                            if len(char_annotation['polygon']) == 0 or len(char_annotation['char']) == 0:
+                                continue
+                            polygons.append(char_annotation['polygon'])
+                            texts.append(char_annotation['char'])
+                            illegibility_list.append(char_annotation['illegibility'])
+                            language_list.append(char_annotation['language'])
+                data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
+                                  'texts': texts, 'ignore_tags': illegibility_list})
+            except:
+                print(f'error gt:{img_path}')
         return data_list
 
     def apply_pre_processes(self, data):
@@ -97,7 +108,10 @@ class JsonDataset(Dataset):
         data = copy.deepcopy(self.data_list[index])
         im = cv2.imread(data['img_path'], 1 if self.img_mode != 'GRAY' else 0)
         if self.img_mode == 'RGB':
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            try:
+                im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            except:
+                print(data['img_path'])
         data['img'] = im
         data['shape'] = [im.shape[0], im.shape[1]]
         data = self.apply_pre_processes(data)
@@ -123,23 +137,25 @@ class JsonDataset(Dataset):
 if __name__ == '__main__':
     import torch
     from torch.utils.data import DataLoader
-    from config.det_train_db_config import config
+    # from config.cfg_det_db import config
+    from local.cfg.cfg_det_db_all import config
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt
     dataset = JsonDataset(config.dataset.train.dataset)
     train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):
+        print(data['img_path'])
         img = data['img']
         shrink_label = data['shrink_map']
         threshold_label = data['threshold_map']
 
-        print(threshold_label.shape, threshold_label.shape, img.shape)
-        show_img(img[0].numpy().transpose(1, 2, 0), title='img')
-        show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
-        show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
-        img = draw_bbox(img[0].numpy().transpose(1, 2, 0), np.array(data['text_polys']))
-        show_img(img, title='draw_bbox')
-        plt.show()
+        # print(threshold_label.shape, threshold_label.shape, img.shape)
+        # show_img(img[0].numpy().transpose(1, 2, 0), title='img')
+        # show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
+        # show_img((threshold_label[0].to(torch.float)).numpy(), title='threshold_label')
+        # img = draw_bbox(img[0].numpy().transpose(1, 2, 0), np.array(data['text_polys']))
+        # show_img(img, title='draw_bbox')
+        # plt.show()
 
         pass

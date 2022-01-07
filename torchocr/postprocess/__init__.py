@@ -3,9 +3,10 @@
 # @Author  : zhoujun
 
 import copy
-from .DBPostProcess import DBPostProcess
+from .DBPostProcess import DBPostProcess,DistillationDBPostProcess
+# from .pse import pse_postprocess
 
-support_post_process = ['DBPostProcess', 'DetModel']
+support_post_process = ['DBPostProcess', 'DetModel','pse_postprocess','DistillationDBPostProcess']
 
 
 def build_post_process(config):

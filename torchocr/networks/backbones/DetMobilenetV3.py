@@ -5,7 +5,8 @@ import logging
 import os
 import torch
 from torch import nn
-from torchocr.networks.CommonModules import ConvBNACT, SEBlock
+from torchocr.networks.CommonModules import ConvBNACT, SEBlock,CBAM
+from collections import OrderedDict
 
 
 class ResidualUnit(nn.Module):
@@ -19,23 +20,13 @@ class ResidualUnit(nn.Module):
                                padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
             self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
+            # self.se = CBAM(in_channels=num_mid_filter, out_channels=num_mid_filter)
         else:
             self.se = None
 
         self.conv2 = ConvBNACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1,
                                padding=0)
         self.not_add = num_in_filter != num_out_filter or stride != 1
-
-    def load_3rd_state_dict(self, _3rd_name, _state, _convolution_index):
-        if _3rd_name == 'paddle':
-            self.conv0.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_expand')
-            self.conv1.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_depthwise')
-            if self.se is not None:
-                self.se.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_se')
-            self.conv2.load_3rd_state_dict(_3rd_name, _state, f'conv{_convolution_index}_linear')
-        else:
-            pass
-        pass
 
     def forward(self, x):
         y = self.conv0(x)
@@ -58,7 +49,7 @@ class MobileNetV3(nn.Module):
         super().__init__()
         self.scale = kwargs.get('scale', 0.5)
         model_name = kwargs.get('model_name', 'large')
-        self.disable_se=kwargs.get('disable_se','True')
+        self.disable_se = kwargs.get('disable_se', True)
         self.inplanes = 16
         if model_name == "large":
             self.cfg = [
@@ -155,7 +146,15 @@ class MobileNetV3(nn.Module):
             logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
                 logger.info('load imagenet weights')
-                self.load_state_dict(torch.load(ckpt_path))
+                dic_ckpt = torch.load(ckpt_path)
+                filtered_dict = OrderedDict()
+                for key in dic_ckpt.keys():
+                    flag = key.find('se') != -1
+                    if self.disable_se and flag:
+                        continue
+                    filtered_dict[key] = dic_ckpt[key]
+
+                self.load_state_dict(filtered_dict)
             else:
                 logger.info(f'{ckpt_path} not exists')
 
@@ -166,18 +165,6 @@ class MobileNetV3(nn.Module):
         if new_v < 0.9 * v:
             new_v += divisor
         return new_v
-
-    def load_3rd_state_dict(self, _3rd_name, _state):
-        if _3rd_name == 'paddle':
-            self.conv1.load_3rd_state_dict(_3rd_name, _state, 'conv1')
-            m_block_index = 2
-            for m_stage in self.stages:
-                for m_block in m_stage:
-                    m_block.load_3rd_state_dict(_3rd_name, _state, m_block_index)
-                    m_block_index += 1
-            self.conv2.load_3rd_state_dict(_3rd_name, _state, 'conv_last')
-        else:
-            pass
 
     def forward(self, x):
         x = self.conv1(x)

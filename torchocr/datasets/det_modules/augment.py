@@ -11,7 +11,7 @@ import numpy as np
 from skimage.util import random_noise
 
 __all__ = ['RandomNoise', 'RandomResize', 'RandomScale', 'ResizeShortSize', 'RandomRotateImgBox', 'HorizontalFlip',
-           'VerticallFlip', 'ResizeFixedSize']
+           'VerticallFlip', 'ResizeFixedSize', 'ResizeLongSize']
 
 
 class RandomNoise:
@@ -232,7 +232,6 @@ class ResizeShortSize:
         resize_w = max(int(round(resize_w / 32) * 32), 32)
         img = cv2.resize(im, (int(resize_w), int(resize_h)))
         if self.resize_text_polys:
-            # text_polys *= scale
             text_polys[:, 0] *= ratio
             text_polys[:, 1] *= ratio
         data['img'] = img
@@ -342,6 +341,45 @@ class ResizeFixedSize:
             text_polys[:, 0] *= ratio_h
             text_polys[:, 1] *= ratio_w
 
+        data['img'] = img
+        data['text_polys'] = text_polys
+        return data
+
+
+class ResizeLongSize:
+    def __init__(self, long_size, resize_text_polys=True):  # short_size,
+        """
+        :param size: resize尺寸,数字或者list的形式，如果为list形式，就是[w,h]
+        :return:
+        """
+        # self.short_size = short_size
+        self.long_size = long_size
+        self.resize_text_polys = resize_text_polys
+
+    def __call__(self, data: dict) -> dict:
+        """
+        对图片和文本框进行缩放
+        :param data: {'img':,'text_polys':,'texts':,'ignore_tags':}
+        :return:
+        """
+        im = data['img']
+        text_polys = data['text_polys']
+        h, w, _ = im.shape
+        if max(h, w) > self.long_size:
+            if h < w:
+                ratio = float(self.long_size) / w
+            else:
+                ratio = float(self.long_size) / h
+        else:
+            ratio = 1.
+        resize_h = int(h * ratio)
+        resize_w = int(w * ratio)
+        resize_h = max(int(round(resize_h / 32) * 32), 32)
+        resize_w = max(int(round(resize_w / 32) * 32), 32)
+        img = cv2.resize(im, (int(resize_w), int(resize_h)))
+        if self.resize_text_polys:
+            text_polys[:, 0] *= ratio
+            text_polys[:, 1] *= ratio
         data['img'] = img
         data['text_polys'] = text_polys
         return data
