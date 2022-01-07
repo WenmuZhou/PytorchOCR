@@ -50,8 +50,10 @@ class MakeBorderMap():
         padding = pyclipper.PyclipperOffset()
         padding.AddPath(subject, pyclipper.JT_ROUND,
                         pyclipper.ET_CLOSEDPOLYGON)
-
-        padded_polygon = np.array(padding.Execute(distance)[0])
+        try:
+            padded_polygon = np.array(padding.Execute(distance)[0])
+        except:
+            return
         cv2.fillPoly(mask, [padded_polygon.astype(np.int32)], 1.0)
 
         xmin = padded_polygon[:, 0].min()
@@ -81,10 +83,12 @@ class MakeBorderMap():
         xmax_valid = min(max(0, xmax), canvas.shape[1] - 1)
         ymin_valid = min(max(0, ymin), canvas.shape[0] - 1)
         ymax_valid = min(max(0, ymax), canvas.shape[0] - 1)
+        rever_distance = 1 - distance_map[
+                             ymin_valid - ymin:ymax_valid - ymax + height,
+                             xmin_valid - xmin:xmax_valid - xmax + width]
+        rever_distance[np.isnan(rever_distance)] = 0.99
         canvas[ymin_valid:ymax_valid + 1, xmin_valid:xmax_valid + 1] = np.fmax(
-            1 - distance_map[
-                ymin_valid - ymin:ymax_valid - ymax + height,
-                xmin_valid - xmin:xmax_valid - xmax + width],
+            rever_distance,
             canvas[ymin_valid:ymax_valid + 1, xmin_valid:xmax_valid + 1])
 
     def distance(self, xs, ys, point_1, point_2):

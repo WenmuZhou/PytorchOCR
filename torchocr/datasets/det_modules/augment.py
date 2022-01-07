@@ -369,7 +369,7 @@ class ResizeLongSize:
         im = data['img']
         text_polys = data['text_polys']
         h, w, _ = im.shape
-        if max(h, w) != self.long_size:
+        if max(h, w) > self.long_size:
             if h < w:
                 ratio = float(self.long_size) / w
             else:

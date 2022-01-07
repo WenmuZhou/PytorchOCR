@@ -5,7 +5,7 @@ import logging
 import os
 import torch
 from torch import nn
-from torchocr.networks.CommonModules import ConvBNACT, SEBlock
+from torchocr.networks.CommonModules import ConvBNACT, SEBlock,CBAM
 from collections import OrderedDict
 
 
@@ -20,6 +20,7 @@ class ResidualUnit(nn.Module):
                                padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
             self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
+            # self.se = CBAM(in_channels=num_mid_filter, out_channels=num_mid_filter)
         else:
             self.se = None
 

@@ -38,15 +38,19 @@ def weight_init(m):
         init.normal_(m.weight.data, mean=1, std=0.02)
         init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.BatchNorm2d):
-        init.normal_(m.weight.data, mean=1, std=0.02)
+        init.constant_(m.weight.data,1)
+        # init.normal_(m.weight.data, mean=1, std=0.02)
         init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.BatchNorm3d):
         init.normal_(m.weight.data, mean=1, std=0.02)
         init.constant_(m.bias.data, 0)
     elif isinstance(m, nn.Linear):
-        init.xavier_uniform_(m.weight.data)
+        # init.xavier_uniform_(m.weight.data)
+        # if m.bias is not None:
+        #     init.normal_(m.bias.data)
+        init.normal_(m.weight.data,0,0.01)
         if m.bias is not None:
-            init.normal_(m.bias.data)
+            init.constant_(m.bias.data,0)
     elif isinstance(m, nn.LSTM):
         for param in m.parameters():
             if len(param.shape) >= 2:

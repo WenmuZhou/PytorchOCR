@@ -149,7 +149,7 @@ class ResNet(nn.Module):
             "supported layers are {} but input layer is {}".format(supported_layers, layers)
         depth = supported_layers[layers]['depth']
         block_class = supported_layers[layers]['block_class']
-
+        self.use_supervised = kwargs.get('use_supervised', False)
         num_filters = [64, 128, 256, 512]
         self.conv1 = nn.Sequential(
             ConvBNACT(in_channels=in_channels, out_channels=32, kernel_size=3, stride=2, padding=1, act='relu'),
@@ -185,6 +185,14 @@ class ResNet(nn.Module):
             logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
                 logger.info('load imagenet weights')
+                self.load_state_dict(torch.load(ckpt_path))
+            else:
+                logger.info(f'{ckpt_path} not exists')
+        if self.use_supervised:
+            ckpt_path = f'./weights/res_supervised_999.pth'
+            logger = logging.getLogger('torchocr')
+            if os.path.exists(ckpt_path):
+                logger.info('load supervised weights')
                 self.load_state_dict(torch.load(ckpt_path))
             else:
                 logger.info(f'{ckpt_path} not exists')
