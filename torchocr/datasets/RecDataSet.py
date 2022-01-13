@@ -37,10 +37,9 @@ class RecTextLineDataset(Dataset):
         with open(config.file, 'r', encoding='utf-8') as f_reader:
             for m_line in f_reader.readlines():
                 m_line=m_line.strip()
-                params = m_line.split(' ')
+                params = m_line.split('\t')
                 if len(params) == 2:
                     m_image_name, m_gt_text = params
-                    m_image_name ='/home/Work/DataSet/360/images/'+ m_image_name
                     if True in [c not in self.str2idx for c in m_gt_text]:
                         continue
                     self.labels.append((m_image_name, m_gt_text))
