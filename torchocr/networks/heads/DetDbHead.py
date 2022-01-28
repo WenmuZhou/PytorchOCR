@@ -18,8 +18,6 @@ class Head(nn.Module):
         self.conv_bn2 = nn.BatchNorm2d(in_channels // 4)
         self.conv3 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=1, kernel_size=2, stride=2)
 
-
-
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv_bn1(x)
@@ -65,8 +63,6 @@ class DBHead(nn.Module):
 
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
-
-
 
     def forward(self, x):
         shrink_maps = self.binarize(x)

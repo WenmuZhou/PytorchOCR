@@ -56,8 +56,8 @@ class IaaAugment():
         line_polys = []
         for poly in data['text_polys']:
             new_poly = self.may_augment_poly(aug, shape, poly)
-            line_polys.append(new_poly)
-        data['text_polys'] = np.array(line_polys)
+            line_polys.append(np.array(new_poly))
+        data['text_polys'] = line_polys
         return data
 
     def may_augment_poly(self, aug, img_shape, poly):

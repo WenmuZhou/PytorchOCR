@@ -79,7 +79,6 @@ def build_optimizer(params, config):
     from torch import optim
     opt_type = config.pop('type')
     opt = getattr(optim, opt_type)(filter(lambda p: p.requires_grad,params), **config)
-    # opt = getattr(optim, opt_type)(params, **config)
     return opt
 
 

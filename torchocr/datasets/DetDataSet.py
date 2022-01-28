@@ -22,6 +22,7 @@ class JsonDataset(Dataset):
     """
     from https://github.com/WenmuZhou/OCR_DataSet/blob/master/dataset/det.py
     """
+
     def __init__(self, config):
         assert config.img_mode in ['RGB', 'BRG', 'GRAY']
         self.ignore_tags = config.ignore_tags
@@ -72,18 +73,10 @@ class JsonDataset(Dataset):
                 for annotation in gt['annotations']:
                     if len(annotation['polygon']) == 0 or len(annotation['text']) == 0:
                         continue
-                    if len(annotation['polygon']) != 4:
-                        a = np.array(annotation['polygon'], dtype=np.int32)
-                        x, y, w, h = cv2.boundingRect(a)
-                        polygons.append([[x, y], [x + w, y], [x + w, y + h], [x, y + h]])
-                        texts.append('ignore')
-                        illegibility_list.append(True)
-                        language_list.append(annotation['language'])
-                    else:
-                        polygons.append(annotation['polygon'])
-                        texts.append(annotation['text'])
-                        illegibility_list.append(annotation['illegibility'])
-                        language_list.append(annotation['language'])
+                    polygons.append(annotation['polygon'])
+                    texts.append(annotation['text'])
+                    illegibility_list.append(annotation['illegibility'])
+                    language_list.append(annotation['language'])
                     if self.load_char_annotation:
                         for char_annotation in annotation['chars']:
                             if len(char_annotation['polygon']) == 0 or len(char_annotation['char']) == 0:
@@ -92,7 +85,7 @@ class JsonDataset(Dataset):
                             texts.append(char_annotation['char'])
                             illegibility_list.append(char_annotation['illegibility'])
                             language_list.append(char_annotation['language'])
-                data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': np.array(polygons),
+                data_list.append({'img_path': img_path, 'img_name': gt['img_name'], 'text_polys': polygons,
                                   'texts': texts, 'ignore_tags': illegibility_list})
             except:
                 print(f'error gt:{img_path}')
@@ -142,6 +135,7 @@ if __name__ == '__main__':
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt
+
     dataset = JsonDataset(config.dataset.train.dataset)
     train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):

@@ -3,8 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-from collections import OrderedDict
 import os
+
 import torch
 from torch import nn
 

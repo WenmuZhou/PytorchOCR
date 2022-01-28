@@ -11,18 +11,18 @@ class ResidualUnit(nn.Module):
     def __init__(self, num_in_filter, num_mid_filter, num_out_filter, stride, kernel_size, act=None, use_se=False):
         super().__init__()
         self.expand_conv = ConvBNACT(in_channels=num_in_filter, out_channels=num_mid_filter, kernel_size=1, stride=1,
-                               padding=0, act=act)
+                                     padding=0, act=act)
 
         self.bottleneck_conv = ConvBNACT(in_channels=num_mid_filter, out_channels=num_mid_filter, kernel_size=kernel_size,
-                               stride=stride,
-                               padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
+                                         stride=stride,
+                                         padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
-            self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter,hsigmoid_type='paddle')
+            self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter, hsigmoid_type='paddle')
         else:
             self.se = None
 
         self.linear_conv = ConvBNACT(in_channels=num_mid_filter, out_channels=num_out_filter, kernel_size=1, stride=1,
-                               padding=0)
+                                     padding=0)
         self.not_add = num_in_filter != num_out_filter or stride != 1
 
     def forward(self, x):
@@ -34,6 +34,7 @@ class ResidualUnit(nn.Module):
         if not self.not_add:
             y = x + y
         return y
+
 
 class MobileNetV3(nn.Module):
     def __init__(self, in_channels=3, **kwargs):

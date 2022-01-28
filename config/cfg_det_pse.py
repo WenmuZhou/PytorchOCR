@@ -178,7 +178,7 @@ config.dataset = {
     'train': {
         'dataset': {
             'type': 'MyDataset',
-            'file': r'/home/zhouyufei/Work/DataSet/icdar2015/detection/train.json',
+            'file': r'/DataSet/icdar2015/detection/train.json',
             'data_shape':640,
             'n':6,
             'm':0.5,
@@ -200,7 +200,7 @@ config.dataset = {
     'eval': {
         'dataset': {
             'type': 'MyDataset',
-            'file': r'/home/zhouyufei/Work/DataSet/icdar2015/detection/test.json',
+            'file': r'/DataSet/icdar2015/detection/test.json',
             'mean': [0.485, 0.456, 0.406],
             'std': [0.229, 0.224, 0.225],
             'n':6,
