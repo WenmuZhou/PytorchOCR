@@ -12,8 +12,9 @@ from torchocr.networks.necks.pse_fpn import PSEFpn
 from torchocr.networks.heads.DetDbHead import DBHead
 from torchocr.networks.heads.DetPseHead import PseHead
 from torchocr.networks.backbones.DetGhostNet import GhostNet
+from torchocr.networks.backbones.Transformer import *
 
-backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet,'GhostNet':GhostNet}
+backbone_dict = {'MobileNetV3': MobileNetV3, 'ResNet': ResNet, 'GhostNet': GhostNet, 'Transformer': SwinTransformer}
 neck_dict = {'DB_fpn': DB_fpn, 'pse_fpn': PSEFpn}
 head_dict = {'DBHead': DBHead, 'PseHead': PseHead}
 

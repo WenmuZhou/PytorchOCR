@@ -45,11 +45,20 @@ config.optimizer = {
     'lr': 0.001,
     'weight_decay': 1e-4,
 }
+# backbone设置为swin_transformer时使用
+# config.optimizer = {
+#     'type': 'AdamW',
+#     'lr': 0.0001,
+#     'betas': (0.9, 0.999),
+#     'weight_decay': 0.05,
+# }
+
 
 config.model = {
     # backbone 可以设置'pretrained': False/True
     'type': "DetModel",
-    'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True}, # ResNet or MobileNetV3
+    'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True},  # ResNet or MobileNetV3
+    # 'backbone': {"type": "Transformer", 'pretrained': True},#swin_transformer
     'neck': {"type": 'DB_fpn', 'out_channels': 256},
     'head': {"type": "DBHead"},
     'in_channels': 3,
