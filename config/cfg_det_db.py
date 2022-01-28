@@ -58,7 +58,7 @@ config.model = {
     # backbone 可以设置'pretrained': False/True
     'type': "DetModel",
     'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True},  # ResNet or MobileNetV3
-    # 'backbone': {"type": "Transformer", 'pretrained': True},#swin_transformer
+    # 'backbone': {"type": "SwinTransformer", 'pretrained': True},#swin_transformer
     'neck': {"type": 'DB_fpn', 'out_channels': 256},
     'head': {"type": "DBHead"},
     'in_channels': 3,
