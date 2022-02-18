@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 
 __all__ = ['MakeShrinkMap']
+
+
 def shrink_polygon_py(polygon, shrink_ratio):
     """
     对框进行缩放，返回去的比例为1/shrink_ratio 即可
@@ -72,6 +74,7 @@ class MakeShrinkMap():
 
         data['shrink_map'] = gt
         data['shrink_mask'] = mask
+        data['ignore_tags'] = ignore_tags
         return data
 
     def validate_polygons(self, polygons, ignore_tags, h, w):
@@ -94,13 +97,14 @@ class MakeShrinkMap():
         return polygons, ignore_tags
 
     def polygon_area(self, polygon):
-        return cv2.contourArea(polygon)
-        # edge = 0
-        # for i in range(polygon.shape[0]):
-        #     next_index = (i + 1) % polygon.shape[0]
-        #     edge += (polygon[next_index, 0] - polygon[i, 0]) * (polygon[next_index, 1] - polygon[i, 1])
-        #
-        # return edge / 2.
+        polygon = polygon.reshape(-1, 2)
+        edge = 0
+        for i in range(polygon.shape[0]):
+            next_index = (i + 1) % polygon.shape[0]
+            edge += (polygon[next_index, 0] - polygon[i, 0]) * (
+                    polygon[next_index, 1] + polygon[i, 1])
+
+        return edge / 2.
 
 
 if __name__ == '__main__':
