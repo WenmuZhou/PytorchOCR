@@ -137,12 +137,12 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
 
     dataset = JsonDataset(config.dataset.train.dataset)
-    train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
+    train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=False, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):
-        print(data['img_path'])
-        img = data['img']
-        shrink_label = data['shrink_map']
-        threshold_label = data['threshold_map']
+        # print(data['img_path'])
+        img = data['img'][0].numpy().transpose(1, 2, 0)
+        shrink_label = data['shrink_map'].numpy()
+        threshold_label = data['threshold_map'].numpy()
 
         # print(threshold_label.shape, threshold_label.shape, img.shape)
         # show_img(img[0].numpy().transpose(1, 2, 0), title='img')
