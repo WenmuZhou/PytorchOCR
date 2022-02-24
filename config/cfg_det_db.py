@@ -59,6 +59,7 @@ config.model = {
     'type': "DetModel",
     'backbone': {"type": "ResNet", 'layers': 18, 'pretrained': True},  # ResNet or MobileNetV3
     # 'backbone': {"type": "SwinTransformer", 'pretrained': True},#swin_transformer
+    # 'backbone': {"type": "ConvNeXt", 'pretrained': True},
     'neck': {"type": 'DB_fpn', 'out_channels': 256},
     'head': {"type": "DBHead"},
     'in_channels': 3,
@@ -92,8 +93,9 @@ config.dataset = {
                                                               {'type': 'Affine', 'args': {'rotate': [-10, 10]}},
                                                               {'type': 'Resize', 'args': {'size': [0.5, 3]}}]},
                               {'type': 'EastRandomCropData', 'args': {'size': [640, 640], 'max_tries': 50, 'keep_ratio': True}},
-                              {'type': 'MakeBorderMap', 'args': {'shrink_ratio': 0.4, 'thresh_min': 0.3, 'thresh_max': 0.7}},
-                              {'type': 'MakeShrinkMap', 'args': {'shrink_ratio': 0.4, 'min_text_size': 8}}],
+                              {'type': 'MakeShrinkMap', 'args': {'shrink_ratio': 0.4, 'min_text_size': 8}},
+                              {'type': 'MakeBorderMap', 'args': {'shrink_ratio': 0.4, 'thresh_min': 0.3, 'thresh_max': 0.7}}
+                              ],
             'filter_keys': ['img_path', 'img_name', 'text_polys', 'texts', 'ignore_tags', 'shape'],  # 需要从data_dict里过滤掉的key
             'ignore_tags': ['*', '###'],
             'img_mode': 'RGB'

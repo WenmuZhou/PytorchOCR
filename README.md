@@ -6,6 +6,7 @@ PytorchOCR旨在打造一套训练，推理，部署一体的OCR引擎库
 **添加微信z572459439或者nsnovio，然后进群讨论。备注ocr进群。**
 
 ## 更新日志
+* 2022.02.24 更新：新增convnext作为backbone
 * 2022.01.28 更新：新增transformer作为backbone
 * 2022.01.07 更新：
 1. 检测模型新增backbone类型ghostnet
@@ -59,7 +60,8 @@ PytorchOCR开源的文本检测算法列表：
 | 原始超轻量模型，支持中英文、多语种文本检测             | MoblieNet        | 移动端| 2.3M  | [c9ko](https://pan.baidu.com/s/1DpM_HzwYFgAJhjgUtQ7CCw)  |
 | 新版 轻量模型，支持中英文、多语种文本检测             | MoblieNet        | 移动端| 2.3M  | [39ne](https://pan.baidu.com/s/1h52tjRYuWdcFEfXjQVYEFQ)  |
 | 通用模型，支持中英文、多语种文本检测，比超轻量模型更大，但效果更好 | ResNet18         | 服务器端| 47.2M | [r26k](https://pan.baidu.com/s/1Pt1P0Z8b280AAjr9jLMqeg)  |
-| 预训练模型                             | swin_transformer | 服务器端| -     | [se32](https://pan.baidu.com/s/1VhoxcjHrOLChwrp03JNwtg)  |
+| 预训练模型                             | swin_transformer | 服务器端| 240M  | [se32](https://pan.baidu.com/s/1VhoxcjHrOLChwrp03JNwtg)  |
+| 预训练模型                             | convnext         | 服务器端| 113M  | [46is](https://pan.baidu.com/s/1-XylC8SzrolKDp53NGApag)  |
 
 
 ## 文本识别算法

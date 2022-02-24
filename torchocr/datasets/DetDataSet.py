@@ -131,19 +131,22 @@ if __name__ == '__main__':
     import torch
     from torch.utils.data import DataLoader
     # from config.cfg_det_db import config
-    from local.cfg.cfg_det_db_all import config
+    from local.cfg.cfg_det_db_latin import config
     from torchocr.utils import show_img, draw_bbox
 
     from matplotlib import pyplot as plt
 
     dataset = JsonDataset(config.dataset.train.dataset)
-    train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=False, num_workers=0)
+    train_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=0)
     for i, data in enumerate(tqdm(train_loader)):
         # print(data['img_path'])
         img = data['img'][0].numpy().transpose(1, 2, 0)
-        shrink_label = data['shrink_map'].numpy()
-        threshold_label = data['threshold_map'].numpy()
-
+        shrink_label = data['shrink_map'].numpy().transpose(1, 2, 0)
+        threshold_label = data['threshold_map'].numpy().transpose(1, 2, 0)
+        show_img(img, title='img')
+        show_img(shrink_label, title='shrink_label')
+        show_img(threshold_label, title='threshold_label')
+        plt.show()
         # print(threshold_label.shape, threshold_label.shape, img.shape)
         # show_img(img[0].numpy().transpose(1, 2, 0), title='img')
         # show_img((shrink_label[0].to(torch.float)).numpy(), title='shrink_label')
