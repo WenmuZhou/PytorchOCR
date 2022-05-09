@@ -19,7 +19,7 @@ class ConvBNACT(nn.Module):
                               bias=False)
         self.bn = nn.BatchNorm2d(out_channels)
         if act == 'relu':
-            self.act = nn.ReLU()
+            self.act = nn.ReLU(inplace=True)
         elif act == 'hard_swish':
             self.act = HSwish()
         elif act is None:
@@ -47,7 +47,7 @@ class ConvBNACTWithPool(nn.Module):
         if act is None:
             self.act = None
         else:
-            self.act = nn.ReLU()
+            self.act = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.pool(x)
@@ -96,7 +96,7 @@ class BottleneckBlock(nn.Module):
                                padding=0, groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.output_channels = out_channels * 4
 
     def forward(self, x):
@@ -119,7 +119,7 @@ class BasicBlock(nn.Module):
                                groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.output_channels = out_channels
 
     def forward(self, x):
@@ -189,7 +189,7 @@ class ResNet(nn.Module):
             else:
                 logger.info(f'{ckpt_path} not exists')
         if self.use_supervised:
-            ckpt_path = f'./weights/res_supervised_999.pth'
+            ckpt_path = f'./weights/res_supervised_140w_387e.pth'
             logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
                 logger.info('load supervised weights')
