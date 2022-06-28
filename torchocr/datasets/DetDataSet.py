@@ -97,7 +97,6 @@ class JsonDataset(Dataset):
         return data
 
     def __getitem__(self, index):
-        # try:
         data = copy.deepcopy(self.data_list[index])
         im = cv2.imread(data['img_path'], 1 if self.img_mode != 'GRAY' else 0)
         if self.img_mode == 'RGB':
@@ -120,8 +119,6 @@ class JsonDataset(Dataset):
             return data_dict
         else:
             return data
-        # except:
-        #     return self.__getitem__(np.random.randint(self.__len__()))
 
     def __len__(self):
         return len(self.data_list)

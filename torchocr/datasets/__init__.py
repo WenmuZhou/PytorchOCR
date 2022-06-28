@@ -7,10 +7,11 @@ from .DetDataSet import JsonDataset
 from .RecCollateFn import RecCollateFn
 from .DetCollateFN import DetCollectFN
 from .DetDateSetPse import MyDataset
+from .DetDataSetFce import FCEDataset
 
 __all__ = ['build_dataloader']
 
-support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset','JsonDataset','MyDataset']
+support_dataset = ['RecTextLineDataset', 'RecLmdbDataset', 'DetTextLineDataset','JsonDataset','MyDataset','FCEDataset']
 support_loader = ['RecDataLoader', 'DataLoader']
 
 

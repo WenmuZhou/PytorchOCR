@@ -5,8 +5,9 @@
 import copy
 from .DBPostProcess import DBPostProcess,DistillationDBPostProcess
 # from .pse import pse_postprocess
+from .FCEPostProcess import FCEPostProcess
 
-support_post_process = ['DBPostProcess', 'DetModel','pse_postprocess','DistillationDBPostProcess']
+support_post_process = ['DBPostProcess', 'DetModel','pse_postprocess','DistillationDBPostProcess','FCEPostProcess']
 
 
 def build_post_process(config):

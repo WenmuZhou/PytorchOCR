@@ -11,6 +11,8 @@ class Head(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels // 4, kernel_size=3, padding=1,
                                bias=False)
+        # self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels // 4, kernel_size=5, padding=2,
+        #                        bias=False)
         self.conv_bn1 = nn.BatchNorm2d(in_channels // 4)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = nn.ConvTranspose2d(in_channels=in_channels // 4, out_channels=in_channels // 4, kernel_size=2,
