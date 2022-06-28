@@ -19,7 +19,7 @@ class ResidualUnit(nn.Module):
                                stride=stride,
                                padding=int((kernel_size - 1) // 2), act=act, groups=num_mid_filter)
         if use_se:
-            self.se = SEBlock(in_channels=num_mid_filter, out_channels=num_mid_filter)
+            self.se = SEBlock(in_channels=num_mid_filter)
         else:
             self.se = None
 

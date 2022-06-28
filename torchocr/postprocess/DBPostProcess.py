@@ -84,6 +84,8 @@ class DBPostProcess(object):
         # structure_element = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         # bitmap = cv2.morphologyEx(bitmap, cv2.MORPH_CLOSE, structure_element)
 
+        # cv2.imwrite('bin.jpg',bitmap)
+
         if cv2.__version__.startswith('3'):
             _, contours, _ = cv2.findContours(bitmap, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         elif cv2.__version__.startswith('4'):
@@ -97,12 +99,13 @@ class DBPostProcess(object):
         scores = []
         for index in range(num_contours):
             contour = contours[index]
+
             points, sside = self.get_mini_boxes(contour)
             if sside < self.min_size:
                 continue
             points = np.array(points)
-            # score = self.box_score_fast(pred, points.reshape(-1, 2))
-            score = self.box_score_slow(pred, contour)
+            score = self.box_score_fast(pred, points.reshape(-1, 2))
+            # score = self.box_score_slow(pred, contour)
             if score < self.box_thresh:
                 continue
             box = self.unclip(points).reshape(-1, 1, 2)
@@ -115,7 +118,39 @@ class DBPostProcess(object):
             box[:, 1] = np.clip(np.round(box[:, 1] / height * dest_height), 0, dest_height)
             boxes.append(box.astype(np.int16))
             scores.append(score)
-        return np.array(boxes, dtype=np.int16), scores
+
+            # try:
+            #     poly = contours[index]
+            #     # cv2.drawContours(debug_mat, poly, -1, (111, 90, 255), -1)
+            #
+            #     epsilon = 0.001 * cv2.arcLength(poly, True)
+            #     approx = cv2.approxPolyDP(poly, epsilon, True)
+            #     points = approx.reshape((-1, 2))
+            #     if points.shape[0] < 4:
+            #         continue
+            #     score = self.box_score_fast(pred, points)
+            #     if score < self.box_thresh:
+            #         continue
+            #     poly = self.unclip(points)
+            #     if len(poly) == 0 or isinstance(poly[0], list):
+            #         continue
+            #     poly = poly.reshape(-1, 2)
+            #
+            #     # box, sside = self.get_mini_boxes(poly)
+            #     # if sside < self.min_size + 2:
+            #     #     continue
+            #     # box = np.array(box)
+            #     box=np.array(poly)
+            #
+            #     box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
+            #     box[:, 1] = np.clip(np.round(box[:, 1] / height * dest_height), 0, dest_height)
+            #     boxes.append(box.astype(np.int16).flatten().tolist())
+            #     scores.append(score)
+            # except:
+            #     print('1')
+            #     pass
+
+        return boxes, scores
 
     def unclip(self, box):
         unclip_ratio = self.unclip_ratio

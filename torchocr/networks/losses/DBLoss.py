@@ -3,11 +3,12 @@
 # @Author  : zhoujun
 from torch import nn
 
-from torchocr.networks.losses.DetBasicLoss import BalanceCrossEntropyLoss, MaskL1Loss, DiceLoss,BalanceLoss
+from torchocr.networks.losses.DetBasicLoss import BalanceCrossEntropyLoss, MaskL1Loss, DiceLoss, BalanceLoss
 
 
 class DBLoss(nn.Module):
-    def __init__(self, balance_loss=True,main_loss_type='DiceLoss',alpha=1.0, beta=10, ohem_ratio=3, reduction='mean', eps=1e-6):
+    def __init__(self, balance_loss=True, main_loss_type='DiceLoss', alpha=1.0, beta=10, ohem_ratio=3, reduction='mean',
+                 eps=1e-6):
         """
         Implement PSE Loss.
         :param alpha: binary_map loss 前面的系数
@@ -44,13 +45,13 @@ class DBLoss(nn.Module):
         threshold_maps = pred[:, 1, :, :]
         binary_maps = pred[:, 2, :, :]
 
-        loss_shrink_maps = self.bce_loss(shrink_maps, batch['shrink_map'], batch['shrink_mask'])
-        loss_threshold_maps = self.l1_loss(threshold_maps, batch['threshold_map'], batch['threshold_mask'])
+        loss_shrink_maps = self.alpha * self.bce_loss(shrink_maps, batch['shrink_map'], batch['shrink_mask'])
+        loss_threshold_maps = self.beta * self.l1_loss(threshold_maps, batch['threshold_map'], batch['threshold_mask'])
         loss_dict = dict(loss_shrink_maps=loss_shrink_maps, loss_threshold_maps=loss_threshold_maps)
         if pred.size()[1] > 2:
             loss_binary_maps = self.dice_loss(binary_maps, batch['shrink_map'], batch['shrink_mask'])
             loss_dict['loss_binary_maps'] = loss_binary_maps
-            loss_all = self.alpha * loss_shrink_maps + self.beta * loss_threshold_maps + loss_binary_maps
+            loss_all = loss_shrink_maps + loss_threshold_maps + loss_binary_maps
             loss_dict['loss'] = loss_all
         else:
             loss_dict['loss'] = loss_shrink_maps

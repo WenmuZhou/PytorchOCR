@@ -19,7 +19,7 @@ class ConvBNACT(nn.Module):
                               bias=False)
         self.bn = nn.BatchNorm2d(out_channels)
         if act == 'relu':
-            self.act = nn.ReLU()
+            self.act = nn.ReLU(inplace=True)
         elif act == 'hard_swish':
             self.act = HSwish()
         elif act is None:
@@ -47,7 +47,7 @@ class ConvBNACTWithPool(nn.Module):
         if act is None:
             self.act = None
         else:
-            self.act = nn.ReLU()
+            self.act = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.pool(x)
@@ -96,7 +96,7 @@ class BottleneckBlock(nn.Module):
                                padding=0, groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels * 4, stride=stride,
                                  if_first=if_first, name=f'{name}_branch1')
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.output_channels = out_channels * 4
 
     def forward(self, x):
@@ -119,7 +119,7 @@ class BasicBlock(nn.Module):
                                groups=1, act=None)
         self.shortcut = ShortCut(in_channels=in_channels, out_channels=out_channels, stride=stride,
                                  name=f'{name}_branch1', if_first=if_first, )
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.output_channels = out_channels
 
     def forward(self, x):
@@ -130,7 +130,7 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, in_channels, layers, pretrained=True, **kwargs):
+    def __init__(self, in_channels, layers, out_indices=[0, 1, 2, 3], pretrained=True, **kwargs):
         """
         the Resnet backbone network for detection module.
         Args:
@@ -150,6 +150,7 @@ class ResNet(nn.Module):
         depth = supported_layers[layers]['depth']
         block_class = supported_layers[layers]['block_class']
         self.use_supervised = kwargs.get('use_supervised', False)
+        self.out_indices = out_indices
         num_filters = [64, 128, 256, 512]
         self.conv1 = nn.Sequential(
             ConvBNACT(in_channels=in_channels, out_channels=32, kernel_size=3, stride=2, padding=1, act='relu'),
@@ -160,6 +161,7 @@ class ResNet(nn.Module):
 
         self.stages = nn.ModuleList()
         self.out_channels = []
+        tmp_channels = []
         in_ch = 64
         for block_index in range(len(depth)):
             block_list = []
@@ -178,8 +180,11 @@ class ResNet(nn.Module):
                                               stride=2 if i == 0 and block_index != 0 else 1,
                                               if_first=block_index == i == 0, name=conv_name))
                 in_ch = block_list[-1].output_channels
-            self.out_channels.append(in_ch)
+            tmp_channels.append(in_ch)
             self.stages.append(nn.Sequential(*block_list))
+        for idx, ch in enumerate(tmp_channels):
+            if idx in self.out_indices:
+                self.out_channels.append(ch)
         if pretrained:
             ckpt_path = f'./weights/resnet{layers}_vd.pth'
             logger = logging.getLogger('torchocr')
@@ -189,7 +194,7 @@ class ResNet(nn.Module):
             else:
                 logger.info(f'{ckpt_path} not exists')
         if self.use_supervised:
-            ckpt_path = f'./weights/res_supervised_999.pth'
+            ckpt_path = f'./weights/res_supervised_140w_387e.pth'
             logger = logging.getLogger('torchocr')
             if os.path.exists(ckpt_path):
                 logger.info('load supervised weights')
@@ -201,7 +206,8 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.pool1(x)
         out = []
-        for stage in self.stages:
+        for idx, stage in enumerate(self.stages):
             x = stage(x)
-            out.append(x)
+            if idx in self.out_indices:
+                out.append(x)
         return out
