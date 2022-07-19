@@ -17,12 +17,13 @@ class CTCLabelConverter(object):
                 dict_character += list(line)
         # dict_character = list(character)
 
+        dict_character += ' '
         self.dict = {}
         for i, char in enumerate(dict_character):
             # NOTE: 0 is reserved for 'blank' token required by CTCLoss
             self.dict[char] = i + 1
         #TODO replace ‘ ’ with special symbol
-        self.character = ['[blank]'] + dict_character+[' ']  # dummy '[blank]' token for CTCLoss (index 0)
+        self.character = ['[blank]'] + dict_character # dummy '[blank]' token for CTCLoss (index 0)
 
     def encode(self, text, batch_max_length=None):
         """convert text-label into text-index.
