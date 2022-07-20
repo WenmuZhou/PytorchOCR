@@ -31,7 +31,8 @@ class RecTextLineDataset(Dataset):
         self.process = RecDataProcess(config)
         with open(config.alphabet, 'r', encoding='utf-8') as file:
             alphabet = ''.join([s.strip('\n') for s in file.readlines()])
-        alphabet += ' '
+        if ' ' not in alphabet:
+            alphabet += ' '
         self.str2idx = {c: i for i, c in enumerate(alphabet)}
         self.labels = []
         with open(config.file, 'r', encoding='utf-8') as f_reader:
