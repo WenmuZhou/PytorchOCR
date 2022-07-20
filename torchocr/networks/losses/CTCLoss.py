@@ -4,9 +4,9 @@ import torch
 
 class CTCLoss(nn.Module):
 
-    def __init__(self, loss_cfg, reduction='mean'):
+    def __init__(self, blank_idx=0, reduction='mean'):
         super().__init__()
-        self.loss_func = torch.nn.CTCLoss(blank=loss_cfg['blank_idx'], reduction=reduction, zero_infinity=True)
+        self.loss_func = torch.nn.CTCLoss(blank=blank_idx, reduction=reduction, zero_infinity=True)
 
     def forward(self, pred, args):
         batch_size = pred.size(0)
