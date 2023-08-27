@@ -51,16 +51,16 @@
 - [x] cls推理
 - [x] 导出为onnx
 - [x] onnx推理
-- [] tensorrt 推理
+- [ ] tensorrt 推理
 - [x] 训练，评估，测试
 
 模型：
 
-- [] PP-OCRv4 det
-- [] PP-OCRv4 rec
-- [] DB
-- [] DB ++
-- [] CRNN
+- [ ] PP-OCRv4 det
+- [ ] PP-OCRv4 rec
+- [ ] DB
+- [ ] DB ++
+- [ ] CRNN
 
 ## 使用方式
 
