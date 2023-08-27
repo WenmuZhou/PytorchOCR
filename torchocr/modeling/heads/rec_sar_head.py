@@ -360,21 +360,21 @@ class SARHead(nn.Module):
             max_text_length=max_text_length,
             pred_concat=pred_concat)
 
-    def forward(self, feat, targets=None):
+    def forward(self, feat, data=None):
         '''
         img_metas: [label, valid_ratio]
         '''
-        holistic_feat = self.encoder(feat, targets)  # bsz c
+        holistic_feat = self.encoder(feat, data)  # bsz c
         if self.training:
-            label = targets[0]  # label
+            label = data[0]  # label
             final_out = self.decoder(
-                feat, holistic_feat, label, img_metas=targets)
+                feat, holistic_feat, label, img_metas=data)
         else:
             final_out = self.decoder(
                 feat,
                 holistic_feat,
                 label=None,
-                img_metas=targets,
+                img_metas=data,
                 train_mode=False)
             # (bsz, seq_len, num_classes)
 

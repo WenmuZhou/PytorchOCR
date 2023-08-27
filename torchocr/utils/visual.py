@@ -104,7 +104,7 @@ def draw_re_results(image,
     return np.array(img_new)
 
 
-def draw_text_det_res(dt_boxes, img):
+def draw_det_res(dt_boxes, img):
     for box in dt_boxes:
         box = np.array(box).astype(np.int32).reshape(-1, 2)
         cv2.polylines(img, [box], True, color=(255, 255, 0), thickness=2)

@@ -64,7 +64,7 @@ class MultiHead(nn.Module):
                 raise NotImplementedError(
                     '{} is not supported in MultiHead yet'.format(name))
 
-    def forward(self, x, targets=None):
+    def forward(self, x, data=None):
 
         ctc_encoder = self.ctc_encoder(x)
         ctc_out = self.ctc_head(ctc_encoder)
@@ -76,9 +76,9 @@ class MultiHead(nn.Module):
         if not self.training:
             return {'res': ctc_out}
         if self.gtc_head == 'sar':
-            sar_out = self.sar_head(x, targets[1:])
+            sar_out = self.sar_head(x, data[1:])
             head_out['sar'] = sar_out
         else:
-            gtc_out = self.gtc_head(self.before_gtc(x), targets[1:])
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])
             head_out['nrtr'] = gtc_out
         return head_out

@@ -12,7 +12,7 @@ Global:
   checkpoints:
   save_inference_dir:
   use_visualdl: false
-  infer_img: doc/imgs_words/ch/word_1.jpg
+  infer_img: doc/imgs_words/en/word_1.jpg
   character_dict_path: ppocr/utils/en_dict.txt
   max_text_length: &max_text_length 25
   infer_mode: false

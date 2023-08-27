@@ -31,7 +31,7 @@ class CTCHead(nn.Module):
         self.return_feats = return_feats
 
 
-    def forward(self, x):
+    def forward(self, x, data=None):
         if self.mid_channels is None:
             predicts = self.fc(x)
         else:

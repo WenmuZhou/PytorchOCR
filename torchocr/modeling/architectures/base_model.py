@@ -80,7 +80,7 @@ class BaseModel(nn.Module):
                 y["neck_out"] = x
             final_name = "neck_out"
         if self.use_head:
-            x = self.head(x, targets=data)
+            x = self.head(x, data=data)
             # for multi head, save ctc neck out for udml
             if 'ctc_neck' in x.keys():
                 y["neck_out"] = x["ctc_neck"]

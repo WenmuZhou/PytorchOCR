@@ -70,7 +70,7 @@ class BalanceLoss(nn.Module):
         negative_loss = negative * loss
         negative_loss = torch.reshape(negative_loss, shape=[-1])
         if negative_count > 0:
-            sort_loss = negative_loss.sort(descending=True)
+            sort_loss, _ = negative_loss.sort(descending=True)
             negative_loss = sort_loss[:negative_count]
             balance_loss = (positive_loss.sum() + negative_loss.sum()) / (
                 positive_count + negative_count + self.eps)

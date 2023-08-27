@@ -1,22 +1,20 @@
 Global:
-  debug: false
-  use_gpu: true
+  device: gpu
   epoch_num: 500
   log_smooth_window: 20
   print_batch_step: 10
   output_dir: ./output/ch_PP-OCR_V3_det/
-  save_epoch_step: 100
-  eval_batch_step:
-  - 0
-  - 400
+  eval_epoch_step: [0, 1]
   cal_metric_during_train: false
-  pretrained_model: https://paddleocr.bj.bcebos.com/pretrained/MobileNetV3_large_x0_5_pretrained.pdparams
-  checkpoints: null
-  save_inference_dir: null
-  use_visualdl: false
-  infer_img: doc/imgs_en/img_10.jpg
-  save_res_path: ./checkpoints/det_db/predicts_db.txt
-  distributed: true
+  pretrained_model:
+  checkpoints:
+  use_tensorboard: false
+  infer_img: doc/imgs/1.jpg
+
+Export:
+  export_dir:
+  export_shape: [ 1, 3, 640, 640 ]
+  dynamic_axes: [ 0, 2, 3 ]
 
 Architecture:
   model_type: det
@@ -42,23 +40,23 @@ Loss:
   alpha: 5
   beta: 10
   ohem_ratio: 3
+
 Optimizer:
   name: Adam
-  beta1: 0.9
-  beta2: 0.999
-  lr:
-    name: Cosine
-    learning_rate: 0.001
-    warmup_epoch: 2
-  regularizer:
-    name: L2
-    factor: 5.0e-05
+  lr: 0.001
+  weight_decay: 5.0e-05
+
+LRscheduler:
+  name: CosineAnnealingLR
+  warmup_epoch: 2
+
 PostProcess:
   name: DBPostProcess
   thresh: 0.3
   box_thresh: 0.6
   max_candidates: 1000
   unclip_ratio: 1.5
+
 Metric:
   name: DetMetric
   main_indicator: hmean

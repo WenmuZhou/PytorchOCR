@@ -108,12 +108,12 @@ class DBHead(nn.Layer):
     def forward(self, x, targets=None):
         shrink_maps = self.binarize(x)
         if not self.training:
-            return {'maps': shrink_maps}
+            return {'res': shrink_maps}
 
         threshold_maps = self.thresh(x)
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = paddle.concat([shrink_maps, threshold_maps, binary_maps], axis=1)
-        return {'maps': y}
+        return {'res': y}
 
 
 class LocalModule(nn.Layer):

@@ -50,7 +50,7 @@ class CombinedLoss(nn.Module):
             loss = {key: loss[key] * weight for key in loss}
 
             if "loss" in loss:
-                loss_all += loss["loss"]
+                loss_all += loss["loss"][0] if loss["loss"].ndim == 1 else loss["loss"]
             else:
                 loss_all += sum(loss.values())
             loss_dict.update(loss)

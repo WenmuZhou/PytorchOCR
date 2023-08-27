@@ -17,6 +17,7 @@ from torchocr.utils.logging import get_logger
 from torchocr import Config
 from tools.utility import update_rec_head_out_channels, ArgsParser
 from tools.infer_rec import build_rec_process
+from tools.infer_det import build_det_process
 
 
 def to_onnx(model, dummy_input, dynamic_axes, sava_path="model.onnx"):
@@ -40,6 +41,8 @@ def export_single_model(model, _cfg,export_dir,export_config, logger, type):
     export_cfg = {'PostProcess': _cfg['PostProcess']}
     if _cfg['Architecture']['model_type'] == 'rec':
         export_cfg['Transforms'] = build_rec_process(_cfg)
+    elif _cfg['Architecture']['model_type'] == 'det':
+        export_cfg['Transforms'] = build_det_process(_cfg)
     cfg.save(os.path.join(export_dir, 'config.yaml'), export_cfg)
 
     dummy_input = torch.randn(*export_config['export_shape'], device="cpu")

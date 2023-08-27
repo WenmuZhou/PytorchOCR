@@ -23,13 +23,16 @@ logger = get_logger()
 
 
 class TextRecognizer(ONNXEngine):
-    def __init__(self, args, cfg):
-        super(TextRecognizer, self).__init__(args.rec_model_path, args.use_gpu)
+    def __init__(self, args):
+        onnx_path = os.path.join(args.rec_model_dir, 'model.onnx')
+        config_path = os.path.join(args.rec_model_dir, 'config.yaml')
+        super(TextRecognizer, self).__init__(onnx_path, args.use_gpu)
 
         self.rec_image_shape = [int(v) for v in args.rec_image_shape.split(",")]
         self.rec_batch_num = args.rec_batch_num
         self.rec_algorithm = args.rec_algorithm
 
+        cfg = Config(config_path).cfg
         self.postprocess_op = build_post_process(cfg['PostProcess'])
 
     def resize_norm_img(self, img, max_wh_ratio):
@@ -89,10 +92,9 @@ class TextRecognizer(ONNXEngine):
 
 def main(args):
     args.use_gpu = check_gpu(args.use_gpu)
-    cfg = Config(args.config)
 
     image_file_list = get_image_file_list(args.image_dir)
-    text_recognizer = TextRecognizer(args, cfg.cfg)
+    text_recognizer = TextRecognizer(args)
     valid_image_file_list = []
     img_list = []
 
@@ -107,7 +109,7 @@ def main(args):
         if not flag:
             img = cv2.imread(image_file)
         if img is None:
-            logger.info("error in loading image:{}".format(image_file))
+            logger.info(f"error in loading image:{image_file}")
             continue
         valid_image_file_list.append(image_file)
         img_list.append(img)

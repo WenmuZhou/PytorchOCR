@@ -5,7 +5,13 @@
   - [模型对齐信息](#模型对齐信息)
     - [环境](#环境)
     - [对齐列表](#对齐列表)
-      - [识别模型](#识别模型)
+  - [使用方式](#使用方式)
+    - [数据准备](#数据准备)
+    - [train](#train)
+    - [eval](#eval)
+    - [infer](#infer)
+    - [export](#export)
+    - [predict](#predict)
 
 从PaddleOCR转换模型到PytorchOCR
 
@@ -25,14 +31,14 @@
 
 百度云: 链接：https://pan.baidu.com/s/1rLYJt647EE0341mfHjSWMg?pwd=uyea 提取码：uyea
 
-#### 识别模型
-
 
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
 | ch_PP-OCRv3_rec  | Y | 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml) |
 | ch_PP-OCRv3_rec_distillation.yml  | Y | Teacher_head_out_res 7.470646e-10 <br> Student_head_out_res 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml) |
-
+| ch_PP-OCRv3_det_student  | Y | 1.766314e-07 | [config](cconfigs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml) |
+| ch_PP-OCRv3_det_cml  | Y | Student_res 1.766314e-07 <br> Student2_res 3.1212483e-07 <br> Teacher_res 8.829421e-08 | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_cml.yml) |
+| ch_PP-OCRv3_det_dml  | Y | ok | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_dml.yml) |
 
 ## 使用方式
 

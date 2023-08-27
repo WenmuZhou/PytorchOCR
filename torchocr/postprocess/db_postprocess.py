@@ -196,11 +196,14 @@ class DBPostProcess(object):
         cv2.fillPoly(mask, contour.reshape(1, -1, 2).astype("int32"), 1)
         return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
 
-    def __call__(self, outs_dict, shape_list):
-        pred = outs_dict['maps']
-        if isinstance(pred, torch.Tensor):
-            pred = pred.numpy()
-        pred = pred[:, 0, :, :]
+    def __call__(self, preds, batch):
+        preds = preds['res']
+        shape_list = batch[1]
+        if isinstance(preds, torch.Tensor):
+            preds = preds.numpy()
+        if isinstance(shape_list, torch.Tensor):
+            shape_list = shape_list.numpy()
+        pred = preds[:, 0, :, :]
         segmentation = pred > self.thresh
 
         boxes_batch = []
@@ -248,8 +251,8 @@ class DistillationDBPostProcess(object):
             score_mode=score_mode,
             box_type=box_type)
 
-    def __call__(self, predicts, shape_list):
+    def __call__(self, predicts, batch):
         results = {}
         for k in self.model_name:
-            results[k] = self.post_process(predicts[k], shape_list=shape_list)
+            results[k] = self.post_process(predicts[k], batch)
         return results

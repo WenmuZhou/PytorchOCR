@@ -23,7 +23,7 @@ def _sum_loss(loss_dict):
             if k == "loss":
                 continue
             else:
-                loss_dict["loss"] += value
+                loss_dict["loss"] += value[0] if value.ndim == 1 else value
         return loss_dict
 
 
@@ -672,7 +672,7 @@ class DistillationDBLoss(DBLoss):
                  eps=1e-6,
                  name="db",
                  **kwargs):
-        super().__init__()
+        super().__init__(balance_loss, main_loss_type, alpha, beta, ohem_ratio, eps)
         self.model_name_list = model_name_list
         self.name = name
         self.key = None
@@ -709,7 +709,7 @@ class DistillationDilaDBLoss(DBLoss):
                  ohem_ratio=3,
                  eps=1e-6,
                  name="dila_dbloss"):
-        super().__init__()
+        super().__init__(balance_loss, main_loss_type, alpha, beta, ohem_ratio, eps)
         self.model_name_pairs = model_name_pairs
         self.name = name
         self.key = key

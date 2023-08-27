@@ -51,17 +51,6 @@ class DetLabelEncode(object):
         data['ignore_tags'] = txt_tags
         return data
 
-    def order_points_clockwise(self, pts):
-        rect = np.zeros((4, 2), dtype="float32")
-        s = pts.sum(axis=1)
-        rect[0] = pts[np.argmin(s)]
-        rect[2] = pts[np.argmax(s)]
-        tmp = np.delete(pts, (np.argmin(s), np.argmax(s)), axis=0)
-        diff = np.diff(np.array(tmp), axis=1)
-        rect[1] = tmp[np.argmin(diff)]
-        rect[3] = tmp[np.argmax(diff)]
-        return rect
-
     def expand_points_num(self, boxes):
         max_points_num = 0
         for box in boxes:
