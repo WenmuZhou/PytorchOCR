@@ -5,8 +5,6 @@ __dir__ = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(__dir__)
 sys.path.insert(0, os.path.abspath(os.path.join(__dir__, '../..')))
 
-os.environ["FLAGS_allocator_strategy"] = 'auto_growth'
-
 import cv2
 import numpy as np
 import math
@@ -24,6 +22,9 @@ logger = get_logger()
 
 class TextRecognizer(ONNXEngine):
     def __init__(self, args):
+        if args.rec_model_dir is None or not os.path.exists(args.rec_model_dir):
+            raise Exception(f'args.rec_model_dir is set to {args.rec_model_dir}, but it is not exists')
+
         onnx_path = os.path.join(args.rec_model_dir, 'model.onnx')
         config_path = os.path.join(args.rec_model_dir, 'config.yaml')
         super(TextRecognizer, self).__init__(onnx_path, args.use_gpu)

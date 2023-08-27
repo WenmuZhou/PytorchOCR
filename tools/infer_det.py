@@ -16,7 +16,7 @@ from torchocr.modeling.architectures import build_model
 from torchocr.postprocess import build_post_process
 from torchocr.utils.ckpt import load_ckpt
 from torchocr.utils.logging import get_logger
-from torchocr.utils.visual import draw_det_res
+from torchocr.utils.visual import draw_det
 from torchocr.utils.utility import get_image_file_list
 from tools.utility import ArgsParser
 from torchocr import Config
@@ -79,7 +79,7 @@ def main(cfg):
                         dt_boxes_list.append(tmp_json)
                     det_box_json[k] = dt_boxes_list
                     save_det_path = f'{save_res_path}/det_results_{os.path.basename(file)}'
-                    src_img = draw_det_res(boxes, src_img)
+                    src_img = draw_det(boxes, src_img)
             else:
                 boxes = post_result[0]['points']
                 dt_boxes_json = []
@@ -88,7 +88,7 @@ def main(cfg):
                     tmp_json = {"transcription": "", "points": np.array(box).tolist()}
                     dt_boxes_json.append(tmp_json)
                 save_det_path = f'{save_res_path}/det_results_{os.path.basename(file)}'
-                src_img = draw_det_res(boxes, src_img)
+                src_img = draw_det(boxes, src_img)
             cv2.imwrite(save_det_path, src_img)
             out_str = f'{file}\t{json.dumps(dt_boxes_json)}'
             fout.write(out_str + '\n')

@@ -5,8 +5,6 @@ __dir__ = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(__dir__)
 sys.path.insert(0, os.path.abspath(os.path.join(__dir__, '../..')))
 
-os.environ["FLAGS_allocator_strategy"] = 'auto_growth'
-
 import cv2
 import json
 import numpy as np
@@ -16,7 +14,7 @@ from torchocr import Config
 from torchocr.postprocess import build_post_process
 from torchocr.data.imaug import create_operators, transform
 from torchocr.utils.logging import get_logger
-from torchocr.utils.visual import draw_det_res
+from torchocr.utils.visual import draw_det
 from torchocr.utils.utility import get_image_file_list, check_and_read
 from tools.infer.onnx_engine import ONNXEngine
 from tools.infer.utility import check_gpu, parse_args
@@ -26,6 +24,9 @@ logger = get_logger()
 
 class TextDetector(ONNXEngine):
     def __init__(self, args):
+        if args.det_model_dir is None or not os.path.exists(args.det_model_dir):
+            raise Exception(f'args.det_model_dir is set to {args.det_model_dir}, but it is not exists')
+
         onnx_path = os.path.join(args.det_model_dir, 'model.onnx')
         config_path = os.path.join(args.det_model_dir, 'config.yaml')
         super(TextDetector, self).__init__(onnx_path, args.use_gpu)
@@ -171,9 +172,9 @@ def main(args):
                 logger.info(f"error in loading image:{image_file}")
                 continue
 
-            st = time.time()
+            tic = time.time()
             dt_boxes, _ = text_detector(img)
-            elapse = time.time() - st
+            elapse = time.time() - tic
             total_time += elapse
 
             dt_boxes_json = []
@@ -187,9 +188,9 @@ def main(args):
             logger.info(out_str)
             logger.info(f"The predict time of {image_file}: {elapse}")
 
-            save_det_path = f'{save_res_path}/inference_results_{os.path.basename(image_file)}'
-            img = draw_det_res(dt_boxes, img)
-            cv2.imwrite(save_det_path, img)
+            save_path = os.path.join(save_res_path, f'inference_det_{os.path.basename(image_file)}')
+            img = draw_det(dt_boxes, img)
+            cv2.imwrite(save_path, img)
 
 
 if __name__ == "__main__":

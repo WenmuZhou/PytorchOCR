@@ -39,6 +39,28 @@
 | ch_PP-OCRv3_det_student  | Y | 1.766314e-07 | [config](cconfigs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml) |
 | ch_PP-OCRv3_det_cml  | Y | Student_res 1.766314e-07 <br> Student2_res 3.1212483e-07 <br> Teacher_res 8.829421e-08 | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_cml.yml) |
 | ch_PP-OCRv3_det_dml  | Y | ok | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_dml.yml) |
+| cls_mv3  | Y | 5.9604645e-08 | [config](configs/cls/cls_mv3.ymll) |
+
+## TODO
+
+功能性：
+
+- [x] 端到端推理
+- [x] det推理
+- [x] rec推理
+- [x] cls推理
+- [x] 导出为onnx
+- [x] onnx推理
+- [] tensorrt 推理
+- [x] 训练，评估，测试
+
+模型：
+
+- [] PP-OCRv4 det
+- [] PP-OCRv4 rec
+- [] DB
+- [] DB ++
+- [] CRNN
 
 ## 使用方式
 
@@ -71,10 +93,26 @@ python tools/infer_rec.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.y
 ```sh
 python tools/export.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
 ```
-会导出会处理和预处理参数
+会将模型导出为onnx格式(默认，torch script未做测试)，同时导出会处理和预处理参数
 
 ### predict
 
 ```sh
-python tools/infer/predict_rec.py -c path/to/export/config.yaml --rec_model_path=path/to/export/model.onnx --image_dir=doc/imgs_words/en/word_1.png
+# det + cls + rec
+python .\tools\infer\predict_system.py --det_model_dir=path/to/det/export_dir  --cls_model_dir=path/to/cls/export_dir  --rec_model_dir=path/to/rec/export_dir  --image_dir=doc/imgs/1.jpg --use_angle_cls=true
+
+# det
+python .\tools\infer\predict_det.py --det_model_dir=path/to/det/export_dir --image_dir=doc/imgs/1.jpg
+
+# cls
+python .\tools\infer\predict_cls.py --cls_model_dir=path/to/cls/export_dir --image_dir=doc/imgs/1.jpg
+
+# rec
+python tools/infer/predict_rec.py --rec_model_dir=path/to/rec/export_dir --image_dir=doc/imgs_words/en/word_1.png
+
 ```
+
+ref:
+
+1. https://github.com/PaddlePaddle/PaddleOCR
+2. https://github.com/frotms/PaddleOCR2Pytorch

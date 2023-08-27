@@ -18,6 +18,8 @@ from torchocr import Config
 from tools.utility import update_rec_head_out_channels, ArgsParser
 from tools.infer_rec import build_rec_process
 from tools.infer_det import build_det_process
+from tools.infer_cls import build_cls_process
+
 
 
 def to_onnx(model, dummy_input, dynamic_axes, sava_path="model.onnx"):
@@ -43,6 +45,9 @@ def export_single_model(model, _cfg,export_dir,export_config, logger, type):
         export_cfg['Transforms'] = build_rec_process(_cfg)
     elif _cfg['Architecture']['model_type'] == 'det':
         export_cfg['Transforms'] = build_det_process(_cfg)
+    elif _cfg['Architecture']['model_type'] == 'cls':
+        export_cfg['Transforms'] = build_cls_process(_cfg)
+
     cfg.save(os.path.join(export_dir, 'config.yaml'), export_cfg)
 
     dummy_input = torch.randn(*export_config['export_shape'], device="cpu")
@@ -52,7 +57,7 @@ def export_single_model(model, _cfg,export_dir,export_config, logger, type):
         torch.jit.save(trace_model, save_path)
     elif type == 'onnx':
         save_path = os.path.join(export_dir, 'model.onnx')
-        to_onnx(model, dummy_input, export_config['dynamic_axes'], save_path)
+        to_onnx(model, dummy_input, export_config.get('dynamic_axes', []), save_path)
     else:
         raise NotImplementedError
     logger.info(f"finish export model to {save_path}")

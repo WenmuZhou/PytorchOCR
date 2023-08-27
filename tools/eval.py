@@ -3,6 +3,7 @@
 # @Author  : zhoujun
 import os
 import sys
+
 __dir__ = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(__dir__)
@@ -27,7 +28,14 @@ def main():
     cfg.merge_dict(FLAGS)
     cfg.merge_dict(opt)
     trainer = Trainer(cfg, mode='eval')
+
+    best_model_dict = trainer.status.get('metrics', {})
+    trainer.logger.info('metric in ckpt ***************')
+    for k, v in best_model_dict.items():
+        trainer.logger.info('{}:{}'.format(k, v))
+
     metric = trainer.eval()
+
     trainer.logger.info('metric eval ***************')
     for k, v in metric.items():
         trainer.logger.info('{}:{}'.format(k, v))

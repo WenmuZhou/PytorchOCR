@@ -86,7 +86,7 @@ class Trainer(object):
             # build optim
             self.optimizer, self.lr_scheduler = build_optimizer(
                 self.cfg['Optimizer'],
-                self.cfg['LRscheduler'],
+                self.cfg['LRScheduler'],
                 epochs=self.cfg['Global']['epoch_num'],
                 step_each_epoch=len(self.train_dataloader),
                 model=self.model)
@@ -126,7 +126,7 @@ class Trainer(object):
         log_smooth_window = self.cfg['Global']['log_smooth_window']
         epoch_num = self.cfg['Global']['epoch_num']
         print_batch_step = self.cfg['Global']['print_batch_step']
-        eval_epoch_step = self.cfg['Global']['eval_epoch_step']
+        eval_epoch_step = self.cfg['Global'].get('eval_epoch_step', 1)
 
         start_eval_epoch = 0
         if self.valid_dataloader is not None:

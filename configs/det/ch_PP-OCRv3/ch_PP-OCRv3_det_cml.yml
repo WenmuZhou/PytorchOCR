@@ -105,7 +105,7 @@ Optimizer:
   lr: 0.001
   weight_decay: 5.0e-05
 
-LRscheduler:
+LRScheduler:
   name: CosineAnnealingLR
   warmup_epoch: 2
 

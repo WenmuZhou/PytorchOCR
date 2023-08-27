@@ -26,7 +26,7 @@ Optimizer:
   weight_decay: 3.0e-05
   amsgrad: true
 
-LRscheduler:
+LRScheduler:
   name: MultiStepLR
   milestones: [700]
   warmup_epoch: 5

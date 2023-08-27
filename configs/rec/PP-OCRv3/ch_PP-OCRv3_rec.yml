@@ -24,9 +24,8 @@ Optimizer:
   name: Adam
   lr: 0.001
   weight_decay: 3.0e-05
-  amsgrad: true
 
-LRscheduler:
+LRScheduler:
   name: CosineAnnealingLR
   warmup_epoch: 5
 

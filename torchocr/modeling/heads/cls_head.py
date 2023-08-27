@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class ClsHead(nn.Module):
@@ -23,4 +23,4 @@ class ClsHead(nn.Module):
         x = self.fc(x)
         if not self.training:
             x = F.softmax(x, dim=1)
-        return x
+        return {'res': x}

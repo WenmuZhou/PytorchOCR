@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/8/27 15:25
 # @Author  : zhoujun
+import os
 
 import fire
 import numpy as np
@@ -12,6 +13,9 @@ class ONNXEngine:
         """
         :param onnx_path:
         """
+        if not os.path.exists(onnx_path):
+            raise Exception(f'{onnx_path} is not exists')
+
         providers = ["CPUExecutionProvider"]
         if use_gpu:
             providers = [

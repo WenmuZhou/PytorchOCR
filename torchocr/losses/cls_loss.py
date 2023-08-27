@@ -7,6 +7,6 @@ class ClsLoss(nn.Module):
         self.loss_func = nn.CrossEntropyLoss(reduction='mean')
 
     def forward(self, predicts, batch):
-        label = batch[1].astype("int64")
-        loss = self.loss_func(input=predicts, label=label)
+        label = batch[1].long()
+        loss = self.loss_func(predicts['res'], label)
         return {'loss': loss}

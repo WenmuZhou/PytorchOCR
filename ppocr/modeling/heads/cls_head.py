@@ -34,14 +34,9 @@ class ClsHead(nn.Layer):
     def __init__(self, in_channels, class_dim, **kwargs):
         super(ClsHead, self).__init__()
         self.pool = nn.AdaptiveAvgPool2D(1)
-        stdv = 1.0 / math.sqrt(in_channels * 1.0)
         self.fc = nn.Linear(
             in_channels,
-            class_dim,
-            weight_attr=ParamAttr(
-                name="fc_0.w_0",
-                initializer=nn.initializer.Uniform(-stdv, stdv)),
-            bias_attr=ParamAttr(name="fc_0.b_0"), )
+            class_dim)
 
     def forward(self, x, targets=None):
         x = self.pool(x)
@@ -49,4 +44,4 @@ class ClsHead(nn.Layer):
         x = self.fc(x)
         if not self.training:
             x = F.softmax(x, axis=1)
-        return x
+        return {'res': x}

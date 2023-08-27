@@ -76,10 +76,10 @@ def build_dataloader(config, mode, logger, seed=None):
     )
     if len(data_loader) == 0:
         logger.error(
-            "No Images in train dataset, please ensure\n" +
+            f"No Images in {mode.lower()} dataloader, please ensure\n"
             "\t1. The images num in the train label_file_list should be larger than or equal with batch size.\n"
-            +
-            "\t2. The annotation file and path in the configuration file are provided normally."
+            "\t2. The annotation file and path in the configuration file are provided normally.\n"
+            "\t3. The BatchSize is large than images."
         )
         sys.exit()
     return data_loader
