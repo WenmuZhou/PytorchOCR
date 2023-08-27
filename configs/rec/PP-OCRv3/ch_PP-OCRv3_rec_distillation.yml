@@ -1,12 +1,12 @@
 Global:
   device: gpu
-  epoch_num: 2
+  epoch_num: 800
   log_smooth_window: 20
-  print_batch_step: 1
+  print_batch_step: 10
   output_dir: ./output/rec_ppocr_v3_distillation
   eval_epoch_step: [0, 1]
   cal_metric_during_train: true
-  pretrained_model: D:\code\OCR\new_ocr\models\ch_PP-OCRv3_rec_train\best_accuracy.pth
+  pretrained_model:
   checkpoints:
   use_tensorboard: false
   infer_img: doc/imgs_words/ch/word_1.jpg
@@ -151,10 +151,10 @@ Metric:
 Train:
   dataset:
     name: SimpleDataSet
-    data_dir: D:/code/OCR/new_ocr/dataset/ic15_data_benckmark
+    data_dir: ./train_data
     ext_op_transform_idx: 1
     label_file_list:
-    - D:/code/OCR/new_ocr/dataset/ic15_data_benckmark/rec_gt_test_lite.txt
+    - ./train_data/train_list.txt
     transforms:
     - DecodeImage:
         img_mode: BGR
@@ -177,15 +177,15 @@ Train:
         - valid_ratio
   loader:
     shuffle: true
-    batch_size_per_card: 4
+    batch_size_per_card: 128
     drop_last: true
     num_workers: 4
 Eval:
   dataset:
     name: SimpleDataSet
-    data_dir: D:/code/OCR/new_ocr/dataset/ic15_data_benckmark
+    data_dir: ./train_data
     label_file_list:
-    - D:/code/OCR/new_ocr/dataset/ic15_data_benckmark/rec_gt_test_lite.txt
+    - ./train_data/train_list.txt
     transforms:
     - DecodeImage:
         img_mode: BGR
@@ -203,5 +203,5 @@ Eval:
   loader:
     shuffle: false
     drop_last: false
-    batch_size_per_card: 4
+    batch_size_per_card: 128
     num_workers: 4
