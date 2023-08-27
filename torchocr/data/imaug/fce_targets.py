@@ -87,20 +87,26 @@ class FCENetTargets:
 
         current_edge_ind = 0
         resampled_line = [line[0]]
+
         for i in range(1, n):
             current_line_len = i * delta_length
 
-            while current_line_len >= length_cumsum[current_edge_ind + 1]:
+            while current_edge_ind + 1 < len(
+                    length_cumsum) and current_line_len >= length_cumsum[
+                        current_edge_ind + 1]:
                 current_edge_ind += 1
+
             current_edge_end_shift = current_line_len - length_cumsum[
                 current_edge_ind]
+
+            if current_edge_ind >= len(length_list):
+                break
             end_shift_ratio = current_edge_end_shift / length_list[
                 current_edge_ind]
             current_point = line[current_edge_ind] + (line[current_edge_ind + 1]
                                                       - line[current_edge_ind]
                                                       ) * end_shift_ratio
             resampled_line.append(current_point)
-
         resampled_line.append(line[-1])
         resampled_line = np.array(resampled_line)
 
@@ -138,7 +144,7 @@ class FCENetTargets:
         sideline2 = pad_points[tail_inds[1]:(head_inds[1] + len(points))]
         sideline_mean_shift = np.mean(
             sideline1, axis=0) - np.mean(
-            sideline2, axis=0)
+                sideline2, axis=0)
 
         if sideline_mean_shift[1] > 0:
             top_sideline, bot_sideline = sideline2, sideline1
@@ -219,9 +225,9 @@ class FCENetTargets:
             head_inds = [head_start, head_end]
             tail_inds = [tail_start, tail_end]
         else:
-            if vector_slope(points[1] - points[0]) + vector_slope(
-                    points[3] - points[2]) < vector_slope(points[
-                                                              2] - points[1]) + vector_slope(points[0] - points[3]):
+            if vector_slope(points[1] - points[0]) + vector_slope(points[
+                    3] - points[2]) < vector_slope(points[2] - points[
+                        1]) + vector_slope(points[0] - points[3]):
                 horizontal_edge_inds = [[0, 1], [2, 3]]
                 vertical_edge_inds = [[3, 0], [1, 2]]
             else:
@@ -230,12 +236,11 @@ class FCENetTargets:
 
             vertical_len_sum = norm(points[vertical_edge_inds[0][0]] - points[
                 vertical_edge_inds[0][1]]) + norm(points[vertical_edge_inds[1][
-                0]] - points[vertical_edge_inds[1][1]])
+                    0]] - points[vertical_edge_inds[1][1]])
             horizontal_len_sum = norm(points[horizontal_edge_inds[0][
                 0]] - points[horizontal_edge_inds[0][1]]) + norm(points[
-                                                                     horizontal_edge_inds[1][0]] - points[
-                                                                     horizontal_edge_inds[1]
-                                                                     [1]])
+                    horizontal_edge_inds[1][0]] - points[horizontal_edge_inds[1]
+                                                         [1]])
 
             if vertical_len_sum > horizontal_len_sum * orientation_thr:
                 head_inds = horizontal_edge_inds[0]
@@ -306,13 +311,13 @@ class FCENetTargets:
         center_region_boxes = []
         for poly in text_polys:
             # assert len(poly) == 1
-            polygon_points = np.unique(poly.reshape(-1, 2), axis=0)
-            if polygon_points.shape[0] < 4:
-                continue
+            polygon_points = poly.reshape(-1, 2)
             _, _, top_line, bot_line = self.reorder_poly_edge(polygon_points)
             resampled_top_line, resampled_bot_line = self.resample_sidelines(
                 top_line, bot_line, self.resample_step)
             resampled_bot_line = resampled_bot_line[::-1]
+            if len(resampled_top_line) != len(resampled_bot_line):
+                continue
             center_line = (resampled_top_line + resampled_bot_line) / 2
 
             line_head_shrink_len = norm(resampled_top_line[0] -
@@ -323,7 +328,7 @@ class FCENetTargets:
             tail_shrink_num = int(line_tail_shrink_len // self.resample_step)
             if len(center_line) > head_shrink_num + tail_shrink_num + 2:
                 center_line = center_line[head_shrink_num:len(center_line) -
-                                                          tail_shrink_num]
+                                          tail_shrink_num]
                 resampled_top_line = resampled_top_line[head_shrink_num:len(
                     resampled_top_line) - tail_shrink_num]
                 resampled_bot_line = resampled_bot_line[head_shrink_num:len(
@@ -364,7 +369,7 @@ class FCENetTargets:
                 p2 = polygon[0]
             else:
                 p2 = polygon[i + 1]
-            length.append(((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5)
+            length.append(((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)**0.5)
 
         total_length = sum(length)
         n_on_each_line = (np.array(length) / (total_length + 1e-8)) * n
@@ -397,16 +402,13 @@ class FCENetTargets:
         Returns:
             new_polygon (lost[float]): The polygon with start point at right.
         """
-        try:
-            temp_polygon = polygon - polygon.mean(axis=0)
-            x = np.abs(temp_polygon[:, 0])
-            y = temp_polygon[:, 1]
-            index_x = np.argsort(x)
-            index_y = np.argmin(y[index_x[:8]])
-            index = index_x[index_y]
-            new_polygon = np.concatenate([polygon[index:], polygon[:index]])
-        except:
-            print(polygon.shape)
+        temp_polygon = polygon - polygon.mean(axis=0)
+        x = np.abs(temp_polygon[:, 0])
+        y = temp_polygon[:, 1]
+        index_x = np.argsort(x)
+        index_y = np.argmin(y[index_x[:8]])
+        index = index_x[index_y]
+        new_polygon = np.concatenate([polygon[index:], polygon[:index]])
         return new_polygon
 
     def poly2fourier(self, polygon, fourier_degree):
@@ -454,10 +456,6 @@ class FCENetTargets:
                   real part and image part of 2k+1 Fourier coefficients.
         """
         resampled_polygon = self.resample_polygon(polygon)
-        if len(resampled_polygon) == 0:
-            print('111')
-            return None
-
         resampled_polygon = self.normalize_polygon(resampled_polygon)
 
         fourier_coeff = self.poly2fourier(resampled_polygon, fourier_degree)
@@ -492,19 +490,14 @@ class FCENetTargets:
         for poly in text_polys:
             mask = np.zeros((h, w), dtype=np.uint8)
             polygon = np.array(poly).reshape((1, -1, 2))
-            if polygon.shape[0] == 0:
-                print('xx')
-                continue
             cv2.fillPoly(mask, polygon.astype(np.int32), 1)
             fourier_coeff = self.cal_fourier_signature(polygon[0], k)
-            if fourier_coeff is None:
-                continue
             for i in range(-k, k + 1):
                 if i != 0:
                     real_map[i + k, :, :] = mask * fourier_coeff[i + k, 0] + (
-                            1 - mask) * real_map[i + k, :, :]
+                        1 - mask) * real_map[i + k, :, :]
                     imag_map[i + k, :, :] = mask * fourier_coeff[i + k, 1] + (
-                            1 - mask) * imag_map[i + k, :, :]
+                        1 - mask) * imag_map[i + k, :, :]
                 else:
                     yx = np.argwhere(mask > 0.5)
                     k_ind = np.ones((len(yx)), dtype=np.int64) * k
@@ -574,7 +567,7 @@ class FCENetTargets:
         lv_ignore_polys = [[] for i in range(len(lv_size_divs))]
         level_maps = []
         for poly in text_polys:
-            polygon = np.array(poly, dtype=np.int).reshape((1, -1, 2))
+            polygon = np.array(poly, dtype=np.int32).reshape((1, -1, 2))
             _, _, box_w, box_h = cv2.boundingRect(polygon)
             proportion = max(box_h, box_w) / (h + 1e-8)
 
@@ -583,7 +576,7 @@ class FCENetTargets:
                     lv_text_polys[ind].append(poly / lv_size_divs[ind])
 
         for ignore_poly in ignore_polys:
-            polygon = np.array(ignore_poly, dtype=np.int).reshape((1, -1, 2))
+            polygon = np.array(ignore_poly, dtype=np.int32).reshape((1, -1, 2))
             _, _, box_w, box_h = cv2.boundingRect(polygon)
             proportion = max(box_h, box_w) / (h + 1e-8)
 
@@ -627,8 +620,8 @@ class FCENetTargets:
         """
 
         assert isinstance(results, dict)
-        image = results['img']
-        polygons = results['text_polys']
+        image = results['image']
+        polygons = results['polys']
         ignore_tags = results['ignore_tags']
         h, w, _ = image.shape
 

@@ -1,3 +1,8 @@
+"""
+This code is refer from:
+https://github.com/open-mmlab/mmocr/blob/main/mmocr/models/textdet/losses/fce_loss.py
+"""
+
 import numpy as np
 from torch import nn
 import torch
@@ -35,22 +40,22 @@ class FCELoss(nn.Module):
         assert isinstance(preds, dict)
         preds = preds['levels']
 
-        p3_maps, p4_maps, p5_maps = labels['p3_maps'], labels['p4_maps'], labels['p5_maps']
-        assert p3_maps[0].shape[0] == 4 * self.fourier_degree + 5, \
+        p3_maps, p4_maps, p5_maps = labels[1:]
+        assert p3_maps[0].shape[0] == 4 * self.fourier_degree + 5,\
             'fourier degree not equal in FCEhead and FCEtarget'
 
         # to tensor
         gts = [p3_maps, p4_maps, p5_maps]
-        # for idx, maps in enumerate(gts):
-        #     gts[idx] = torch.tensor(np.stack(maps.cpu().detach().numpy()))
-        #     torch.stack(maps)
+        for idx, maps in enumerate(gts):
+            gts[idx] = torch.tensor(np.stack(maps))
+
         losses = multi_apply(self.forward_single, preds, gts)
 
-        loss_tr = torch.tensor(0.).cuda().float()
-        loss_tcl = torch.tensor(0.).cuda().float()
-        loss_reg_x = torch.tensor(0.).cuda().float()
-        loss_reg_y = torch.tensor(0.).cuda().float()
-        loss_all = torch.tensor(0.).cuda().float()
+        loss_tr = torch.tensor(0.).float()
+        loss_tcl = torch.tensor(0.).float()
+        loss_reg_x = torch.tensor(0.).float()
+        loss_reg_y = torch.tensor(0.).float()
+        loss_all = torch.tensor(0.).float()
 
         for idx, loss in enumerate(losses):
             loss_all += sum(loss)
@@ -72,48 +77,48 @@ class FCELoss(nn.Module):
         return results
 
     def forward_single(self, pred, gt):
-        cls_pred = pred[0].permute(0, 2, 3, 1)
-        reg_pred = pred[1].permute(0, 2, 3, 1)
-        gt = gt.permute(0, 2, 3, 1)
+        cls_pred = torch.permute(pred[0], (0, 2, 3, 1))
+        reg_pred = torch.permute(pred[1], (0, 2, 3, 1))
+        gt = torch.permute(gt, (0, 2, 3, 1))
 
         k = 2 * self.fourier_degree + 1
-        tr_pred = torch.reshape(cls_pred[:, :, :, :2], (-1, 2))
-        tcl_pred = torch.reshape(cls_pred[:, :, :, 2:], (-1, 2))
-        x_pred = torch.reshape(reg_pred[:, :, :, 0:k], (-1, k))
-        y_pred = torch.reshape(reg_pred[:, :, :, k:2 * k], (-1, k))
+        tr_pred = torch.permute(cls_pred[:, :, :, :2], (-1, 2))
+        tcl_pred = torch.permute(cls_pred[:, :, :, 2:], (-1, 2))
+        x_pred = torch.permute(reg_pred[:, :, :, 0:k], (-1, k))
+        y_pred = torch.permute(reg_pred[:, :, :, k:2 * k], (-1, k))
 
         tr_mask = gt[:, :, :, :1].reshape([-1])
         tcl_mask = gt[:, :, :, 1:2].reshape([-1])
         train_mask = gt[:, :, :, 2:3].reshape([-1])
-        x_map = torch.reshape(gt[:, :, :, 3:3 + k], (-1, k))
-        y_map = torch.reshape(gt[:, :, :, 3 + k:], (-1, k))
+        x_map = torch.permute(gt[:, :, :, 3:3 + k], (-1, k))
+        y_map = torch.permute(gt[:, :, :, 3 + k:], (-1, k))
 
-        tr_train_mask = (train_mask * tr_mask).bool()
+        tr_train_mask = (train_mask * tr_mask).astype('bool')
         tr_train_mask2 = torch.cat(
             [tr_train_mask.unsqueeze(1), tr_train_mask.unsqueeze(1)], dim=1)
         # tr loss
         loss_tr = self.ohem(tr_pred, tr_mask, train_mask)
         # tcl loss
-        loss_tcl = torch.tensor((0.), dtype=torch.float32)
+        loss_tcl = torch.tensor(0.).float()
         tr_neg_mask = tr_train_mask.logical_not()
         tr_neg_mask2 = torch.cat(
             [tr_neg_mask.unsqueeze(1), tr_neg_mask.unsqueeze(1)], dim=1)
         if tr_train_mask.sum().item() > 0:
             loss_tcl_pos = F.cross_entropy(
                 tcl_pred.masked_select(tr_train_mask2).reshape([-1, 2]),
-                tcl_mask.masked_select(tr_train_mask).long())
+                tcl_mask.masked_select(tr_train_mask).astype('int64'))
             loss_tcl_neg = F.cross_entropy(
                 tcl_pred.masked_select(tr_neg_mask2).reshape([-1, 2]),
-                tcl_mask.masked_select(tr_neg_mask).long())
+                tcl_mask.masked_select(tr_neg_mask).astype('int64'))
             loss_tcl = loss_tcl_pos + 0.5 * loss_tcl_neg
 
         # regression loss
         loss_reg_x = torch.tensor(0.).float()
         loss_reg_y = torch.tensor(0.).float()
         if tr_train_mask.sum().item() > 0:
-            weight = (tr_mask.masked_select(tr_train_mask.bool())
-                      .float() + tcl_mask.masked_select(
-                tr_train_mask.bool()).float()) / 2
+            weight = (tr_mask.masked_select(tr_train_mask.astype('bool'))
+                      .astype('float32') + tcl_mask.masked_select(
+                          tr_train_mask.astype('bool')).astype('float32')) / 2
             weight = weight.reshape([-1, 1])
 
             ft_x, ft_y = self.fourier2poly(x_map, y_map)
@@ -137,37 +142,37 @@ class FCELoss(nn.Module):
 
     def ohem(self, predict, target, train_mask):
 
-        pos = (target * train_mask).bool()
-        neg = ((1 - target) * train_mask).bool()
+        pos = (target * train_mask).astype('bool')
+        neg = ((1 - target) * train_mask).astype('bool')
 
-        pos2 = torch.cat([pos.unsqueeze(1), pos.unsqueeze(1)], dim=1)
-        neg2 = torch.cat([neg.unsqueeze(1), neg.unsqueeze(1)], dim=1)
+        pos2 = torch.concat([pos.unsqueeze(1), pos.unsqueeze(1)], dim=1)
+        neg2 = torch.concat([neg.unsqueeze(1), neg.unsqueeze(1)], dim=1)
 
-        n_pos = pos.float().sum()
+        n_pos = pos.astype('float32').sum()
 
         if n_pos.item() > 0:
             loss_pos = F.cross_entropy(
                 predict.masked_select(pos2).reshape([-1, 2]),
-                target.masked_select(pos).long(),
+                target.masked_select(pos).astype('int64'),
                 reduction='sum')
             loss_neg = F.cross_entropy(
                 predict.masked_select(neg2).reshape([-1, 2]),
-                target.masked_select(neg).long(),
+                target.masked_select(neg).astype('int64'),
                 reduction='none')
             n_neg = min(
-                int(neg.float().sum().item()),
-                int(self.ohem_ratio * n_pos.float()))
+                int(neg.astype('float32').sum().item()),
+                int(self.ohem_ratio * n_pos.astype('float32')))
         else:
             loss_pos = torch.tensor(0.)
             loss_neg = F.cross_entropy(
                 predict.masked_select(neg2).reshape([-1, 2]),
-                target.masked_select(neg).long(),
+                target.masked_select(neg).astype('int64'),
                 reduction='none')
             n_neg = 100
         if len(loss_neg) > n_neg:
             loss_neg, _ = torch.topk(loss_neg, n_neg)
 
-        return (loss_pos + loss_neg.sum()) / (n_pos + n_neg).float()
+        return (loss_pos + loss_neg.sum()) / (n_pos + n_neg).astype('float32')
 
     def fourier2poly(self, real_maps, imag_maps):
         """Transform Fourier coefficient maps to polygon maps.
@@ -185,23 +190,15 @@ class FCELoss(nn.Module):
                 represented by n sample points (xn, yn), whose shape is (-1, n)
         """
 
-        k_vect = torch.arange(
-            -self.fourier_degree, self.fourier_degree + 1,
-            dtype=torch.float32).reshape([-1, 1])
-        i_vect = torch.arange(
-            0, self.num_sample, dtype=torch.float32).reshape([1, -1])
+        k_vect = torch.arange(-self.fourier_degree, self.fourier_degree + 1, dtype=torch.float).reshape([-1, 1])
+        i_vect = torch.arange(0, self.num_sample, dtype=torch.float).reshape([1, -1])
 
-        transform_matrix = 2 * np.pi / self.num_sample * torch.matmul(k_vect,
-                                                                      i_vect)
+        transform_matrix = 2 * np.pi / self.num_sample * torch.matmul(k_vect, i_vect)
 
-        x1 = torch.einsum('ak, kn-> an', real_maps,
-                          torch.cos(transform_matrix).cuda())
-        x2 = torch.einsum('ak, kn-> an', imag_maps,
-                          torch.sin(transform_matrix).cuda())
-        y1 = torch.einsum('ak, kn-> an', real_maps,
-                          torch.sin(transform_matrix).cuda())
-        y2 = torch.einsum('ak, kn-> an', imag_maps,
-                          torch.cos(transform_matrix).cuda())
+        x1 = torch.einsum('ak, kn-> an', real_maps, torch.cos(transform_matrix))
+        x2 = torch.einsum('ak, kn-> an', imag_maps, torch.sin(transform_matrix))
+        y1 = torch.einsum('ak, kn-> an', real_maps, torch.sin(transform_matrix))
+        y2 = torch.einsum('ak, kn-> an', imag_maps, torch.cos(transform_matrix))
 
         x_maps = x1 - x2
         y_maps = y1 + y2

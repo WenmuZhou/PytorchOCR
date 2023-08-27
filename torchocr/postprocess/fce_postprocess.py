@@ -1,8 +1,3 @@
-"""
-This code is refer from:
-https://github.com/open-mmlab/mmocr/blob/v0.3.0/mmocr/models/textdet/postprocess/wrapper.py
-"""
-
 import cv2
 import torch
 import numpy as np
@@ -18,7 +13,7 @@ def fill_hole(input_mask):
     mask = np.zeros((h + 4, w + 4), np.uint8)
 
     cv2.floodFill(canvas, mask, (0, 0), 1)
-    canvas = canvas[1:h + 1, 1:w + 1].astype(np.bool)
+    canvas = canvas[1:h + 1, 1:w + 1].astype(np.bool_)
 
     return ~canvas | input_mask
 
@@ -78,7 +73,7 @@ class FCEPostProcess(object):
         score_maps = []
         for key, value in preds.items():
             if isinstance(value, torch.Tensor):
-                value = value.cpu().detach().numpy()
+                value = value.numpy()
             cls_res = value[:, :4, :, :]
             reg_res = value[:, 4:, :, :]
             score_maps.append([cls_res, reg_res])
@@ -87,10 +82,12 @@ class FCEPostProcess(object):
 
     def resize_boundary(self, boundaries, scale_factor):
         """Rescale boundaries via scale_factor.
+
         Args:
             boundaries (list[list[float]]): The boundary list. Each boundary
             with size 2k+1 with k>=4.
             scale_factor(ndarray): The scale factor of size (4,).
+
         Returns:
             boundaries (list[list[float]]): The scaled boundaries.
         """
@@ -112,15 +109,16 @@ class FCEPostProcess(object):
         boundaries = []
         for idx, score_map in enumerate(score_maps):
             scale = self.scales[idx]
-            boundaries = boundaries + self._get_boundary_single(score_map,scale)
+            boundaries = boundaries + self._get_boundary_single(score_map,
+                                                                scale)
 
         # nms
         boundaries = poly_nms(boundaries, self.nms_thr)
         boundaries, scores = self.resize_boundary(
             boundaries, (1 / shape_list[0, 2:]).tolist()[::-1])
 
-        # boxes_batch = [dict(points=boundaries, scores=scores)]
-        return boundaries.tolist(),scores
+        boxes_batch = [dict(points=boundaries, scores=scores)]
+        return boxes_batch
 
     def _get_boundary_single(self, score_map, scale):
         assert len(score_map) == 2
@@ -148,6 +146,7 @@ class FCEPostProcess(object):
                       score_thr=0.3,
                       nms_thr=0.1):
         """Decoding predictions of FCENet to instances.
+
         Args:
             preds (list(Tensor)): The head output tensors.
             fourier_degree (int): The maximum Fourier transform degree k.
@@ -162,6 +161,7 @@ class FCEPostProcess(object):
             score_thr (float) : The threshold used to filter out the final
                 candidates.
             nms_thr (float) :  The threshold of nms.
+
         Returns:
             boundaries (list[list[float]]): The instance boundary and confidence
                 list.
@@ -216,7 +216,7 @@ class FCEPostProcess(object):
                 poly = np.array(boundary[:-1]).reshape(-1, 2).astype(np.float32)
                 score = boundary[-1]
                 points = cv2.boxPoints(cv2.minAreaRect(poly))
-                points = np.int0(points)
+                points = np.int64(points)
                 new_boundaries.append(points.reshape(-1).tolist() + [score])
                 boundaries = new_boundaries
 
