@@ -237,7 +237,6 @@ class CVRandomPerspective(object):
         startpoints, endpoints = self.get_params(width, height, self.distortion)
         M = cv2.getPerspectiveTransform(startpoints, endpoints)
 
-        # TODO: more robust way to crop image
         rect = cv2.minAreaRect(endpoints)
         bbox = cv2.boxPoints(rect).astype(dtype=np.int32)
         max_x, max_y = bbox[:, 0].max(), bbox[:, 1].max()

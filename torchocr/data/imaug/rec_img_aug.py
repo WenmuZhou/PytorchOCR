@@ -408,7 +408,6 @@ class GrayRecResizeImg(object):
         image_shape = self.image_shape
         if self.padding:
             imgC, imgH, imgW = image_shape
-            # todo: change to 0 and modified image shape
             h = img.shape[0]
             w = img.shape[1]
             ratio = w / float(h)
@@ -558,7 +557,6 @@ def resize_norm_img(img,
 
 def resize_norm_img_chinese(img, image_shape):
     imgC, imgH, imgW = image_shape
-    # todo: change to 0 and modified image shape
     max_wh_ratio = imgW * 1.0 / imgH
     h, w = img.shape[0], img.shape[1]
     ratio = w * 1.0 / h
