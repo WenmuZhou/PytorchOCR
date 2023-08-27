@@ -1,14 +1,19 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2020/6/15 14:07
-# @Author  : zhoujun
 import copy
-from .RecMetric import RecMetric
-from .DetMetric import DetMetric
-from .distill_metric import DistillationMetric
+
+__all__ = ["build_metric"]
+
+from .det_metric import DetMetric, DetFCEMetric
+from .rec_metric import RecMetric, CNTMetric, CANMetric
+from .cls_metric import ClsMetric
+from .e2e_metric import E2EMetric
+from .distillation_metric import DistillationMetric
 
 
 def build_metric(config):
-    support_dict = ["DistillationMetric"]
+    support_dict = [
+        "DetMetric", "DetFCEMetric", "RecMetric", "ClsMetric", "E2EMetric",
+        "DistillationMetric"
+    ]
 
     config = copy.deepcopy(config)
     module_name = config.pop("name")

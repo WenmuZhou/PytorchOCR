@@ -1,0 +1,6 @@
+Linear:
+  torch:
+    - Linear
+    - NonDynamicallyQuantizableLinear
+  param:
+    weight: transpose

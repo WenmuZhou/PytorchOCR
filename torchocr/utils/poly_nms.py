@@ -1,16 +1,4 @@
-# copyright (c) 2022 PaddlePaddle Authors. All Rights Reserve.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
 
 import numpy as np
 from shapely.geometry import Polygon
@@ -18,9 +6,11 @@ from shapely.geometry import Polygon
 
 def points2polygon(points):
     """Convert k points to 1 polygon.
+
     Args:
         points (ndarray or list): A ndarray or a list of shape (2k)
             that indicates k points.
+
     Returns:
         polygon (Polygon): A polygon object.
     """
@@ -36,9 +26,11 @@ def points2polygon(points):
 
 def poly_intersection(poly_det, poly_gt, buffer=0.0001):
     """Calculate the intersection area between two polygon.
+
     Args:
         poly_det (Polygon): A polygon predicted by detector.
         poly_gt (Polygon): A gt polygon.
+
     Returns:
         intersection_area (float): The intersection area between two polygons.
     """
@@ -54,9 +46,11 @@ def poly_intersection(poly_det, poly_gt, buffer=0.0001):
 
 def poly_union(poly_det, poly_gt):
     """Calculate the union area between two polygon.
+
     Args:
         poly_det (Polygon): A polygon predicted by detector.
         poly_gt (Polygon): A gt polygon.
+
     Returns:
         union_area (float): The union area between two polygons.
     """
@@ -83,9 +77,11 @@ def valid_boundary(x, with_score=True):
 
 def boundary_iou(src, target):
     """Calculate the IOU between two boundaries.
+
     Args:
        src (list): Source boundary.
        target (list): Target boundary.
+
     Returns:
        iou (float): The iou between two boundaries.
     """
@@ -99,9 +95,11 @@ def boundary_iou(src, target):
 
 def poly_iou(poly_det, poly_gt):
     """Calculate the IOU between two polygons.
+
     Args:
         poly_det (Polygon): A polygon predicted by detector.
         poly_gt (Polygon): A gt polygon.
+
     Returns:
         iou (float): The IOU between two polygons.
     """

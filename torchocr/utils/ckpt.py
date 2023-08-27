@@ -1,73 +1,74 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2020/6/16 8:56
+# @Time    : 2023/8/27 10:02
 # @Author  : zhoujun
 import os
+
 import torch
 
+from torchocr.utils.logging import get_logger
 
-def load_checkpoint(_model, resume_from, to_use_device, _optimizers=None, third_name=None):
+
+def save_ckpt(model, cfg, optimizer, lr_scheduler, epoch, global_step, metrics, is_best=False, logger=None):
     """
-    加载预训练模型
-    Args:
-        _model:  模型
-        resume_from: 预训练模型路径
-        to_use_device: 设备
-        _optimizers: 如果不为None，则表明采用模型的训练参数
-        third_name: 第三方预训练模型的名称
+    Saving checkpoints
 
-    Returns:
-
+    :param epoch: current epoch number
+    :param log: logging information of the epoch
+    :param save_best: if True, rename the saved checkpoint to 'model_best.pth.tar'
     """
-    global_state = {}
-    if not third_name:
-        state = torch.load(resume_from, map_location=to_use_device)
-        _model.load_state_dict({'module.' + k: v for k, v in state['state_dict'].items()}, strict=True)
-        # _model.load_state_dict(state['state_dict'])
-        if 'optimizer' in state and _optimizers is not None:
-            _optimizers.load_state_dict(state['optimizer'])
-        if 'global_state' in state:
-            global_state = state['global_state']
-
-    return _model, _optimizers, global_state
-
-
-def save_checkpoint(checkpoint_path, model, _optimizers, logger, cfg, **kwargs):
-    # if isinstance(model, torch.nn.DataParallel()):
-    #     mode_state_dict = model.module.state_dict()
-    # else:
-    mode_state_dict = model.module.state_dict()
-    state = {'state_dict': mode_state_dict,
-             'optimizer': _optimizers.state_dict(),
-             'cfg': cfg}
-    state.update(kwargs)
-    torch.save(state, checkpoint_path)
-    logger.info('models saved to %s' % checkpoint_path)
-
-
-def save_checkpoint_logic(total_loss, total_num, min_loss, net, solver, epoch, rec_train_options, logger):
-    """
-    根据配置文件保存模型
-    Args:
-        total_loss:
-        total_num:
-        min_loss:
-        net:
-        epoch:
-        rec_train_options:
-        logger:
-    Returns:
-
-    """
-    # operation for model save as parameter ckpt_save_type is  HighestAcc
-    if rec_train_options['ckpt_save_type'] == 'HighestAcc':
-        loss_mean = sum([total_loss[idx] * total_num[idx] for idx in range(len(total_loss))]) / sum(total_num)
-        if loss_mean < min_loss:
-            min_loss = loss_mean
-            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                            solver, epoch, logger)
-
+    if logger is None:
+        logger = get_logger()
+    if is_best:
+        save_path = os.path.join(cfg['Global']['output_dir'], 'best.pth')
     else:
-        if epoch % rec_train_options['ckpt_save_epoch'] == 0:
-            save_checkpoint(os.path.join(rec_train_options['checkpoint_save_dir'], 'epoch_' + str(epoch) + '.pth'), net,
-                            solver, epoch, logger)
-    return min_loss
+        save_path = os.path.join(cfg['Global']['output_dir'], 'latest.pth')
+    state_dict = model.module.state_dict() if cfg['Global']['distributed'] else model.state_dict()
+    state = {
+        'epoch': epoch,
+        'global_step': global_step,
+        'state_dict': state_dict,
+        'optimizer': optimizer.state_dict(),
+        'scheduler': lr_scheduler.state_dict(),
+        'config': cfg,
+        'metrics': metrics
+    }
+    torch.save(state, save_path)
+    logger.info(f'save ckpt to {save_path}')
+
+
+def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
+    """
+    Resume from saved checkpoints
+    :param checkpoint_path: Checkpoint path to be resumed
+    """
+    if logger is None:
+        logger = get_logger()
+    checkpoints = cfg['Global'].get('checkpoints')
+    pretrained_model = cfg['Global'].get('pretrained_model')
+
+    status = {}
+    if checkpoints and os.path.exists(checkpoints):
+        logger.info(f"loading checkpoint: {checkpoints} ...")
+        checkpoint = torch.load(checkpoints, map_location=torch.device('cpu'))
+        model.load_state_dict(checkpoint['state_dict'], strict=True)
+        if optimizer is not None:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+        if lr_scheduler is not None:
+            lr_scheduler.load_state_dict(checkpoint['scheduler'])
+        logger.info(f"resume from checkpoint {checkpoints} (epoch {checkpoint['epoch']})")
+
+        status['global_step'] = checkpoint['global_step']
+        status['epoch'] = checkpoint['epoch'] + 1
+        status['metrics'] = checkpoint['metrics']
+    elif pretrained_model and os.path.exists(pretrained_model):
+        logger.info(f"loading checkpoint: {pretrained_model} ...")
+        load_pretrained_params(model, pretrained_model)
+        logger.info(f"finetune from checkpoint {pretrained_model}")
+    else:
+        logger.info("train from scratch")
+    return status
+
+
+def load_pretrained_params(model, pretrained_model):
+    checkpoint = torch.load(pretrained_model, map_location=torch.device('cpu'))
+    model.load_state_dict(checkpoint['state_dict'], strict=False)
