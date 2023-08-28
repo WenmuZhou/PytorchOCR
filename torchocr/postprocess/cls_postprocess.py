@@ -12,7 +12,7 @@ class ClsPostProcess(object):
         if 'res' in preds:
             preds = preds['res']
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
 
         label_list = self.label_list
         if label_list is None:

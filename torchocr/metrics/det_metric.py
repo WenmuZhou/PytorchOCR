@@ -19,8 +19,8 @@ class DetMetric(object):
        preds: a list of dict produced by post process
             points: np.ndarray of shape (N, K, 4, 2), the polygons of objective regions.
        '''
-        gt_polyons_batch = batch[2]
-        ignore_tags_batch = batch[3]
+        gt_polyons_batch = batch[2].cpu().numpy()
+        ignore_tags_batch = batch[3].cpu().numpy()
         for pred, gt_polyons, ignore_tags in zip(preds, gt_polyons_batch,
                                                  ignore_tags_batch):
             # prepare gt

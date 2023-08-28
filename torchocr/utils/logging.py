@@ -40,14 +40,14 @@ def get_logger(name='torchocr', log_file=None, log_level=logging.DEBUG):
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    cpu_gpurank0 = not torch.cuda.is_available() or dist.get_rank() == 0
-    if log_file is not None and cpu_gpurank0:
+    rank = int(os.environ['LOCAL_RANK']) if 'LOCAL_RANK' in os.environ else 0
+    if log_file is not None and rank==0:
         log_file_folder = os.path.split(log_file)[0]
         os.makedirs(log_file_folder, exist_ok=True)
         file_handler = logging.FileHandler(log_file, 'a')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-    if cpu_gpurank0:
+    if rank==0:
         logger.setLevel(log_level)
     else:
         logger.setLevel(logging.ERROR)

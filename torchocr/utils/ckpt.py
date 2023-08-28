@@ -48,7 +48,6 @@ def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
 
     status = {}
     if checkpoints and os.path.exists(checkpoints):
-        logger.info(f"loading checkpoint: {checkpoints} ...")
         checkpoint = torch.load(checkpoints, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint['state_dict'], strict=True)
         if optimizer is not None:
@@ -61,7 +60,6 @@ def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
         status['epoch'] = checkpoint['epoch'] + 1
         status['metrics'] = checkpoint['metrics']
     elif pretrained_model and os.path.exists(pretrained_model):
-        logger.info(f"loading checkpoint: {pretrained_model} ...")
         load_pretrained_params(model, pretrained_model)
         logger.info(f"finetune from checkpoint {pretrained_model}")
     else:

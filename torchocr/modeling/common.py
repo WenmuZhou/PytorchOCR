@@ -1,23 +1,6 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-class Hswish(nn.Module):
-    def __init__(self, inplace=True):
-        super(Hswish, self).__init__()
-        self.inplace = inplace
-
-    def forward(self, x):
-        return x * F.relu6(x + 3., inplace=self.inplace) / 6.
-
-class Hsigmoid(nn.Module):
-    def __init__(self, inplace=True):
-        super(Hsigmoid, self).__init__()
-        self.inplace = inplace
-
-    def forward(self, x):
-        return F.relu6(1.2 * x + 3., inplace=self.inplace) / 6.
 
 class GELU(nn.Module):
     def __init__(self, inplace=True):
@@ -26,7 +9,6 @@ class GELU(nn.Module):
 
     def forward(self, x):
         return torch.nn.functional.gelu(x)
-
 
 class Swish(nn.Module):
     def __init__(self, inplace=True):
@@ -50,11 +32,11 @@ class Activation(nn.Module):
         elif act_type == 'relu6':
             self.act = nn.ReLU6(inplace=inplace)
         elif act_type == 'sigmoid':
-            raise NotImplementedError
+            self.act = nn.Sigmoid()
         elif act_type == 'hard_sigmoid':
-            self.act = Hsigmoid(inplace)
+            self.act = nn.Hardsigmoid(inplace)
         elif act_type == 'hard_swish':
-            self.act = Hswish(inplace=inplace)
+            self.act = nn.Hardswish(inplace=inplace)
         elif act_type == 'leakyrelu':
             self.act = nn.LeakyReLU(inplace=inplace)
         elif act_type == 'gelu':

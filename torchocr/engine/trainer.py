@@ -30,7 +30,18 @@ __all__ = ['Trainer']
 class Trainer(object):
     def __init__(self, cfg, mode='train'):
         self.cfg = cfg.cfg
-        self.local_rank = self.cfg['Global'].get('local_rank', 0)
+
+        self.local_rank = int(os.environ['LOCAL_RANK']) if 'LOCAL_RANK' in os.environ else 0
+        self.set_device(self.cfg['Global']['device'])
+
+        if torch.cuda.device_count() > 1:
+            torch.distributed.init_process_group(backend="nccl")
+            torch.cuda.set_device(self.device)
+            self.cfg['Global']['distributed'] = True
+        else:
+            self.cfg['Global']['distributed'] = False
+            self.local_rank = 0
+        
         self.cfg['Global']['output_dir'] = self.cfg['Global'].get('output_dir', 'output')
         os.makedirs(self.cfg['Global']['output_dir'], exist_ok=True)
 
@@ -40,15 +51,6 @@ class Trainer(object):
 
         self.logger = get_logger('torchocr', os.path.join(self.cfg['Global']['output_dir'],
                                                           ' train.log') if 'train' in mode else None)
-
-        self.set_device(self.cfg['Global']['device'])
-        if torch.cuda.device_count() > 1 and self.device.type == 'cuda':
-            torch.cuda.set_device(self.local_rank)
-            torch.distributed.init_process_group(backend="nccl", init_method="env://",
-                                                 world_size=torch.cuda.device_count(), rank=self.local_rank)
-            self.cfg['Global']['distributed'] = True
-        else:
-            self.cfg['Global']['distributed'] = False
 
         self.set_random_seed(self.cfg.get('seed', 48))
 
@@ -72,7 +74,7 @@ class Trainer(object):
 
         # build model
         self.model = build_model(self.cfg['Architecture'])
-
+        self.model = self.model.to(self.device)
         use_sync_bn = self.cfg["Global"].get("use_sync_bn", False)
         if use_sync_bn:
             self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
@@ -96,7 +98,7 @@ class Trainer(object):
         self.status = load_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler)
 
         if self.cfg['Global']['distributed']:
-            self.model = torch.nn.parallel.DistributedDataParallel(self.model)
+            self.model = torch.nn.parallel.DistributedDataParallel(self.model, [self.local_rank], find_unused_parameters=True)
 
         # amp
         self.scaler = torch.cuda.amp.GradScaler() if self.cfg['Global'].get('use_amp', False) else None
@@ -114,7 +116,7 @@ class Trainer(object):
 
     def set_device(self, device):
         if device == 'gpu' and torch.cuda.is_available():
-            device = torch.device("cuda:0")
+            device = torch.device(f"cuda:{self.local_rank}")
         else:
             if device == 'gpu':
                 self.logger.info('cuda is not available, auto switch to cpu')
@@ -160,6 +162,7 @@ class Trainer(object):
                 self.train_dataloader = build_dataloader(self.cfg, 'Train', self.logger)
 
             for idx, batch in enumerate(self.train_dataloader):
+                batch = [t.to(self.device) for t in batch]
                 self.optimizer.zero_grad()
                 train_reader_cost += time.time() - reader_start
                 # use amp
@@ -193,7 +196,7 @@ class Trainer(object):
 
                 # logger
                 stats = {
-                    k: float(v) if v.shape == [] else v.detach().numpy().mean()
+                    k: float(v) if v.shape == [] else v.detach().cpu().numpy().mean()
                     for k, v in loss.items()
                 }
                 stats['lr'] = self.lr_scheduler.get_last_lr()[0]
@@ -253,6 +256,8 @@ class Trainer(object):
         self.logger.info(best_str)
         if self.writer is not None:
             self.writer.close()
+        if torch.cuda.device_count() > 1:
+            torch.distributed.destroy_process_group()
 
     def eval(self):
         self.model.eval()
@@ -266,7 +271,9 @@ class Trainer(object):
                 leave=True)
             sum_images = 0
             for idx, batch in enumerate(self.valid_dataloader):
+                batch = [t.to(self.device) for t in batch]
                 start = time.time()
+                images = batch[0].to(self.device)
                 if self.scaler:
                     with torch.cuda.amp.autocast():
                         preds = self.model(batch[0], data=batch[1:])

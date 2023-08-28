@@ -5,6 +5,7 @@
   - [模型对齐信息](#模型对齐信息)
     - [环境](#环境)
     - [对齐列表](#对齐列表)
+  - [TODO](#todo)
   - [使用方式](#使用方式)
     - [数据准备](#数据准备)
     - [train](#train)
@@ -34,6 +35,7 @@
 
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
+| ch_PP-OCRv4_det_student  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
 | ch_PP-OCRv3_rec  | Y | 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml) |
 | ch_PP-OCRv3_rec_distillation.yml  | Y | Teacher_head_out_res 7.470646e-10 <br> Student_head_out_res 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml) |
 | ch_PP-OCRv3_det_student  | Y | 1.766314e-07 | [config](cconfigs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml) |
@@ -56,8 +58,10 @@
 
 模型：
 
-- [ ] PP-OCRv4 det
-- [ ] PP-OCRv4 rec
+- [x] PP-OCRv4 det mobile
+- [ ] PP-OCRv4 det server
+- [ ] PP-OCRv4 rec mobile
+- [ ] PP-OCRv4 rec server
 - [ ] DB
 - [ ] DB ++
 - [ ] CRNN
@@ -71,14 +75,18 @@
 ### train
 
 ```sh
-python tools/train.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
+# 单卡
+CUDA_VISIBLE_DEVICES=0 python tools/train.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
+
+# 多卡
+CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nnodes=1 --nproc_per_node=4 tools/train.py --c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
 ```
 
 
 ### eval
 
 ```sh
-python tools/eval.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
 ```
 
 

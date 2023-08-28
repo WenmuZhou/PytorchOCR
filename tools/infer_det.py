@@ -32,6 +32,7 @@ def build_det_process(cfg):
             op[op_name]['keep_keys'] = ['image', 'shape']
         transforms.append(op)
     return transforms
+
 def main(cfg):
     logger = get_logger()
     global_config = cfg['Global']
@@ -50,7 +51,7 @@ def main(cfg):
 
     save_res_path = global_config.get('output_dir', 'output')
     os.makedirs(save_res_path, exist_ok=True)
-
+    
     with open(os.path.join(save_res_path, 'predict_det.txt'), "w") as fout:
         for file in get_image_file_list(cfg['Global']['infer_img']):
             logger.info("infer_img: {}".format(file))

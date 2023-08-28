@@ -20,7 +20,6 @@ def parse_args():
         action='store_true',
         default=True,
         help="Whether to perform evaluation in train")
-    parser.add_argument('--local_rank', dest='local_rank', default=0, type=int, help='Use distributed training')
     args = parser.parse_args()
     return args
 
@@ -32,7 +31,6 @@ def main():
     opt = FLAGS.pop('opt')
     cfg.merge_dict(FLAGS)
     cfg.merge_dict(opt)
-    cfg.cfg['Global']['local_rank'] = FLAGS['local_rank']
     trainer = Trainer(cfg, mode='train_eval' if FLAGS['eval'] else 'train')
     trainer.train()
 

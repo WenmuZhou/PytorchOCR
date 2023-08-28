@@ -100,7 +100,7 @@ class CTCLabelDecode(BaseRecLabelDecode):
         if 'res' in preds:
             preds = preds['res']
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=True)
@@ -200,7 +200,7 @@ class AttnLabelDecode(BaseRecLabelDecode):
             return text, label
         """
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
 
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
@@ -275,7 +275,7 @@ class RFLLabelDecode(BaseRecLabelDecode):
         if isinstance(preds, tuple) or isinstance(preds, list):
             cnt_outputs, seq_outputs = preds
             if isinstance(seq_outputs, torch.Tensor):
-                seq_outputs = seq_outputs.detach().numpy()
+                seq_outputs = seq_outputs.detach().cpu().numpy()
             preds_idx = seq_outputs.argmax(axis=2)
             preds_prob = seq_outputs.max(axis=2)
             text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
@@ -288,7 +288,7 @@ class RFLLabelDecode(BaseRecLabelDecode):
         else:
             cnt_outputs = preds
             if isinstance(cnt_outputs, torch.Tensor):
-                cnt_outputs = cnt_outputs.detach().numpy()
+                cnt_outputs = cnt_outputs.detach().cpu().numpy()
             cnt_length = []
             for lens in cnt_outputs:
                 length = round(np.sum(lens))
@@ -382,7 +382,7 @@ class SEEDLabelDecode(BaseRecLabelDecode):
         """
         preds_idx = preds["rec_pred"]
         if isinstance(preds_idx, torch.Tensor):
-            preds_idx = preds_idx.detach().numpy()
+            preds_idx = preds_idx.detach().cpu().numpy()
         if "rec_pred_scores" in preds:
             preds_idx = preds["rec_pred"]
             preds_prob = preds["rec_pred_scores"]
@@ -536,7 +536,7 @@ class SARLabelDecode(BaseRecLabelDecode):
 
     def __call__(self, preds, batch=None, *args, **kwargs):
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
 
@@ -612,7 +612,7 @@ class SATRNLabelDecode(BaseRecLabelDecode):
 
     def __call__(self, preds, batch=None, *args, **kwargs):
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
 
@@ -712,7 +712,7 @@ class PRENLabelDecode(BaseRecLabelDecode):
 
     def __call__(self, preds, batch=None, *args, **kwargs):
         if isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
         text = self.decode(preds_idx, preds_prob)
@@ -735,9 +735,9 @@ class NRTRLabelDecode(BaseRecLabelDecode):
             preds_id = preds[0]
             preds_prob = preds[1]
             if isinstance(preds_id, torch.Tensor):
-                preds_id = preds_id.detach().numpy()
+                preds_id = preds_id.detach().cpu().numpy()
             if isinstance(preds_prob, torch.Tensor):
-                preds_prob = preds_prob.detach().numpy()
+                preds_prob = preds_prob.detach().cpu().numpy()
             if preds_id[0][0] == 2:
                 preds_idx = preds_id[:, 1:]
                 preds_prob = preds_prob[:, 1:]
@@ -749,7 +749,7 @@ class NRTRLabelDecode(BaseRecLabelDecode):
             label = self.decode(batch[1][:, 1:])
         else:
             if isinstance(preds, torch.Tensor):
-                preds = preds.detach().numpy()
+                preds = preds.detach().cpu().numpy()
             preds_idx = preds.argmax(axis=2)
             preds_prob = preds.max(axis=2)
             text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
@@ -796,7 +796,7 @@ class ViTSTRLabelDecode(NRTRLabelDecode):
 
     def __call__(self, preds, batch=None, *args, **kwargs):
         if isinstance(preds, torch.Tensor):
-            preds = preds[:, 1:].detach().numpy()
+            preds = preds[:, 1:].detach().cpu().numpy()
         else:
             preds = preds[:, 1:]
         preds_idx = preds.argmax(axis=2)
@@ -822,9 +822,9 @@ class ABINetLabelDecode(NRTRLabelDecode):
 
     def __call__(self, preds, batch=None, *args, **kwargs):
         if isinstance(preds, dict):
-            preds = preds['align'][-1].detach().numpy()
+            preds = preds['align'][-1].detach().cpu().numpy()
         elif isinstance(preds, torch.Tensor):
-            preds = preds.detach().numpy()
+            preds = preds.detach().cpu().numpy()
         else:
             preds = preds
 

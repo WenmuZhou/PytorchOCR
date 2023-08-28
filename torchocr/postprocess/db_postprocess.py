@@ -200,9 +200,9 @@ class DBPostProcess(object):
         preds = preds['res']
         shape_list = batch[1]
         if isinstance(preds, torch.Tensor):
-            preds = preds.numpy()
+            preds = preds.cpu().numpy()
         if isinstance(shape_list, torch.Tensor):
-            shape_list = shape_list.numpy()
+            shape_list = shape_list.cpu().numpy()
         pred = preds[:, 0, :, :]
         segmentation = pred > self.thresh
 

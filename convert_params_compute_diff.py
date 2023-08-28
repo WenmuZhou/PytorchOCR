@@ -118,6 +118,32 @@ def conver_params(model_config, paddle_params_path, tmp_dir, show_log=False):
     print(f"save convert torch params to {torch_params_path}")
     return paddle_params_path, torch_params_path
 
+def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
+    paddle_state_dict = paddle_model.state_dict()
+    # paddle_state_dict = paddle.load(paddle_model)
+    fc_names = ["classifier"]
+    torch_state_dict = {}
+    for k in paddle_state_dict:
+        v = paddle_state_dict[k].detach().cpu().numpy()
+        flag = [i in k for i in fc_names]
+        if any(flag) and "weight" in k: # ignore bias
+            new_shape = [1, 0] + list(range(2, v.ndim))
+            print(f"name: {k}, ori shape: {v.shape}, new shape: {v.transpose(new_shape).shape}")
+            v = v.transpose(new_shape)
+        k = k.replace("_variance", "running_var")
+        k = k.replace("_mean", "running_mean")
+        torch_state_dict[k] = torch.from_numpy(v)
+
+    for k in torch_state_dict:
+        if k not in torch_model.state_dict():
+            print(f'{k} is not in torch model')
+    for k in torch_model.state_dict():
+        if 'num_batches_tracked' in k:
+            continue
+        if k not in torch_state_dict:
+            print(f'{k} is not in torch params')
+    torch_model.load_state_dict(torch_state_dict)
+    
 def get_input(w, h, color=True):
     img = cv2.imread("doc/imgs/1.jpg", 1 if color else 0)
     img = cv2.resize(img, (w, h))
@@ -175,7 +201,7 @@ def main():
 
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
-    config_path = "configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml"
+    config_path = "configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml"
     paddle_params_path = ''
 
     config = load_config(config_path)
