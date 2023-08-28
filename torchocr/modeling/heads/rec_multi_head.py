@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 from torchocr.modeling.necks.rnn import Im2Seq, SequenceEncoder
@@ -14,9 +15,9 @@ class FCTranspose(nn.Module):
 
     def forward(self, x):
         if self.only_transpose:
-            return x.transpose([0, 2, 1])
+            return x.permute([0, 2, 1])
         else:
-            return self.fc(x.transpose([0, 2, 1]))
+            return self.fc(x.permute([0, 2, 1]))
 
 
 class MultiHead(nn.Module):

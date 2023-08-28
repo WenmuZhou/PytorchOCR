@@ -35,7 +35,8 @@
 
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
-| ch_PP-OCRv4_det_student  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
+| ch_PP-OCRv4_rec_mobile  | Y | 3.6277156e-06 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec.yml) |
+| ch_PP-OCRv4_det_mobile  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
 | ch_PP-OCRv3_rec  | Y | 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml) |
 | ch_PP-OCRv3_rec_distillation.yml  | Y | Teacher_head_out_res 7.470646e-10 <br> Student_head_out_res 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml) |
 | ch_PP-OCRv3_det_student  | Y | 1.766314e-07 | [config](cconfigs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml) |
@@ -60,7 +61,7 @@
 
 - [x] PP-OCRv4 det mobile
 - [ ] PP-OCRv4 det server
-- [ ] PP-OCRv4 rec mobile
+- [x] PP-OCRv4 rec mobile
 - [ ] PP-OCRv4 rec server
 - [ ] DB
 - [ ] DB ++

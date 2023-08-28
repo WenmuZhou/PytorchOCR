@@ -49,12 +49,13 @@ def build_dataloader(config, mode, logger, seed=None):
         pin_memory = False
 
     sampler = None
+    batch_sampler=None
     if mode == "Train":
         # Distribute data to multiple cards
         if 'sampler' in config[mode]:
             config_sampler = config[mode]['sampler']
             sampler_name = config_sampler.pop("name")
-            sampler = eval(sampler_name)(dataset, **config_sampler)
+            batch_sampler = eval(sampler_name)(dataset, **config_sampler)
         elif config['Global']['distributed']:
             sampler = DistributedSampler(
                 dataset=dataset,
@@ -65,15 +66,24 @@ def build_dataloader(config, mode, logger, seed=None):
         collate_fn = getattr(collate_fn, loader_config['collate_fn'])()
     else:
         collate_fn = None
-    data_loader = DataLoader(
-        dataset=dataset,
-        sampler=sampler,
-        num_workers=num_workers,
-        pin_memory=pin_memory,
-        collate_fn=collate_fn,
-        batch_size=batch_size,
-        drop_last=drop_last
-    )
+    if batch_sampler is None:
+        data_loader = DataLoader(
+            dataset=dataset,
+            sampler=sampler,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            collate_fn=collate_fn,
+            batch_size=batch_size,
+            drop_last=drop_last
+        )
+    else:
+        data_loader = DataLoader(
+            dataset=dataset,
+            batch_sampler=batch_sampler,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            collate_fn=collate_fn,
+        )
     if len(data_loader) == 0:
         logger.error(
             f"No Images in {mode.lower()} dataloader, please ensure\n"

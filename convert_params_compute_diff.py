@@ -109,6 +109,8 @@ def conver_params(model_config, paddle_params_path, tmp_dir, show_log=False):
     torch_model_warp.auto_layer_map("base", show_log=show_log)
     paddle_model_warp.auto_layer_map("raw", show_log=show_log)
     assign_weight(torch_model_warp, paddle_model_warp)
+    # for recv4 rec
+    # torch2paddle(torch_model, paddle_model)
     if not os.path.exists(paddle_params_path):
         paddle_params_path = os.path.join(tmp_dir, 'paddle.pdparams')
         paddle.save(paddle_model.state_dict(), paddle_params_path)
@@ -120,8 +122,9 @@ def conver_params(model_config, paddle_params_path, tmp_dir, show_log=False):
 
 def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
     paddle_state_dict = paddle_model.state_dict()
+    torch_dict = torch_model.state_dict()
     # paddle_state_dict = paddle.load(paddle_model)
-    fc_names = ["classifier"]
+    fc_names = ["qkv",'fc', 'kv', 'tgt_word_prj','q','out_proj','linear','proj']
     torch_state_dict = {}
     for k in paddle_state_dict:
         v = paddle_state_dict[k].detach().cpu().numpy()
@@ -132,6 +135,8 @@ def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
             v = v.transpose(new_shape)
         k = k.replace("_variance", "running_var")
         k = k.replace("_mean", "running_mean")
+        if torch_dict[k].numpy().shape != v.shape:
+            print(torch_dict[k].numpy().shape, v.shape)
         torch_state_dict[k] = torch.from_numpy(v)
 
     for k in torch_state_dict:
@@ -151,6 +156,9 @@ def get_input(w, h, color=True):
         img = np.expand_dims(img, axis=2)
     img = np.expand_dims(img, 0).transpose([0, 3, 1, 2])
     img = img.astype("float32")
+    img /= 255
+    img-=0.5
+    img/=0.5
     return img
 
 
@@ -197,12 +205,12 @@ def torch_infer(config, input_np, device, params_path):
 
 def main():
     device = "cpu"
-    input_np = get_input(640, 640, True)
+    input_np = get_input(320, 48, True)
 
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
-    config_path = "configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml"
-    paddle_params_path = ''
+    config_path = "configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml"
+    paddle_params_path = r''
 
     config = load_config(config_path)
     config = init_head(config)

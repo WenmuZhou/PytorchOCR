@@ -51,6 +51,8 @@ class Trainer(object):
 
         self.logger = get_logger('torchocr', os.path.join(self.cfg['Global']['output_dir'],
                                                           ' train.log') if 'train' in mode else None)
+        if self.cfg['Global']['device'] == 'gpu' and self.device.type == 'cpu':
+            self.logger.info('cuda is not available, auto switch to cpu')
 
         self.set_random_seed(self.cfg.get('seed', 48))
 
@@ -118,8 +120,6 @@ class Trainer(object):
         if device == 'gpu' and torch.cuda.is_available():
             device = torch.device(f"cuda:{self.local_rank}")
         else:
-            if device == 'gpu':
-                self.logger.info('cuda is not available, auto switch to cpu')
             device = torch.device("cpu")
         self.device = device
 
@@ -216,7 +216,7 @@ class Trainer(object):
                     strs = (f'epoch: [{epoch}/{epoch_num}], global_step: {global_step}, {logs}, '
                             f'avg_reader_cost: {train_reader_cost / print_batch_step:.5f} s, '
                             f'avg_batch_cost: {train_batch_cost / print_batch_step:.5f} s, '
-                            f'avg_samples: {train_batch_cost / print_batch_step}, '
+                            f'avg_samples: {total_samples / print_batch_step}, '
                             f'ips: {total_samples / train_batch_cost:.5f} samples/s, '
                             f'eta: {eta_sec_format}')
                     self.logger.info(strs)
@@ -306,7 +306,7 @@ class Trainer(object):
                 if count % 1 == 0:
                     batch_time = time.time() - starttime
                     starttime = time.time()
-                    self.logger.info(f"reader: {count}, {len(data['image'])}, {batch_time}")
+                    self.logger.info(f"reader: {count}, {data[0].shape}, {batch_time}")
         except:
             import traceback
             self.logger.info(traceback.format_exc())

@@ -48,8 +48,12 @@ class MultiScaleSampler(Sampler):
         base_batch_size = first_bs
 
         # Get the GPU and node related information
-        num_replicas = dist.get_world_size()
-        rank = dist.get_rank()
+        if dist.is_initialized():
+            num_replicas = dist.get_world_size()
+            rank = dist.get_rank()
+        else:
+            num_replicas = 1
+            rank = 0
         # adjust the total samples to avoid batch dropping
         num_samples_per_replica = int(self.n_data_samples * 1.0 / num_replicas)
 

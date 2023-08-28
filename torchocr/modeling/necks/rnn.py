@@ -12,23 +12,8 @@ class Im2Seq(nn.Module):
         B, C, H, W = x.shape
         assert H == 1
         x = x.squeeze(dim=2)
-        x = x.permute(0,2,1)
+        x = x.permute(0, 2, 1)
         return x
-
-
-class EncoderWithRNN_(nn.Module):
-    def __init__(self, in_channels, hidden_size):
-        super(EncoderWithRNN_, self).__init__()
-        self.out_channels = hidden_size * 2
-        self.rnn1 = nn.LSTM(in_channels, hidden_size, bidirectional=False, batch_first=True, num_layers=2)
-        self.rnn2 = nn.LSTM(in_channels, hidden_size, bidirectional=False, batch_first=True, num_layers=2)
-
-    def forward(self, x):
-        self.rnn1.flatten_parameters()
-        self.rnn2.flatten_parameters()
-        out1, h1 = self.rnn1(x)
-        out2, h2 = self.rnn2(torch.flip(x, [1]))
-        return torch.cat([out1, torch.flip(out2, [1])], 2)
 
 
 class EncoderWithRNN(nn.Module):
@@ -72,12 +57,17 @@ class EncoderWithSVTR(nn.Module):
             drop_rate=0.1,
             attn_drop_rate=0.1,
             drop_path=0.,
+            kernel_size=[3, 3],
             qk_scale=None):
         super(EncoderWithSVTR, self).__init__()
         self.depth = depth
         self.use_guide = use_guide
         self.conv1 = ConvBNLayer(
-            in_channels, in_channels // 8, padding=1, act='swish')
+            in_channels,
+            in_channels // 8,
+            kernel_size=kernel_size,
+            padding=[kernel_size[0] // 2, kernel_size[1] // 2],
+            act='swish')
         self.conv2 = ConvBNLayer(
             in_channels // 8, hidden_dims, kernel_size=1, act='swish')
 
@@ -103,7 +93,11 @@ class EncoderWithSVTR(nn.Module):
             hidden_dims, in_channels, kernel_size=1, act='swish')
         # last conv-nxn, the input is concat of input tensor and conv3 output tensor
         self.conv4 = ConvBNLayer(
-            2 * in_channels, in_channels // 8, padding=1, act='swish')
+            2 * in_channels,
+            in_channels // 8,
+            kernel_size=kernel_size,
+            padding=[kernel_size[0] // 2, kernel_size[1] // 2],
+            act='swish')
 
         self.conv1x1 = ConvBNLayer(
             in_channels // 8, dims, kernel_size=1, act='swish')
@@ -111,30 +105,20 @@ class EncoderWithSVTR(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        # weight initialization
-        if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.BatchNorm2d):
-            nn.init.ones_(m.weight)
-            nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight, 0, 0.01)
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.ConvTranspose2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out')
-            if m.bias is not None:
+        if isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.zeros_(m.bias)
         elif isinstance(m, nn.LayerNorm):
             nn.init.ones_(m.weight)
             nn.init.zeros_(m.bias)
 
+
     def forward(self, x):
         # for use guide
         if self.use_guide:
-            z = x.detach()
+            z = x.clone()
+            z.stop_gradient = True
         else:
             z = x
         # for shortcut
@@ -144,18 +128,15 @@ class EncoderWithSVTR(nn.Module):
         z = self.conv2(z)
         # SVTR global block
         B, C, H, W = z.shape
-        z = z.flatten(2).permute(0, 2, 1)
-
+        z = z.flatten(2).permute([0, 2, 1])
         for blk in self.svtr_block:
             z = blk(z)
-
         z = self.norm(z)
         # last stage
-        z = z.reshape([-1, H, W, C]).permute(0, 3, 1, 2)
+        z = z.reshape([-1, H, W, C]).permute([0, 3, 1, 2])
         z = self.conv3(z)
         z = torch.cat((h, z), dim=1)
         z = self.conv1x1(self.conv4(z))
-
         return z
 
 

@@ -19,7 +19,7 @@ class NRTRLoss(nn.Module):
         if self.smoothing:
             eps = 0.1
             n_class = pred.shape[1]
-            one_hot = F.one_hot(tgt, pred.shape[1])
+            one_hot = F.one_hot(tgt.long(), num_classes=pred.shape[1])
             one_hot = one_hot * (1 - eps) + (1 - one_hot) * eps / (n_class - 1)
             log_prb = F.log_softmax(pred, dim=1)
             non_pad_mask = torch.not_equal(

@@ -87,21 +87,21 @@ class MultiHead(nn.Layer):
                 raise NotImplementedError(
                     '{} is not supported in MultiHead yet'.format(name))
 
-    def forward(self, x, targets=None):
+    def forward(self, x, data=None):
 
         ctc_encoder = self.ctc_encoder(x)
-        ctc_out = self.ctc_head(ctc_encoder, targets)
+        ctc_out = self.ctc_head(ctc_encoder)
         head_out = dict()
+        head_out['ctc'] = ctc_out
         head_out['res'] = ctc_out
+        head_out['ctc_neck'] = ctc_encoder
         # eval mode
         if not self.training:
-            return head_out
-        head_out['ctc_neck'] = ctc_encoder
-
+            return {'res': ctc_out}
         if self.gtc_head == 'sar':
-            sar_out = self.sar_head(x, targets[1:])
+            sar_out = self.sar_head(x, data[1:])
             head_out['sar'] = sar_out
         else:
-            gtc_out = self.gtc_head(self.before_gtc(x), targets[1:])
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])
             head_out['nrtr'] = gtc_out
         return head_out
