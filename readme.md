@@ -102,7 +102,7 @@ python tools/infer_rec.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.y
 ```sh
 python tools/export.py -c configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml
 ```
-会将模型导出为onnx格式(默认，torch script未做测试)，同时导出会处理和预处理参数
+会将模型导出为onnx格式(默认，torch script未做测试)，同时导出后处理和预处理参数
 
 ### predict
 
