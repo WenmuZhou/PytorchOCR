@@ -37,7 +37,10 @@ def to_onnx(model, dummy_input, dynamic_axes, sava_path="model.onnx"):
         },
     )
 
-def export_single_model(model, _cfg,export_dir,export_config, logger, type):
+def export_single_model(model: torch.nn.Module, _cfg,export_dir,export_config, logger, type):
+    for layer in model.modules():
+        if hasattr(layer, "rep") and not getattr(layer, "is_repped"):
+            layer.rep()
     os.makedirs(export_dir, exist_ok=True)
 
     export_cfg = {'PostProcess': _cfg['PostProcess']}

@@ -201,7 +201,7 @@ class LearnableRepLayer(nn.Module):
             running_var = branch.bn.running_var
             gamma = branch.bn.weight
             beta = branch.bn.bias
-            eps = branch.bn._epsilon
+            eps = branch.bn.eps
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, 'id_tensor'):
