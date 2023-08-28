@@ -69,7 +69,7 @@ class Marker:
 
         self.layer_map = _layer_map
 
-    def auto_layer_map(self, model_place):
+    def auto_layer_map(self, model_place, show_log=False):
         """
         Try to find components which support special init, and add them to layer_map automatically.
         NOTICE: this api suppose that all sublayers/submodules are defined in same order,
@@ -77,15 +77,15 @@ class Marker:
         """
         _layer_map = []
         registered = init_pool.registered_base_models if model_place == "base" else init_pool.registered_raw_models
-
-        log("Auto set layer_map start searching...")
+        if show_log:
+            log("Auto set layer_map start searching...")
         for layer in self.traversal_for_auto_layer_map():
             if layer.fullname in registered:
-                print(f"++++    {model_place}_model found `{layer.fullname}` add to layer_map   ++++")
+                if show_log:
+                    log(f"++++    {model_place}_model found `{layer.fullname}` add to layer_map   ++++")
                 _layer_map.append(layer)
                 self.unassigned_weights_list.add(layer.model)
                 self.unassigned_weights_list_recursively.add(layer.model)
-        print()
         self.layer_map = _layer_map
         return True
 

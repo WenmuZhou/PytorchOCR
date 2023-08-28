@@ -140,8 +140,8 @@ class ProxyModel:
     def set_layer_map(self, layers):
         self.marker.set_layer_map(layers)
 
-    def auto_layer_map(self, place):
-        self.marker.auto_layer_map(place)
+    def auto_layer_map(self, place, show_log=False):
+        self.marker.auto_layer_map(place, show_log=show_log)
 
     """
         about dump

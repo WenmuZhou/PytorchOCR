@@ -1,4 +1,4 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-import importlib
+import paddle
+import torch
 
-from .base_model import BaseModel
-from .distillation_model import DistillationModel
-
-__all__ = ["build_model"]
+from .special_init_pool import global_special_init_pool as init_pool
 
 
-def build_model(config):
-    config = copy.deepcopy(config)
-    if not "name" in config:
-        arch = BaseModel(config)
-    else:
-        name = config.pop("name")
-        mod = importlib.import_module(__name__)
-        arch = getattr(mod, name)(config)
-    return arch
+@init_pool.register("torch", "Embeddings", "paddle", "Embeddings")
+def init_Embeddings(module, layer):
+    param_dict = {}
+    for name, param in layer.state_dict().items():
+        param_dict[name] = torch.from_numpy(param.cpu().detach().numpy())
+    module.load_state_dict(param_dict)
