@@ -16,6 +16,8 @@
 
 从PaddleOCR转换模型到PytorchOCR
 
+之前的版本见[master分支](https://github.com/WenmuZhou/PytorchOCR/tree/master)
+
 ## 模型对齐信息
 
 ### 环境
