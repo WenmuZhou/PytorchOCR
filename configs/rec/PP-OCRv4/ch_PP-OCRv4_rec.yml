@@ -47,8 +47,6 @@ Architecture:
             hidden_dims: 120
             kernel_size: [1, 3]
             use_guide: True
-          Head:
-            fc_decay: 0.00001
       - NRTRHead:
           nrtr_dim: 384
           max_text_length: *max_text_length

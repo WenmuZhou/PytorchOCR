@@ -531,7 +531,7 @@ class DistillationDKDLoss(DKDLoss):
                     non_pad_mask = torch.not_equal(
                         tgt, torch.zeros(
                             tgt.shape,
-                            dtype=tgt.dtype))  # batch_size * (max_len + 1)
+                            dtype=tgt.dtype, device=tgt.device))  # batch_size * (max_len + 1)
 
                     loss = super().forward(
                         out1[self.dis_head], out2[self.dis_head], tgt,

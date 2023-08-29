@@ -34,6 +34,8 @@
 
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
+| ch_PP-OCRv4_rec_distill   | X | 配置不一致 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec_distill.yml) |
+| ch_PP-OCRv4_rec_teacher   | Y | 1.4605024e-10 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec_hgnet.yml) |
 | ch_PP-OCRv4_rec_student  | Y | 3.6277156e-06 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec.yml) |
 | ch_PP-OCRv4_det_student  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
 | ch_PP-OCRv4_det_teacher  | Y | maps 7.811429e-07 <br> cbn_maps 1.0471307e-06 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_teacher.yml) |
@@ -61,9 +63,9 @@
 模型：
 
 - [x] PP-OCRv4 det mobile
-- [ ] PP-OCRv4 det server
+- [x] PP-OCRv4 det server
 - [x] PP-OCRv4 rec mobile
-- [ ] PP-OCRv4 rec server
+- [x] PP-OCRv4 rec server
 - [ ] DB
 - [ ] DB ++
 - [ ] CRNN
