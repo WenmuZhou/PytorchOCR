@@ -66,6 +66,9 @@
 - [x] PP-OCRv4 det server
 - [x] PP-OCRv4 rec mobile
 - [x] PP-OCRv4 rec server
+- [x] PP-OCRv3 det
+- [x] PP-OCRv3 rec
+- [x] cls_mv3
 - [ ] DB
 - [ ] DB ++
 - [ ] CRNN
