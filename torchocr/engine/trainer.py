@@ -189,13 +189,13 @@ class Trainer(object):
                     metric = self.eval_class.get_metric()
                     train_stats.update(metric)
 
-                self.lr_scheduler.step()
-
                 train_batch_time = time.time() - reader_start
                 train_batch_cost += train_batch_time
                 eta_meter.update(train_batch_time)
                 global_step += 1
                 total_samples += len(batch[0])
+
+                self.lr_scheduler.step()
 
                 # logger
                 stats = {
@@ -223,11 +223,10 @@ class Trainer(object):
                             f'ips: {total_samples / train_batch_cost:.5f} samples/s, '
                             f'eta: {eta_sec_format}')
                     self.logger.info(strs)
-
                     total_samples = 0
                     train_reader_cost = 0.0
                     train_batch_cost = 0.0
-
+                reader_start = time.time()
             if self.local_rank == 0:
                 save_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler, epoch, global_step, best_metric,
                           is_best=False)
@@ -254,7 +253,6 @@ class Trainer(object):
                                                best_metric[self.eval_class.main_indicator], global_step)
                 best_str = f"best metric, {', '.join(['{}: {}'.format(k, v) for k, v in best_metric.items()])}"
                 self.logger.info(best_str)
-            reader_start = time.time()
         best_str = f"best metric, {', '.join(['{}: {}'.format(k, v) for k, v in best_metric.items()])}"
         self.logger.info(best_str)
         if self.writer is not None:
