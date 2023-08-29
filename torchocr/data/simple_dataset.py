@@ -247,6 +247,6 @@ class MultiScaleDataSet(SimpleDataSet):
             outs = None
         if outs is None:
             # during evaluation, we should fix the idx to get same results for many times of evaluation.
-            rnd_idx = (idx + 1) % self.__len__()
+            rnd_idx = np.random.randint(self.__len__()) if self.mode == "train" else (idx + 1) % self.__len__()
             return self.__getitem__([img_width, img_height, rnd_idx, wh_ratio])
         return outs

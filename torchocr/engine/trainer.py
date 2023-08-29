@@ -227,9 +227,6 @@ class Trainer(object):
                     train_reader_cost = 0.0
                     train_batch_cost = 0.0
                 reader_start = time.time()
-            if self.local_rank == 0:
-                save_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler, epoch, global_step, best_metric,
-                          is_best=False)
             # eval
             if self.local_rank == 0 and epoch > start_eval_epoch and (epoch - start_eval_epoch) % eval_epoch_step == 0:
                 cur_metric = self.eval()
@@ -245,14 +242,17 @@ class Trainer(object):
                 if cur_metric[self.eval_class.main_indicator] >= best_metric[self.eval_class.main_indicator]:
                     best_metric.update(cur_metric)
                     best_metric['best_epoch'] = epoch
-                    save_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler, epoch, global_step, best_metric,
-                              is_best=True)
-
                     if self.writer is not None:
                         self.writer.add_scalar(f'EVAL/best_{self.eval_class.main_indicator}',
                                                best_metric[self.eval_class.main_indicator], global_step)
+                    save_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler, epoch, global_step, best_metric,
+                              is_best=True)
                 best_str = f"best metric, {', '.join(['{}: {}'.format(k, v) for k, v in best_metric.items()])}"
                 self.logger.info(best_str)
+
+            if self.local_rank == 0:
+                save_ckpt(self.model, self.cfg, self.optimizer, self.lr_scheduler, epoch, global_step, best_metric,
+                          is_best=False)
         best_str = f"best metric, {', '.join(['{}: {}'.format(k, v) for k, v in best_metric.items()])}"
         self.logger.info(best_str)
         if self.writer is not None:
@@ -274,7 +274,6 @@ class Trainer(object):
             for idx, batch in enumerate(self.valid_dataloader):
                 batch = [t.to(self.device) for t in batch]
                 start = time.time()
-                images = batch[0].to(self.device)
                 if self.scaler:
                     with torch.cuda.amp.autocast():
                         preds = self.model(batch[0], data=batch[1:])

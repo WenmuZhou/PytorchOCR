@@ -22,5 +22,5 @@ class ClsPostProcess(object):
         decode_out = [(label_list[idx], preds[i, idx]) for i, idx in enumerate(pred_idxs)]
         if batch is None:
             return decode_out
-        label = [(label_list[idx], 1.0) for idx in batch[1].numpy()]
+        label = [(label_list[idx], 1.0) for idx in batch[1].cpu().numpy()]
         return decode_out, label
