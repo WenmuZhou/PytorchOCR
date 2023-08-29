@@ -51,10 +51,13 @@ class Trainer(object):
 
         self.logger = get_logger('torchocr', os.path.join(self.cfg['Global']['output_dir'],
                                                           ' train.log') if 'train' in mode else None)
+        
+        cfg.print_cfg(self.logger.info)
+
         if self.cfg['Global']['device'] == 'gpu' and self.device.type == 'cpu':
             self.logger.info('cuda is not available, auto switch to cpu')
 
-        self.set_random_seed(self.cfg.get('seed', 48))
+        self.set_random_seed(self.cfg['Global'].get('seed', 48))
 
         mode = mode.lower()
         assert mode in ['train_eval', 'train', 'eval', 'test'], "mode should be train, eval and test"

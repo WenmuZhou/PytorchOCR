@@ -22,9 +22,7 @@ class NRTRLoss(nn.Module):
             one_hot = F.one_hot(tgt.long(), num_classes=pred.shape[1])
             one_hot = one_hot * (1 - eps) + (1 - one_hot) * eps / (n_class - 1)
             log_prb = F.log_softmax(pred, dim=1)
-            non_pad_mask = torch.not_equal(
-                tgt, torch.zeros(
-                    tgt.shape, dtype=tgt.dtype))
+            non_pad_mask = torch.not_equal(tgt, torch.zeros(tgt.shape, dtype=tgt.dtype, device=tgt.device))
             loss = -(one_hot * log_prb).sum(dim=1)
             loss = loss.masked_select(non_pad_mask).mean()
         else:

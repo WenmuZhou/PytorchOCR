@@ -100,8 +100,7 @@ class SimpleDataSet(Dataset):
         ext_data = []
 
         while len(ext_data) < ext_data_num:
-            file_idx = self.data_idx_order_list[np.random.randint(self.__len__(
-            ))]
+            file_idx = self.data_idx_order_list[np.random.randint(self.__len__())]
             data_line = self.data_lines[file_idx]
             data_line = data_line.decode('utf-8')
             substr = data_line.strip("\n").split(self.delimiter)

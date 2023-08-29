@@ -91,7 +91,7 @@ class Transformer(nn.Module):
 
         tgt = self.embedding(tgt)
         tgt = self.positional_encoding(tgt)
-        tgt_mask = self.generate_square_subsequent_mask(tgt.shape[1])
+        tgt_mask = self.generate_square_subsequent_mask(tgt.shape[1], tgt.device)
 
         if self.encoder is not None:
             src = self.positional_encoding(src)
@@ -143,7 +143,7 @@ class Transformer(nn.Module):
         for len_dec_seq in range(1, self.max_len):
             dec_seq_embed = self.embedding(dec_seq)
             dec_seq_embed = self.positional_encoding(dec_seq_embed)
-            tgt_mask = self.generate_square_subsequent_mask(dec_seq_embed.size(1))
+            tgt_mask = self.generate_square_subsequent_mask(dec_seq_embed.size(1), dec_seq_embed.device)
             tgt = dec_seq_embed
             for decoder_layer in self.decoder:
                 tgt = decoder_layer(tgt, memory, self_mask=tgt_mask)
@@ -217,7 +217,7 @@ class Transformer(nn.Module):
             def predict_word(dec_seq, enc_output, n_active_inst, n_bm):
                 dec_seq = self.embedding(dec_seq)
                 dec_seq = self.positional_encoding(dec_seq)
-                tgt_mask = self.generate_square_subsequent_mask(dec_seq.size(1))
+                tgt_mask = self.generate_square_subsequent_mask(dec_seq.size(1), dec_seq.device)
                 tgt = dec_seq
                 for decoder_layer in self.decoder:
                     tgt = decoder_layer(tgt, enc_output, self_mask=tgt_mask)
@@ -302,7 +302,7 @@ class Transformer(nn.Module):
             torch.from_numpy(hyp_scores)
         ]
 
-    def generate_square_subsequent_mask(self, sz):
+    def generate_square_subsequent_mask(self, sz, device):
         """Generate a square mask for the sequence. The masked positions are filled with float('-inf').
             Unmasked positions are filled with float(0.0).
         """
@@ -311,7 +311,7 @@ class Transformer(nn.Module):
             torch.full(size=(sz, sz), dtype=torch.float32, fill_value=-torch.inf),
             diagonal=1)
         mask = mask + mask_inf
-        return mask.unsqueeze(0).unsqueeze(0)
+        return mask.unsqueeze(0).unsqueeze(0).to(device)
 
 
 class MultiheadAttention(nn.Module):

@@ -106,7 +106,7 @@ class CTCLabelDecode(BaseRecLabelDecode):
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=True)
         if batch is None:
             return text
-        label = self.decode(batch[1].numpy())
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
 
     def add_special_char(self, dict_character):
@@ -207,7 +207,7 @@ class AttnLabelDecode(BaseRecLabelDecode):
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
         if batch is None:
             return text
-        label = self.decode(batch[1], is_remove_duplicate=False)
+        label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
         return text, label
 
     def get_ignored_tokens(self):
@@ -282,7 +282,7 @@ class RFLLabelDecode(BaseRecLabelDecode):
 
             if batch is None:
                 return text
-            label = self.decode(batch[1], is_remove_duplicate=False)
+            label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
             return text, label
 
         else:
@@ -295,7 +295,7 @@ class RFLLabelDecode(BaseRecLabelDecode):
                 cnt_length.append(length)
             if batch is None:
                 return cnt_length
-            label = self.decode(batch[1], is_remove_duplicate=False)
+            label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
             length = [len(res[0]) for res in label]
             return cnt_length, length
 
@@ -392,7 +392,7 @@ class SEEDLabelDecode(BaseRecLabelDecode):
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
         if batch is None:
             return text
-        label = self.decode(batch[1], is_remove_duplicate=False)
+        label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
         return text, label
 
 
@@ -424,7 +424,7 @@ class SRNLabelDecode(BaseRecLabelDecode):
         if batch is None:
             text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
             return text
-        label = self.decode(batch[1])
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
 
     def decode(self, text_index, text_prob=None, is_remove_duplicate=False):
@@ -544,7 +544,7 @@ class SARLabelDecode(BaseRecLabelDecode):
 
         if batch is None:
             return text
-        label = self.decode(batch[1], is_remove_duplicate=False)
+        label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
         return text, label
 
     def get_ignored_tokens(self):
@@ -620,7 +620,7 @@ class SATRNLabelDecode(BaseRecLabelDecode):
 
         if batch is None:
             return text
-        label = self.decode(batch[1], is_remove_duplicate=False)
+        label = self.decode(batch[1].cpu().numpy(), is_remove_duplicate=False)
         return text, label
 
     def get_ignored_tokens(self):
@@ -718,7 +718,7 @@ class PRENLabelDecode(BaseRecLabelDecode):
         text = self.decode(preds_idx, preds_prob)
         if batch is None:
             return text
-        label = self.decode(batch[1])
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
 
 
@@ -746,7 +746,7 @@ class NRTRLabelDecode(BaseRecLabelDecode):
             text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
             if batch is None:
                 return text
-            label = self.decode(batch[1][:, 1:])
+            label = self.decode(batch[1][:, 1:].cpu().numpy())
         else:
             if isinstance(preds, torch.Tensor):
                 preds = preds.detach().cpu().numpy()
@@ -755,7 +755,7 @@ class NRTRLabelDecode(BaseRecLabelDecode):
             text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
             if batch is None:
                 return text
-            label = self.decode(batch[1][:, 1:])
+            label = self.decode(batch[1][:, 1:].cpu().numpy())
         return text, label
 
     def add_special_char(self, dict_character):
@@ -804,7 +804,7 @@ class ViTSTRLabelDecode(NRTRLabelDecode):
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
         if batch is None:
             return text
-        label = self.decode(batch[1][:, 1:])
+        label = self.decode(batch[1][:, 1:].cpu().numpy())
         return text, label
 
     def add_special_char(self, dict_character):
@@ -833,7 +833,7 @@ class ABINetLabelDecode(NRTRLabelDecode):
         text = self.decode(preds_idx, preds_prob, is_remove_duplicate=False)
         if batch is None:
             return text
-        label = self.decode(batch[1])
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
 
     def add_special_char(self, dict_character):
@@ -950,7 +950,7 @@ class VLLabelDecode(BaseRecLabelDecode):
             text.append((preds_text, float(preds_prob)))
         if batch is None:
             return text
-        label = self.decode(batch[1])
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
 
 
@@ -983,5 +983,5 @@ class CANLabelDecode(BaseRecLabelDecode):
         text = self.decode(preds_idx)
         if batch is None:
             return text
-        label = self.decode(batch[1])
+        label = self.decode(batch[1].cpu().numpy())
         return text, label
