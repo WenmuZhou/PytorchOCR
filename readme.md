@@ -32,11 +32,12 @@
 
 百度云: 链接：https://pan.baidu.com/s/1rLYJt647EE0341mfHjSWMg?pwd=uyea 提取码：uyea
 
-
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
-| ch_PP-OCRv4_rec_mobile  | Y | 3.6277156e-06 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec.yml) |
-| ch_PP-OCRv4_det_mobile  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
+| ch_PP-OCRv4_rec_student  | Y | 3.6277156e-06 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec.yml) |
+| ch_PP-OCRv4_det_student  | Y | 0 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_student.yml) |
+| ch_PP-OCRv4_det_teacher  | Y | maps 7.811429e-07 <br> cbn_maps 1.0471307e-06 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_teacher.yml) |
+| ch_PP-OCRv4_det_cml  | Y | Student_res 0.0 <br> Student2_res 0.0 <br> Teacher_maps 1.1398747e-06 <br> Teacher_cbn_maps 1.2791393e-06 | [config](configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_cml.yml) |
 | ch_PP-OCRv3_rec  | Y | 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml) |
 | ch_PP-OCRv3_rec_distillation.yml  | Y | Teacher_head_out_res 7.470646e-10 <br> Student_head_out_res 4.615016e-11 | [config](configs/rec/PP-OCRv3/ch_PP-OCRv3_rec_distillation.yml) |
 | ch_PP-OCRv3_det_student  | Y | 1.766314e-07 | [config](cconfigs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_student.yml) |

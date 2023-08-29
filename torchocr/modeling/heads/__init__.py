@@ -3,7 +3,7 @@ __all__ = ['build_head']
 
 def build_head(config):
     # det head
-    from .det_db_head import DBHead
+    from .det_db_head import DBHead, PFHeadLocal
     # rec head
     from .rec_ctc_head import CTCHead
     from .rec_multi_head import MultiHead
@@ -12,7 +12,7 @@ def build_head(config):
     from .cls_head import ClsHead
 
     support_dict = [
-        'MultiHead', 'SARHead', 'DBHead', 'CTCHead', 'ClsHead'
+        'MultiHead', 'SARHead', 'DBHead', 'CTCHead', 'ClsHead', 'PFHeadLocal'
     ]
 
     module_name = config.pop('name')

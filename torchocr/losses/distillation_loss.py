@@ -12,6 +12,7 @@ from .basic_loss import DistanceLoss
 from .basic_loss import LossFromOutput
 from .det_db_loss import DBLoss
 from .det_basic_loss import BalanceLoss, MaskL1Loss, DiceLoss
+from .kd_loss import KnowledgeDistillationKLDivLoss
 
 
 def _sum_loss(loss_dict):
@@ -648,8 +649,8 @@ class DistillationNRTRLoss(CELoss):
             if self.key is not None:
                 out = out[self.key]
             if self.multi_head:
-                assert 'gtc' in out, 'multi head has multi out'
-                loss = super().forward(out['gtc'], batch[:1] + batch[2:])
+                assert 'nrtr' in out, 'multi head has multi out'
+                loss = super().forward(out['nrtr'], batch[:1] + batch[2:])
             else:
                 loss = super().forward(out, batch)
             if isinstance(loss, dict):
@@ -708,11 +709,15 @@ class DistillationDilaDBLoss(DBLoss):
                  beta=10,
                  ohem_ratio=3,
                  eps=1e-6,
+                 kd_loss=None,
                  name="dila_dbloss"):
         super().__init__(balance_loss, main_loss_type, alpha, beta, ohem_ratio, eps)
         self.model_name_pairs = model_name_pairs
         self.name = name
         self.key = key
+        self.kd_loss = None
+        if kd_loss is not None:
+            self.kd_loss = eval(kd_loss.pop('name'))(**kd_loss)
 
     def forward(self, predicts, batch):
         loss_dict = dict()
@@ -729,12 +734,19 @@ class DistillationDilaDBLoss(DBLoss):
             # dilation to teacher prediction
             dilation_w = np.array([[1, 1], [1, 1]])
             th_shrink_maps = tch_preds[:, 0, :, :]
-            th_shrink_maps = th_shrink_maps.numpy() > 0.3  # thresh = 0.3 
+
+            if self.kd_loss is not None:
+                B = stu_shrink_maps.shape[0]
+                kd_loss = self.kd_loss(stu_shrink_maps.reshape([B, -1]), th_shrink_maps.reshape([B, -1]))
+                k = f"{self.name}_{pair[0]}_{pair[1]}_kd"
+                loss_dict[k] = kd_loss
+
+            th_shrink_maps = th_shrink_maps.cpu().numpy() > 0.3  # thresh = 0.3 
             dilate_maps = np.zeros_like(th_shrink_maps).astype(np.float32)
             for i in range(th_shrink_maps.shape[0]):
                 dilate_maps[i] = cv2.dilate(
                     th_shrink_maps[i, :, :].astype(np.uint8), dilation_w)
-            th_shrink_maps = torch.tensor(dilate_maps)
+            th_shrink_maps = torch.tensor(dilate_maps, device=stu_shrink_maps.device)
 
             label_threshold_map, label_threshold_mask, label_shrink_map, label_shrink_mask = batch[
                 1:]

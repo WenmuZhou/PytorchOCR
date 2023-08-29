@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchocr.modeling.common import Activation
 from torchocr.modeling.backbones.det_mobilenet_v3 import SEModule
-
-def hard_swish(x, inplace=True):
-    return x * F.relu6(x + 3., inplace=inplace) / 6.
+from torchocr.modeling.necks.intracl import IntraCLBlock
 
 class DSConv(nn.Module):
     def __init__(self,
@@ -14,13 +13,11 @@ class DSConv(nn.Module):
                  padding,
                  stride=1,
                  groups=None,
-                 if_act=True,
                  act="relu",
                  **kwargs):
         super(DSConv, self).__init__()
         if groups == None:
             groups = in_channels
-        self.if_act = if_act
         self.act = act
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
@@ -56,7 +53,9 @@ class DSConv(nn.Module):
                 kernel_size=1,
                 stride=1,
                 bias=False)
-
+        self.act = None
+        if act:
+            self.act = Activation(act)
     def forward(self, inputs):
 
         x = self.conv1(inputs)
@@ -64,15 +63,8 @@ class DSConv(nn.Module):
 
         x = self.conv2(x)
         x = self.bn2(x)
-        if self.if_act:
-            if self.act == "relu":
-                x = F.relu(x)
-            elif self.act == "hardswish":
-                x = hard_swish(x)
-            else:
-                print("The activation function({}) is selected incorrectly.".
-                      format(self.act))
-                exit()
+        if self.act:
+            x = self.act(x)
 
         x = self.conv3(x)
         if self._c[0] != self._c[1]:
@@ -288,7 +280,13 @@ class LKPAN(nn.Module):
                     kernel_size=9,
                     padding=4,
                     bias=False))
-
+        self.intracl = False
+        if 'intracl' in kwargs.keys() and kwargs['intracl'] is True:
+            self.intracl = kwargs['intracl']
+            self.incl1 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl2 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl3 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
+            self.incl4 = IntraCLBlock(self.out_channels // 4, reduce_factor=2)
     def forward(self, x):
         c2, c3, c4, c5 = x
 
@@ -317,6 +315,12 @@ class LKPAN(nn.Module):
         p3 = self.pan_lat_conv[1](pan3)
         p4 = self.pan_lat_conv[2](pan4)
         p5 = self.pan_lat_conv[3](pan5)
+
+        if self.intracl is True:
+            p5 = self.incl4(p5)
+            p4 = self.incl3(p4)
+            p3 = self.incl2(p3)
+            p2 = self.incl1(p2)
 
         p5 = F.upsample(p5, scale_factor=8, mode="nearest")
         p4 = F.upsample(p4, scale_factor=4, mode="nearest")

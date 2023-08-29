@@ -50,7 +50,7 @@ class Trainer(object):
             self.writer = SummaryWriter(self.cfg['Global']['output_dir'])
 
         self.logger = get_logger('torchocr', os.path.join(self.cfg['Global']['output_dir'],
-                                                          ' train.log') if 'train' in mode else None)
+                                                          'train.log') if 'train' in mode else None)
         
         cfg.print_cfg(self.logger.info)
 
@@ -65,7 +65,7 @@ class Trainer(object):
         # build data loader
         self.train_dataloader = None
         if 'train' in mode:
-            cfg.save(os.path.join(self.cfg['Global']['output_dir'], ' config.yml'), self.cfg)
+            cfg.save(os.path.join(self.cfg['Global']['output_dir'], 'config.yml'), self.cfg)
             self.train_dataloader = build_dataloader(self.cfg, 'Train', self.logger)
             self.logger.info(f'train dataloader has {len(self.train_dataloader)} iters')
         self.valid_dataloader = None

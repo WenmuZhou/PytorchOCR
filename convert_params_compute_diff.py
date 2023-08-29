@@ -104,13 +104,14 @@ def conver_params(model_config, paddle_params_path, tmp_dir, show_log=False):
     torch_model.eval()
     paddle_model.eval()
 
-    torch_model_warp = create_model(torch_model)
-    paddle_model_warp = create_model(paddle_model)
-    torch_model_warp.auto_layer_map("base", show_log=show_log)
-    paddle_model_warp.auto_layer_map("raw", show_log=show_log)
-    assign_weight(torch_model_warp, paddle_model_warp)
-    # for recv4 rec
-    # torch2paddle(torch_model, paddle_model)
+    # torch_model_warp = create_model(torch_model)
+    # paddle_model_warp = create_model(paddle_model)
+    # torch_model_warp.auto_layer_map("base", show_log=show_log)
+    # paddle_model_warp.auto_layer_map("raw", show_log=show_log)
+    # assign_weight(torch_model_warp, paddle_model_warp)
+    
+    # for recv4 rec and det
+    torch2paddle(torch_model, paddle_model)
     if not os.path.exists(paddle_params_path):
         paddle_params_path = os.path.join(tmp_dir, 'paddle.pdparams')
         paddle.save(paddle_model.state_dict(), paddle_params_path)
@@ -124,7 +125,8 @@ def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
     paddle_state_dict = paddle_model.state_dict()
     torch_dict = torch_model.state_dict()
     # paddle_state_dict = paddle.load(paddle_model)
-    fc_names = ["qkv",'fc', 'kv', 'tgt_word_prj','q','out_proj','linear','proj']
+    # fc_names = ["qkv",'fc', 'kv', 'tgt_word_prj','q','out_proj','linear','proj'] # v4 rec
+    fc_names = []
     torch_state_dict = {}
     for k in paddle_state_dict:
         v = paddle_state_dict[k].detach().cpu().numpy()
@@ -135,8 +137,8 @@ def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
             v = v.transpose(new_shape)
         k = k.replace("_variance", "running_var")
         k = k.replace("_mean", "running_mean")
-        if torch_dict[k].numpy().shape != v.shape:
-            print(torch_dict[k].numpy().shape, v.shape)
+        # if torch_dict[k].numpy().shape != v.shape:
+        #     print(torch_dict[k].numpy().shape, v.shape)
         torch_state_dict[k] = torch.from_numpy(v)
 
     for k in torch_state_dict:
@@ -205,12 +207,12 @@ def torch_infer(config, input_np, device, params_path):
 
 def main():
     device = "cpu"
-    input_np = get_input(320, 48, True)
+    input_np = get_input(640, 640, True)
 
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
-    config_path = "configs/rec/PP-OCRv3/ch_PP-OCRv3_rec.yml"
-    paddle_params_path = r''
+    config_path = "configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_teacher.yml"
+    paddle_params_path = ''
 
     config = load_config(config_path)
     config = init_head(config)

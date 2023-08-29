@@ -105,7 +105,7 @@ class DBHead(nn.Layer):
     def step_function(self, x, y):
         return paddle.reciprocal(1 + paddle.exp(-self.k * (x - y)))
 
-    def forward(self, x, targets=None):
+    def forward(self, x, data=None):
         shrink_maps = self.binarize(x)
         if not self.training:
             return {'res': shrink_maps}
@@ -140,7 +140,7 @@ class PFHeadLocal(DBHead):
         elif self.mode == 'small':
             self.cbn_layer = LocalModule(in_channels // 4, in_channels // 8)
 
-    def forward(self, x, targets=None):
+    def forward(self, x, data=None):
         shrink_maps, f = self.binarize(x, return_f=True)
         base_maps = shrink_maps
         cbn_maps = self.cbn_layer(self.up_conv(f), shrink_maps, None)
