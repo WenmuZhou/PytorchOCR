@@ -70,7 +70,7 @@ class MultiHead(nn.Module):
     def forward(self, x, data=None):
 
         ctc_encoder = self.ctc_encoder(x)
-        ctc_out = self.ctc_head(ctc_encoder)
+        ctc_out = self.ctc_head(ctc_encoder)['res']
         head_out = dict()
         head_out['ctc'] = ctc_out
         head_out['res'] = ctc_out

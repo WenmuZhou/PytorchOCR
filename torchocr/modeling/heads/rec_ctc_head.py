@@ -47,4 +47,4 @@ class CTCHead(nn.Module):
             predicts = F.softmax(predicts, dim=2)
             result = predicts
 
-        return result
+        return {'res': result}

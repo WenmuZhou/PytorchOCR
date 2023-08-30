@@ -80,7 +80,9 @@ class MultiHead(nn.Layer):
                 self.ctc_encoder = SequenceEncoder(in_channels=in_channels, \
                     encoder_type=encoder_type, **neck_args)
                 # ctc head
-                head_args = self.head_list[idx][name]['Head']
+                head_args = self.head_list[idx][name].get('Head', {})
+                if head_args is None:
+                    head_args = {}
                 self.ctc_head = eval(name)(in_channels=self.ctc_encoder.out_channels, \
                     out_channels=out_channels_list['CTCLabelDecode'], **head_args)
             else:
@@ -90,7 +92,7 @@ class MultiHead(nn.Layer):
     def forward(self, x, data=None):
 
         ctc_encoder = self.ctc_encoder(x)
-        ctc_out = self.ctc_head(ctc_encoder)
+        ctc_out = self.ctc_head(ctc_encoder)['res']
         head_out = dict()
         head_out['ctc'] = ctc_out
         head_out['res'] = ctc_out

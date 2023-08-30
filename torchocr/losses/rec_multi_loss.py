@@ -23,11 +23,11 @@ class MultiLoss(nn.Module):
         # batch [image, label_ctc, label_sar, length, valid_ratio]
         for name, loss_func in self.loss_funcs.items():
             if name == 'CTCLoss':
-                loss = loss_func(predicts['ctc'], batch[:2] + batch[3:])['loss'] * self.weight_1
+                loss = loss_func({'res': predicts['ctc']}, batch[:2] + batch[3:])['loss'] * self.weight_1
             elif name == 'SARLoss':
-                loss = loss_func(predicts['sar'],  batch[:1] + batch[2:])['loss'] * self.weight_2
+                loss = loss_func({'res': predicts['sar']},  batch[:1] + batch[2:])['loss'] * self.weight_2
             elif name == 'NRTRLoss':
-                loss = loss_func(predicts['nrtr'], batch[:1] + batch[2:])['loss'] * self.weight_2
+                loss = loss_func({'res': predicts['nrtr']}, batch[:1] + batch[2:])['loss'] * self.weight_2
             else:
                 raise NotImplementedError(
                     '{} is not supported in MultiLoss yet'.format(name))

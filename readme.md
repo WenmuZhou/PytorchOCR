@@ -5,6 +5,8 @@
   - [模型对齐信息](#模型对齐信息)
     - [环境](#环境)
     - [对齐列表](#对齐列表)
+      - [PP系列](#pp系列)
+      - [识别模型](#识别模型)
   - [TODO](#todo)
   - [使用方式](#使用方式)
     - [数据准备](#数据准备)
@@ -15,8 +17,6 @@
     - [predict](#predict)
 
 从PaddleOCR转换模型到PytorchOCR
-
-之前的版本见[master分支](https://github.com/WenmuZhou/PytorchOCR/tree/master)
 
 ## 模型对齐信息
 
@@ -34,6 +34,7 @@
 
 百度云: 链接：https://pan.baidu.com/s/1rLYJt647EE0341mfHjSWMg?pwd=uyea 提取码：uyea
 
+#### PP系列
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
 | ch_PP-OCRv4_rec_distill   | X | 配置不一致 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec_distill.yml) |
@@ -49,6 +50,15 @@
 | ch_PP-OCRv3_det_dml  | Y | ok | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_dml.yml) |
 | cls_mv3  | Y | 5.9604645e-08 | [config](configs/cls/cls_mv3.ymll) |
 
+#### 识别模型
+
+| 模型 | 是否对齐 | 对齐误差| 配置文件 |
+|---|---|---|---|
+| rec_mv3_none_none_ctc   | Y | 2.114354e-09 | [config](configs/rec/rec_mv3_none_none_ctc.yml) |
+| rec_mv3_none_bilstm_ctc   | Y | 1.1861777e-09 | [config](configs/rec/rec_mv3_none_bilstm_ctc.yml) |
+| rec_mv3_tps_bilstm_ctc   | Y | 1.1886948e-09 | [config](configs/rec/rec_mv3_tps_bilstm_ctc.yml) |
+| rec_mv3_tps_bilstm_att   | Y | 1.8528418e-09 | [config](configs/rec/rec_mv3_tps_bilstm_att.yml) |
+
 ## TODO
 
 功能性：
@@ -61,19 +71,6 @@
 - [x] onnx推理
 - [ ] tensorrt 推理
 - [x] 训练，评估，测试
-
-模型：
-
-- [x] PP-OCRv4 det mobile
-- [x] PP-OCRv4 det server
-- [x] PP-OCRv4 rec mobile
-- [x] PP-OCRv4 rec server
-- [x] PP-OCRv3 det
-- [x] PP-OCRv3 rec
-- [x] cls_mv3
-- [ ] DB
-- [ ] DB ++
-- [ ] CRNN
 
 ## 使用方式
 

@@ -1,34 +1,34 @@
 Global:
-  use_gpu: True
+  device: gpu
   epoch_num: 72
   log_smooth_window: 20
   print_batch_step: 10
-  output_dir: ./output/rec/mv3_none_bilstm_ctc/
-  save_epoch_step: 3
-  # evaluation is run every 2000 iterations
-  eval_batch_step: [0, 2000]
-  cal_metric_during_train: True
+  output_dir: ./output/rec/rec_mv3_none_bilstm_ctc
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: true
   pretrained_model:
   checkpoints:
-  save_inference_dir:
-  use_visualdl: False
-  infer_img: doc/imgs_words_en/word_10.png
-  # for data or label process
-  character_dict_path:
-  max_text_length: 25
-  infer_mode: False
-  use_space_char: False
-  save_res_path: ./output/rec/predicts_mv3_none_bilstm_ctc.txt
+  use_tensorboard: false
+  infer_mode: false
+  infer_img: doc/imgs_words/en/word_1.png
+  character_dict_path: &character_dict_path
+  max_text_length: &max_text_length 25
+  use_space_char: &use_space_char False
+
+
+Export:
+  export_dir:
+  export_shape: [ 1, 3, 32, 100 ]
+  dynamic_axes: [ 0, 2, 3 ]
 
 Optimizer:
   name: Adam
-  beta1: 0.9
-  beta2: 0.999
-  lr:
-    learning_rate: 0.0005
-  regularizer:
-    name: 'L2'
-    factor: 0
+  lr: 0.0005
+  weight_decay: 0.0
+
+LRScheduler:
+  name: ConstLR
+  warmup_epoch: 0
 
 Architecture:
   model_type: rec
@@ -44,13 +44,14 @@ Architecture:
     hidden_size: 96
   Head:
     name: CTCHead
-    fc_decay: 0
 
 Loss:
   name: CTCLoss
 
-PostProcess:
+PostProcess:  
   name: CTCLabelDecode
+  character_dict_path: *character_dict_path
+  use_space_char: *use_space_char
 
 Metric:
   name: RecMetric

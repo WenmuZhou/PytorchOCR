@@ -37,14 +37,15 @@ class AttentionHead(nn.Layer):
         input_ont_hot = F.one_hot(input_char, onehot_dim)
         return input_ont_hot
 
-    def forward(self, inputs, targets=None, batch_max_length=25):
+    def forward(self, inputs, data=None, batch_max_length=25):
         batch_size = paddle.shape(inputs)[0]
         num_steps = batch_max_length
 
         hidden = paddle.zeros((batch_size, self.hidden_size))
         output_hiddens = []
 
-        if targets is not None:
+        if data is not None:
+            targets = data[1]
             for i in range(num_steps):
                 char_onehots = self._char_to_onehot(
                     targets[:, i], onehot_dim=self.num_classes)
@@ -76,7 +77,7 @@ class AttentionHead(nn.Layer):
                 targets = next_input
         if not self.training:
             probs = paddle.nn.functional.softmax(probs, axis=2)
-        return probs
+        return {'res':probs}
 
 
 class AttentionGRUCell(nn.Layer):

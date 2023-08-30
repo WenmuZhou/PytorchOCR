@@ -8,11 +8,12 @@ def build_head(config):
     from .rec_ctc_head import CTCHead
     from .rec_multi_head import MultiHead
     from .rec_sar_head import SARHead
+    from .rec_att_head import AttentionHead
     # cls head
     from .cls_head import ClsHead
 
     support_dict = [
-        'MultiHead', 'SARHead', 'DBHead', 'CTCHead', 'ClsHead', 'PFHeadLocal'
+        'MultiHead', 'SARHead', 'DBHead', 'CTCHead', 'ClsHead', 'PFHeadLocal', 'AttentionHead'
     ]
 
     module_name = config.pop('name')
