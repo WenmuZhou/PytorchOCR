@@ -3,7 +3,6 @@
 # @Author  : zhoujun
 import os
 
-import fire
 import numpy as np
 import onnxruntime
 

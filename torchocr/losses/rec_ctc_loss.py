@@ -9,8 +9,7 @@ class CTCLoss(nn.Module):
         self.use_focal_loss = use_focal_loss
 
     def forward(self, predicts, batch):
-        if isinstance(predicts, (list, tuple)):
-            predicts = predicts[-1]
+        predicts = predicts['res']
 
         batch_size = predicts.size(0)
         label, label_length = batch[1], batch[2]

@@ -8,6 +8,7 @@ class SARLoss(nn.Module):
         self.loss_func = nn.CrossEntropyLoss(reduction="mean", ignore_index=ignore_index)
 
     def forward(self, predicts, batch):
+        predicts = predicts['res']
         predict = predicts[:, :-1, :]  # ignore last index of outputs to be in same seq_len with targets
         label = batch[1].long()[:, 1:]  # ignore first index of target in loss calculation
         batch_size, num_steps, num_classes = predict.shape[0], predict.shape[1], predict.shape[2]

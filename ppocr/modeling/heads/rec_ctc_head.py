@@ -69,7 +69,7 @@ class CTCHead(nn.Layer):
         self.mid_channels = mid_channels
         self.return_feats = return_feats
 
-    def forward(self, x, targets=None):
+    def forward(self, x, data=None):
         if self.mid_channels is None:
             predicts = self.fc(x)
         else:
@@ -84,4 +84,4 @@ class CTCHead(nn.Layer):
             predicts = F.softmax(predicts, axis=2)
             result = predicts
 
-        return result
+        return {'res': result}

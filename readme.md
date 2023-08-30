@@ -5,6 +5,8 @@
   - [模型对齐信息](#模型对齐信息)
     - [环境](#环境)
     - [对齐列表](#对齐列表)
+      - [PP系列](#pp系列)
+      - [识别模型](#识别模型)
   - [TODO](#todo)
   - [使用方式](#使用方式)
     - [数据准备](#数据准备)
@@ -32,6 +34,7 @@
 
 百度云: 链接：https://pan.baidu.com/s/1rLYJt647EE0341mfHjSWMg?pwd=uyea 提取码：uyea
 
+#### PP系列
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
 | ch_PP-OCRv4_rec_distill   | X | 配置不一致 | [config](configs/rec/PP-OCRv4/ch_PP-OCRv4_rec_distill.yml) |
@@ -46,6 +49,12 @@
 | ch_PP-OCRv3_det_cml  | Y | Student_res 1.766314e-07 <br> Student2_res 3.1212483e-07 <br> Teacher_res 8.829421e-08 | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_cml.yml) |
 | ch_PP-OCRv3_det_dml  | Y | ok | [config](configs/det/ch_PP-OCRv3/ch_PP-OCRv3_det_dml.yml) |
 | cls_mv3  | Y | 5.9604645e-08 | [config](configs/cls/cls_mv3.ymll) |
+
+#### 识别模型
+
+| 模型 | 是否对齐 | 对齐误差| 配置文件 |
+|---|---|---|---|
+| rec_mv3_none_bilstm_ctc   | X | 1.1861777e-09 | [config](configs/rec/rec_mv3_none_bilstm_ctc.yml) |
 
 ## TODO
 

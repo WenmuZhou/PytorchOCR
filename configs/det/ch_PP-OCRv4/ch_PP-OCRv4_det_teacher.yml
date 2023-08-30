@@ -3,7 +3,7 @@ Global:
   epoch_num: &epoch_num 500
   log_smooth_window: 20
   print_batch_step: 10
-  output_dir: ./output/ch_PP-OCRv4/
+  output_dir: ./output/det/h_PP-OCRv4_hgnet/
   eval_epoch_step: [0, 1]
   cal_metric_during_train: false
   pretrained_model:

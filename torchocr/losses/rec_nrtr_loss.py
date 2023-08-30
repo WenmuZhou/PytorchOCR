@@ -12,6 +12,7 @@ class NRTRLoss(nn.Module):
         self.smoothing = smoothing
 
     def forward(self, pred, batch):
+        pred = pred['res']
         max_len = batch[2].max()
         tgt = batch[1][:, 1:2 + max_len]
         pred = pred.reshape([-1, pred.shape[2]])
