@@ -54,8 +54,10 @@
 
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
+| rec_mv3_none_none_ctc   | X | 2.114354e-09 | [config](configs/rec/rec_mv3_none_none_ctc.yml) |
 | rec_mv3_none_bilstm_ctc   | X | 1.1861777e-09 | [config](configs/rec/rec_mv3_none_bilstm_ctc.yml) |
 | rec_mv3_tps_bilstm_ctc   | X | 1.1886948e-09 | [config](configs/rec/rec_mv3_tps_bilstm_ctc.yml) |
+| rec_mv3_tps_bilstm_att   | X | 1.8528418e-09 | [config](configs/rec/rec_mv3_tps_bilstm_att.yml) |
 
 ## TODO
 

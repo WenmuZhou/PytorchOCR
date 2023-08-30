@@ -27,7 +27,7 @@ Optimizer:
   weight_decay: 0.0
 
 LRScheduler:
-  name: CosineAnnealingLR
+  name: ConstLR
   warmup_epoch: 0
 
 Architecture:

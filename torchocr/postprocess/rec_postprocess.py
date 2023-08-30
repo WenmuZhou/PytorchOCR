@@ -199,6 +199,7 @@ class AttnLabelDecode(BaseRecLabelDecode):
             label = self.decode(label, is_remove_duplicate=False)
             return text, label
         """
+        preds = preds['res']
         if isinstance(preds, torch.Tensor):
             preds = preds.detach().cpu().numpy()
 
