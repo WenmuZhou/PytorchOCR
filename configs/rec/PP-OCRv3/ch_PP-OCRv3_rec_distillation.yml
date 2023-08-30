@@ -59,8 +59,6 @@ Architecture:
                 depth: 2
                 hidden_dims: 120
                 use_guide: True
-              Head:
-                fc_decay: 0.00001
           - SARHead:
               enc_dim: 512
               max_text_length: *max_text_length
