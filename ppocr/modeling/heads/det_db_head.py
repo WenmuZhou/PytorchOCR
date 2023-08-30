@@ -146,9 +146,9 @@ class PFHeadLocal(DBHead):
         cbn_maps = self.cbn_layer(self.up_conv(f), shrink_maps, None)
         cbn_maps = F.sigmoid(cbn_maps)
         if not self.training:
-            return {'maps': 0.5 * (base_maps + cbn_maps), 'cbn_maps': cbn_maps}
+            return {'res': 0.5 * (base_maps + cbn_maps), 'cbn_maps': cbn_maps}
 
         threshold_maps = self.thresh(x)
         binary_maps = self.step_function(shrink_maps, threshold_maps)
         y = paddle.concat([cbn_maps, threshold_maps, binary_maps], axis=1)
-        return {'maps': y, 'distance_maps': cbn_maps, 'cbn_maps': binary_maps}
+        return {'res': y, 'distance_maps': cbn_maps, 'cbn_maps': binary_maps}

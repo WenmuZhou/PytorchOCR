@@ -12,12 +12,13 @@ def build_backbone(config, model_type):
         ]
     elif model_type == "rec" or model_type == "cls":
         from .rec_mobilenet_v3 import MobileNetV3
+        from .rec_resnet_vd import ResNet
         from .rec_resnet_31 import ResNet31
         from .rec_mv1_enhance import MobileNetV1Enhance
         from .rec_lcnetv3 import PPLCNetV3
         from .rec_hgnet import PPHGNet_small
         support_dict = [
-            'MobileNetV1Enhance', 'ResNet31', 'MobileNetV3', 'PPLCNetV3', 'PPHGNet_small'
+            'MobileNetV1Enhance', 'ResNet31', 'MobileNetV3', 'PPLCNetV3', 'PPHGNet_small', 'ResNet'
         ]
     else:
         raise NotImplementedError

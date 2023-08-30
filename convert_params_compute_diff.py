@@ -101,17 +101,19 @@ def conver_params(model_config, paddle_params_path, tmp_dir, show_log=False):
     paddle_model = build_model_paddle(model_config)
     if os.path.exists(paddle_params_path):
         paddle_model.set_state_dict(paddle.load(paddle_params_path))
+        print(f'load paddle ckpt from {paddle_params_path}')
     torch_model.eval()
     paddle_model.eval()
 
-    # torch_model_warp = create_model(torch_model)
-    # paddle_model_warp = create_model(paddle_model)
-    # torch_model_warp.auto_layer_map("base", show_log=show_log)
-    # paddle_model_warp.auto_layer_map("raw", show_log=show_log)
-    # assign_weight(torch_model_warp, paddle_model_warp)
+    torch_model_warp = create_model(torch_model)
+    paddle_model_warp = create_model(paddle_model)
+    torch_model_warp.auto_layer_map("base", show_log=show_log)
+    paddle_model_warp.auto_layer_map("raw", show_log=show_log)
+    assign_weight(torch_model_warp, paddle_model_warp)
     
     # for recv4 rec and det
-    torch2paddle(torch_model, paddle_model)
+    # torch2paddle(torch_model, paddle_model)
+
     if not os.path.exists(paddle_params_path):
         paddle_params_path = os.path.join(tmp_dir, 'paddle.pdparams')
         paddle.save(paddle_model.state_dict(), paddle_params_path)
@@ -125,8 +127,8 @@ def torch2paddle(torch_model: torch.nn.Module, paddle_model: paddle.nn.Layer):
     paddle_state_dict = paddle_model.state_dict()
     torch_dict = torch_model.state_dict()
     # paddle_state_dict = paddle.load(paddle_model)
-    # fc_names = ["qkv",'fc', 'kv', 'tgt_word_prj','q','out_proj','linear','proj'] # v4 rec
-    fc_names = []
+    fc_names = ["qkv",'fc', 'kv', 'tgt_word_prj','q','out_proj','linear','proj'] # v4 rec
+    # fc_names = []
     torch_state_dict = {}
     for k in paddle_state_dict:
         v = paddle_state_dict[k].detach().cpu().numpy()
@@ -207,13 +209,13 @@ def torch_infer(config, input_np, device, params_path):
 
 def main():
     device = "cpu"
-    input_np = get_input(640, 640, True)
+    input_np = get_input(320, 48, True)
 
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
-    config_path = "configs/det/ch_PP-OCRv4/ch_PP-OCRv4_det_teacher.yml"
-    paddle_params_path = ''
-
+    config_path = "configs/rec/rec_r34_vd_tps_bilstm_ctc.yml"
+    paddle_params_path = r''
+    torch_params_path = paddle_params_path.replace('.pdparams', '.pth')
     config = load_config(config_path)
     config = init_head(config)
     model_config = config["Architecture"]

@@ -55,9 +55,13 @@
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
 |---|---|---|---|
 | rec_mv3_none_none_ctc   | Y | 2.114354e-09 | [config](configs/rec/rec_mv3_none_none_ctc.yml) |
+| rec_r34_vd_none_none_ctc   | Y | 3.920279e-08 | [config](configs/rec/rec_r34_vd_none_none_ctc.yml) |
 | rec_mv3_none_bilstm_ctc   | Y | 1.1861777e-09 | [config](configs/rec/rec_mv3_none_bilstm_ctc.yml) |
+| rec_r34_vd_none_bilstm_ctc   | Y | 1.9336952e-08 | [config](configs/rec/rec_r34_vd_none_bilstm_ctc.yml) |
 | rec_mv3_tps_bilstm_ctc   | Y | 1.1886948e-09 | [config](configs/rec/rec_mv3_tps_bilstm_ctc.yml) |
+| rec_r34_vd_tps_bilstm_ctc   | N | 0.0035705192 | [config](configs/rec/rec_r34_vd_tps_bilstm_ctc.yml) |
 | rec_mv3_tps_bilstm_att   | Y | 1.8528418e-09 | [config](configs/rec/rec_mv3_tps_bilstm_att.yml) |
+| rec_r34_vd_tps_bilstm_att   | N | 0.0006942689 | [config](configs/rec/rec_r34_vd_tps_bilstm_att.yml) |
 
 ## TODO
 
