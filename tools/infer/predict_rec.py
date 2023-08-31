@@ -85,7 +85,7 @@ class TextRecognizer(ONNXEngine):
             norm_img_batch = norm_img_batch.copy()
 
             preds = self.run(norm_img_batch)[0]
-            rec_result = self.postprocess_op(preds)
+            rec_result = self.postprocess_op({'res':preds})
             for rno in range(len(rec_result)):
                 rec_res[indices[beg_img_no + rno]] = rec_result[rno]
         return rec_res, time.time() - st

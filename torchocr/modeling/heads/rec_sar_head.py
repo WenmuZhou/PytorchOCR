@@ -64,7 +64,7 @@ class SAREncoder(nn.Module):
         if img_metas is not None and self.mask:
             valid_ratios = img_metas[-1]
 
-        h_feat = feat.shape[2]  # bsz c h w
+        h_feat = feat.size(2)  # bsz c h w
         feat_v = F.max_pool2d(
             feat, kernel_size=(h_feat, 1), stride=1, padding=0)
 
@@ -378,4 +378,4 @@ class SARHead(nn.Module):
                 train_mode=False)
             # (bsz, seq_len, num_classes)
 
-        return final_out
+        return {'res': final_out}

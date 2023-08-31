@@ -97,8 +97,7 @@ class CTCLabelDecode(BaseRecLabelDecode):
         super(CTCLabelDecode, self).__init__(character_dict_path, use_space_char)
 
     def __call__(self, preds, batch=None, *args, **kwargs):
-        if 'res' in preds:
-            preds = preds['res']
+        preds = preds['res']
         if isinstance(preds, torch.Tensor):
             preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)
@@ -536,6 +535,7 @@ class SARLabelDecode(BaseRecLabelDecode):
         return result_list
 
     def __call__(self, preds, batch=None, *args, **kwargs):
+        preds = preds['res']
         if isinstance(preds, torch.Tensor):
             preds = preds.detach().cpu().numpy()
         preds_idx = preds.argmax(axis=2)

@@ -62,6 +62,7 @@
 | rec_r34_vd_tps_bilstm_ctc   | N | 0.0035705192 | [config](configs/rec/rec_r34_vd_tps_bilstm_ctc.yml) |
 | rec_mv3_tps_bilstm_att   | Y | 1.8528418e-09 | [config](configs/rec/rec_mv3_tps_bilstm_att.yml) |
 | rec_r34_vd_tps_bilstm_att   | N | 0.0006942689 | [config](configs/rec/rec_r34_vd_tps_bilstm_att.yml) |
+| rec_r31_sar   | Y | 7.348353e-08 | [config](configs/rec/rec_r31_sar.yml) |
 
 ## TODO
 

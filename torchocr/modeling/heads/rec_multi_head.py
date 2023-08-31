@@ -79,9 +79,9 @@ class MultiHead(nn.Module):
         if not self.training:
             return {'res': ctc_out}
         if self.gtc_head == 'sar':
-            sar_out = self.sar_head(x, data[1:])
+            sar_out = self.sar_head(x, data[1:])['res']
             head_out['sar'] = sar_out
         else:
-            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])['res']
             head_out['nrtr'] = gtc_out
         return head_out
