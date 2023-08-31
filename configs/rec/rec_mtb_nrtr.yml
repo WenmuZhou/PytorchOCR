@@ -1,37 +1,34 @@
 Global:
-  use_gpu: True
+  device: gpu
   epoch_num: 21
   log_smooth_window: 20
   print_batch_step: 10
-  output_dir: ./output/rec/nrtr/
-  save_epoch_step: 1
-  # evaluation is run every 2000 iterations
-  eval_batch_step: [0, 2000]
-  cal_metric_during_train: True
+  output_dir: ./output/rec/nrtr
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: true
   pretrained_model:
   checkpoints:
-  save_inference_dir:
-  use_visualdl: False
-  infer_img: doc/imgs_words_en/word_10.png
-  # for data or label process
-  character_dict_path: ppocr/utils/EN_symbol_dict.txt
-  max_text_length: 25
-  infer_mode: False
-  use_space_char: False
-  save_res_path: ./output/rec/predicts_nrtr.txt
+  use_tensorboard: false
+  infer_mode: false
+  infer_img: doc/imgs_words/en/word_1.png
+  character_dict_path: &character_dict_path ppocr/utils/EN_symbol_dict.txt
+  max_text_length: &max_text_length 25
+  use_space_char: &use_space_char False
+
+Export:
+  export_dir:
+  export_shape: [ 1, 1, 32, 100 ]
+  dynamic_axes: []
 
 Optimizer:
   name: Adam
-  beta1: 0.9
-  beta2: 0.99
-  clip_norm: 5.0
-  lr:
-    name: Cosine
-    learning_rate: 0.0005
-    warmup_epoch: 2
-  regularizer:
-    name: 'L2'
-    factor: 0.
+  lr: 0.0005
+  weight_decay: 0
+
+LRScheduler:
+  name: CosineAnnealingLR
+  warmup_epoch: 2
+
 
 Architecture:
   model_type: rec
@@ -54,6 +51,8 @@ Loss:
 
 PostProcess:
   name: NRTRLabelDecode
+  character_dict_path: *character_dict_path
+  use_space_char: *use_space_char
 
 Metric:
   name: RecMetric
@@ -82,7 +81,7 @@ Train:
 Eval:
   dataset:
     name: LMDBDataSet
-    data_dir: ./train_data/data_lmdb_release/evaluation/
+    data_dir: ./train_data/data_lmdb_release/validation/
     transforms:
       - DecodeImage: # load image
           img_mode: BGR

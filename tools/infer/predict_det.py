@@ -114,29 +114,12 @@ class TextDetector(ONNXEngine):
         shape_list = np.expand_dims(shape_list, axis=0)
         img = img.copy()
 
-        outputs = self.run(img)
+        preds = self.run(img)
 
-        preds = {}
-        if self.det_algorithm == "EAST":
-            preds['f_geo'] = outputs[0]
-            preds['f_score'] = outputs[1]
-        elif self.det_algorithm == 'SAST':
-            preds['f_border'] = outputs[0]
-            preds['f_score'] = outputs[1]
-            preds['f_tco'] = outputs[2]
-            preds['f_tvo'] = outputs[3]
-        elif self.det_algorithm in ['DB', 'PSE', 'DB++']:
-            preds['res'] = outputs[0]
-        elif self.det_algorithm == 'FCE':
-            for i, output in enumerate(outputs):
-                preds['level_{}'.format(i)] = output
-        elif self.det_algorithm == "CT":
-            preds['maps'] = outputs[0]
-            preds['score'] = outputs[1]
-        else:
-            raise NotImplementedError
+        if self.det_algorithm in ['DB', 'PSE', 'DB++']:
+            preds = preds[0]
 
-        post_result = self.postprocess_op(preds, [-1, shape_list])
+        post_result = self.postprocess_op({'res':preds}, [-1, shape_list])
         dt_boxes = post_result[0]['points']
 
         if self.args.det_box_type == 'poly':

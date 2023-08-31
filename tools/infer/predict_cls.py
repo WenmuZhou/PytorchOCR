@@ -56,8 +56,11 @@ class TextClassifier(ONNXEngine):
             norm_img_batch = np.concatenate(norm_img_batch)
             norm_img_batch = norm_img_batch.copy()
 
-            preds = self.run(norm_img_batch)[0]
-            cls_result = self.postprocess_op(preds)
+            preds = self.run(norm_img_batch)
+            if len(preds) == 1:
+                preds = preds[0]
+
+            cls_result = self.postprocess_op({'res': preds})
             elapse += time.time() - tic
 
             for rno in range(len(cls_result)):

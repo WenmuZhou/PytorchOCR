@@ -12,6 +12,7 @@ import time
 
 from torchocr import Config
 from torchocr.postprocess import build_post_process
+from torchocr.data import create_operators, transform
 from torchocr.utils.logging import get_logger
 from torchocr.utils.utility import get_image_file_list, check_and_read
 from tools.infer.onnx_engine import ONNXEngine
@@ -34,6 +35,7 @@ class TextRecognizer(ONNXEngine):
         self.rec_algorithm = args.rec_algorithm
 
         cfg = Config(config_path).cfg
+        self.ops = create_operators(cfg['Transforms'][1:])
         self.postprocess_op = build_post_process(cfg['PostProcess'])
 
     def resize_norm_img(self, img, max_wh_ratio):
@@ -77,15 +79,21 @@ class TextRecognizer(ONNXEngine):
                 wh_ratio = w * 1.0 / h
                 max_wh_ratio = max(max_wh_ratio, wh_ratio)
             for ino in range(beg_img_no, end_img_no):
-                norm_img = self.resize_norm_img(img_list[indices[ino]],
-                                                max_wh_ratio)
+                if self.rec_algorithm == 'nrtr':
+                    norm_img = transform({'image':img_list[indices[ino]]}, self.ops)[0]
+                else:
+                    norm_img = self.resize_norm_img(img_list[indices[ino]], max_wh_ratio)
                 norm_img = norm_img[np.newaxis, :]
                 norm_img_batch.append(norm_img)
             norm_img_batch = np.concatenate(norm_img_batch)
             norm_img_batch = norm_img_batch.copy()
 
-            preds = self.run(norm_img_batch)[0]
-            rec_result = self.postprocess_op({'res':preds})
+            preds = self.run(norm_img_batch)
+
+            if len(preds) == 1:
+                preds = preds[0]
+
+            rec_result = self.postprocess_op({'res': preds})
             for rno in range(len(rec_result)):
                 rec_res[indices[beg_img_no + rno]] = rec_result[rno]
         return rec_res, time.time() - st

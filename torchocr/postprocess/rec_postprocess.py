@@ -731,7 +731,7 @@ class NRTRLabelDecode(BaseRecLabelDecode):
                                               use_space_char)
 
     def __call__(self, preds, batch=None, *args, **kwargs):
-
+        preds = preds['res']
         if len(preds) == 2:
             preds_id = preds[0]
             preds_prob = preds[1]

@@ -128,7 +128,7 @@ class Transformer(nn.Layer):
         logit = self.tgt_word_prj(output)
         return logit
 
-    def forward(self, src, targets=None):
+    def forward(self, src, data=None):
         """Take in and process masked source/target sequences.
         Args:
             src: the sequence to the encoder (required).
@@ -141,14 +141,15 @@ class Transformer(nn.Layer):
         """
 
         if self.training:
-            max_len = targets[1].max()
-            tgt = targets[0][:, :2 + max_len]
-            return self.forward_train(src, tgt)
+            max_len = data[1].max()
+            tgt = data[0][:, :2 + max_len]
+            res= self.forward_train(src, tgt)
         else:
             if self.beam_size > 0:
-                return self.forward_beam(src)
+                res= self.forward_beam(src)
             else:
-                return self.forward_test(src)
+                res= self.forward_test(src)
+        return {'res':res}
 
     def forward_test(self, src):
 
