@@ -63,6 +63,7 @@
 | rec_mv3_tps_bilstm_att   | Y | 1.8528418e-09 | [config](configs/rec/rec_mv3_tps_bilstm_att.yml) |
 | rec_r34_vd_tps_bilstm_att   | N | 0.0006942689 | [config](configs/rec/rec_r34_vd_tps_bilstm_att.yml) |
 | rec_r31_sar   | Y | 7.348353e-08 | [config](configs/rec/rec_r31_sar.yml) |
+| rec_mtb_nrtr   | N | res_0 8.64 <br> res_1 0.13501492 | [config](configs/rec/rec_mtb_nrtr.yml) |
 
 ## TODO
 
