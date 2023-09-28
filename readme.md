@@ -39,7 +39,7 @@
 
 模型下载地址 
 
-百度云: 链接：https://pan.baidu.com/s/1rLYJt647EE0341mfHjSWMg?pwd=uyea 提取码：uyea
+百度云: 链接：https://pan.baidu.com/s/17NVg9VSBmrDmbX5MmubZgQ?pwd=ppdz 提取码：ppdz
 
 #### PP系列
 | 模型 | 是否对齐 | 对齐误差| 配置文件 |
