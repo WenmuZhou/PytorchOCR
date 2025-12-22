@@ -39,7 +39,8 @@ class ArgsParser(ArgumentParser):
                     if idx == len(keys) - 2:
                         cur[key] = yaml.load(v, Loader=yaml.Loader)
                     else:
-                        cur[key] = {}
+                        if key not in cur:
+                            cur[key] = {}
                         cur = cur[key]
         return config
 
