@@ -28,3 +28,4 @@ dist/
 ppocr/
 .idea/
 pretrain_models
+*.pt[h]

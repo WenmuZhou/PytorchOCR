@@ -61,7 +61,7 @@ def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
         # status['global_step'] = checkpoint['global_step']
         # status['epoch'] = checkpoint['epoch'] + 1
         # status['metrics'] = checkpoint['metrics']
-        status['epoch'] = checkpoint.get('epoch', 0)
+        status['epoch'] = checkpoint.get('epoch', 0) + 1
         status['global_step'] = checkpoint.get('global_step', 0)
         status['metrics'] = checkpoint.get('metrics', {})
     elif pretrained_model and os.path.exists(pretrained_model):
