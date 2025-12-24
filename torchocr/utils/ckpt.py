@@ -74,7 +74,16 @@ def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
 
 def load_pretrained_params(model, pretrained_model):
     logger = get_logger()
-    loaded_state_dict = torch.load(pretrained_model, map_location=torch.device('cpu'))['state_dict']
+    # loaded_state_dict = torch.load(pretrained_model, map_location=torch.device('cpu'))['state_dict']
+    checkpoint = torch.load(pretrained_model, map_location='cpu')
+    # print("模型文件包含的键:", checkpoint.keys())
+    if 'model' in checkpoint:
+        loaded_state_dict = checkpoint['model']
+    elif 'state_dict' in checkpoint:
+        loaded_state_dict = checkpoint['state_dict']
+    else:
+        loaded_state_dict = checkpoint  # 如果直接是state_dict
+
     current_model_dict = model.state_dict()
     new_state_dict = {}
     for k, v in loaded_state_dict.items():
