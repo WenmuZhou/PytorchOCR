@@ -54,11 +54,16 @@ def load_ckpt(model, cfg, optimizer=None, lr_scheduler=None, logger=None):
             optimizer.load_state_dict(checkpoint['optimizer'])
         if lr_scheduler is not None:
             lr_scheduler.load_state_dict(checkpoint['scheduler'])
-        logger.info(f"resume from checkpoint: {checkpoints} (epoch {checkpoint['epoch']})")
+        epoch = checkpoint.get('epoch', 'N/A')
+        logger.info(f"resume from checkpoint: {checkpoints} (epoch {epoch})")
+        # logger.info(f"resume from checkpoint: {checkpoints} (epoch {checkpoint['epoch']})")
 
-        status['global_step'] = checkpoint['global_step']
-        status['epoch'] = checkpoint['epoch'] + 1
-        status['metrics'] = checkpoint['metrics']
+        # status['global_step'] = checkpoint['global_step']
+        # status['epoch'] = checkpoint['epoch'] + 1
+        # status['metrics'] = checkpoint['metrics']
+        status['epoch'] = checkpoint.get('epoch', 0) + 1
+        status['global_step'] = checkpoint.get('global_step', 0)
+        status['metrics'] = checkpoint.get('metrics', {})
     elif pretrained_model and os.path.exists(pretrained_model):
         load_pretrained_params(model, pretrained_model)
         logger.info(f"finetune from checkpoint: {pretrained_model}")
