@@ -85,14 +85,22 @@ def load_pretrained_params(model, pretrained_model):
         loaded_state_dict = checkpoint  # 如果直接是state_dict
 
     current_model_dict = model.state_dict()
+    logger.info(f"model : {len(current_model_dict.keys())}, pretrained_model: {len(loaded_state_dict.keys())}")
     new_state_dict = {}
+    loaded, ignored = 0, 0
     for k, v in loaded_state_dict.items():
         if k not in current_model_dict.keys():
             logger.info(f"ignore loading parameter: {k}, because it is not in current model")
+            ignored += 1
             continue
 
         if current_model_dict[k].size() != v.size():
             logger.info(f"ignore loading parameter: {k}, because of size mismatch, current size: {current_model_dict[k].size()}, pretrained size: {v.size()}")
+            ignored += 1
             continue
         new_state_dict[k] = v
+        loaded += 1
+    current_model_dict.update(new_state_dict)
     model.load_state_dict(new_state_dict, strict=False)
+    # logger.info(f"model : {len(model.state_dict().keys())}")
+    logger.info(f"✅ Loaded {loaded} params, ignored {ignored} params.")

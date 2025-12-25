@@ -58,6 +58,7 @@ class EncoderWithSVTR(nn.Module):
             attn_drop_rate=0.1,
             drop_path=0.,
             kernel_size=[3, 3],
+            conv4_kernel_size=None,  # <--- 1. 添加参数接收，默认为 None
             qk_scale=None):
         super(EncoderWithSVTR, self).__init__()
         self.depth = depth
@@ -92,11 +93,17 @@ class EncoderWithSVTR(nn.Module):
         self.conv3 = ConvBNLayer(
             hidden_dims, in_channels, kernel_size=1, act='swish')
         # last conv-nxn, the input is concat of input tensor and conv3 output tensor
+
+        # 如果没传 conv4_kernel_size，则默认使用 kernel_size 以保持向后兼容
+        if conv4_kernel_size is None:
+            conv4_kernel_size = kernel_size
         self.conv4 = ConvBNLayer(
             2 * in_channels,
             in_channels // 8,
-            kernel_size=kernel_size,
-            padding=[kernel_size[0] // 2, kernel_size[1] // 2],
+            # kernel_size=kernel_size,
+            # padding=[kernel_size[0] // 2, kernel_size[1] // 2],
+            kernel_size=conv4_kernel_size,
+            padding=[conv4_kernel_size[0] // 2, conv4_kernel_size[1] // 2],
             act='swish')
 
         self.conv1x1 = ConvBNLayer(
