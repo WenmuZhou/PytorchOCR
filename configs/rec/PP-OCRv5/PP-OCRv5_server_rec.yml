@@ -15,10 +15,10 @@ Global:
   save_inference_dir:
   use_visualdl: false
   infer_img: doc/imgs_words/ch/word_1.jpg
-  character_dict_path: ./ppocr/utils/dict/ppocrv5_dict.txt
+  character_dict_path: &character_dict_path ./torchocr/utils/dict/ppocrv5_dict.txt
   max_text_length: &max_text_length 25
   infer_mode: false
-  use_space_char: true
+  use_space_char: &use_space_char true
   distributed: true
   save_res_path: ./output/rec/predicts_ppocrv5.txt
   d2s_train_image_shape: [3, 48, 320]
@@ -54,6 +54,7 @@ Architecture:
             depth: 2
             hidden_dims: 120
             kernel_size: [1, 3]
+            conv4_kernel_size: [3, 3]  # <--- 新增此行，专门控制 conv4
             use_guide: True
           Head:
             fc_decay: 0.00001
@@ -69,6 +70,8 @@ Loss:
 
 PostProcess:  
   name: CTCLabelDecode
+  character_dict_path: *character_dict_path
+  use_space_char: *use_space_char
 
 Metric:
   name: RecMetric
