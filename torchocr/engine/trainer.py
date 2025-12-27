@@ -167,7 +167,7 @@ class Trainer(object):
                 self.train_dataloader = build_dataloader(self.cfg, 'Train', self.logger, epoch=epoch-1)
             reader_start = time.time()
             for idx, batch in enumerate(self.train_dataloader):
-                batch = [t.to(self.device) for t in batch]
+                batch = [t.to(dtype=torch.float32, device=self.device) for t in batch]
                 self.optimizer.zero_grad()
                 train_reader_cost += time.time() - reader_start
                 # use amp
