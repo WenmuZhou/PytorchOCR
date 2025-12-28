@@ -1234,7 +1234,8 @@ class HGV2_Block(TheseusLayer):
         x = self.aggregation_squeeze_conv(x)
         x = self.aggregation_excitation_conv(x)
         if self.identity:
-            x += identity
+            # x += identity
+            x = x + identity
         return x
 
 
