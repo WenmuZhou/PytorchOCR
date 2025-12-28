@@ -4,7 +4,7 @@ Global:
   use_gpu: true
   device: gpu
   use_tensorboard: false
-  epoch_num: &epoch_num 500
+  epoch_num: &epoch_num 100
   log_smooth_window: 20
   print_batch_step: 100
   save_model_dir: ./output/PP-OCRv5_mobile_det
