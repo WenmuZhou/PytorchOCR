@@ -123,6 +123,8 @@ class Trainer(object):
     def set_device(self, device):
         if device == 'gpu' and torch.cuda.is_available():
             device = torch.device(f"cuda:{self.local_rank}")
+        elif device == 'mps' and torch.backends.mps.is_available():
+            device = torch.device("mps")
         else:
             device = torch.device("cpu")
         self.device = device
@@ -165,7 +167,7 @@ class Trainer(object):
                 self.train_dataloader = build_dataloader(self.cfg, 'Train', self.logger, epoch=epoch-1)
             reader_start = time.time()
             for idx, batch in enumerate(self.train_dataloader):
-                batch = [t.to(self.device) for t in batch]
+                batch = [t.to(dtype=torch.float32, device=self.device) for t in batch]
                 self.optimizer.zero_grad()
                 train_reader_cost += time.time() - reader_start
                 # use amp
@@ -272,7 +274,7 @@ class Trainer(object):
                 leave=True)
             sum_images = 0
             for idx, batch in enumerate(self.valid_dataloader):
-                batch = [t.to(self.device) for t in batch]
+                batch = [t.to(dtype=torch.float32, device=self.device) for t in batch]
                 start = time.time()
                 if self.scaler:
                     with torch.cuda.amp.autocast():
