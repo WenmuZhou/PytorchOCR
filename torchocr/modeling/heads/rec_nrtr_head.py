@@ -119,8 +119,8 @@ class Transformer(nn.Module):
         """
 
         if self.training:
-            max_len = data[1].max()
-            tgt = data[0][:, :2 + max_len]
+            max_len = int(data[1].max())
+            tgt = data[0][:, :2 + max_len].long()
             res = self.forward_train(src, tgt)
         else:
             if self.beam_size > 0:
