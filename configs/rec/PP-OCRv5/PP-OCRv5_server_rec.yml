@@ -23,6 +23,10 @@ Global:
   save_res_path: ./output/rec/predicts_ppocrv5.txt
   d2s_train_image_shape: [3, 48, 320]
 
+Export:
+  export_dir:
+  export_shape: [ 1, 3, 48, 320 ]
+  dynamic_axes: [ 0, 2, 3 ]
 
 Optimizer:
   name: Adam
