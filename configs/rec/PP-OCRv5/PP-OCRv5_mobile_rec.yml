@@ -2,9 +2,9 @@ Global:
   model_name: PP-OCRv5_mobile_rec # To use static model for inference.
   debug: false
   use_gpu: true
-  epoch_num: 75
+  epoch_num: 100
   log_smooth_window: 20
-  print_batch_step: 10
+  print_batch_step: 100
   save_model_dir: ./output/PP-OCRv5_mobile_rec
   save_epoch_step: 10
   eval_batch_step: [0, 2000]
@@ -32,7 +32,7 @@ Optimizer:
   #   name: Cosine
   #   learning_rate: 0.0005
   #   warmup_epoch: 5
-  lr: 0.0001
+  lr: 0.0005
   # regularizer:
   #   name: L2
   #   factor: 3.0e-05
