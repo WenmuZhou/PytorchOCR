@@ -13,8 +13,8 @@ class NRTRLoss(nn.Module):
 
     def forward(self, pred, batch):
         pred = pred['res']
-        max_len = batch[2].max()
-        tgt = batch[1][:, 1:2 + max_len]
+        max_len = int(batch[2].max())
+        tgt = batch[1][:, 1:2 + max_len].long()
         pred = pred.reshape([-1, pred.shape[2]])
         tgt = tgt.reshape([-1])
         if self.smoothing:

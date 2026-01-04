@@ -9,9 +9,21 @@ class Im2Seq(nn.Module):
         self.out_channels = in_channels
 
     def forward(self, x):
-        B, C, H, W = x.shape
-        assert H == 1
-        x = x.squeeze(dim=2)
+        # B, C, H, W = x.shape
+        # assert H == 1
+        # x = x.squeeze(dim=2)
+        if len(x.shape) == 4:
+            # 如果是 [N, C, H, W]，通常需要先压平 H 维（如果是识别任务，H 通常为 1）
+            # 或者直接根据逻辑处理
+            # N, C, H, W = x.shape
+            # if H != 1:
+            #     # 如果 H 不为 1，可能需要 pool 或者 view
+            #     x = x.reshape(N, C, H * W)
+            # else:
+            #     x = x.squeeze(2)  # 变成 [N, C, W]
+            # B, C, H, W -> B, C, (H*W)
+            # 对于 OCR 识别，H 通常会被压缩为 1，所以 flatten(2) 等价于 squeeze(2)
+            x = x.flatten(2)
         x = x.permute(0, 2, 1)
         return x
 

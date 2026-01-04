@@ -2,9 +2,9 @@ Global:
   model_name: PP-OCRv5_mobile_rec # To use static model for inference.
   debug: false
   use_gpu: true
-  epoch_num: 75
+  epoch_num: 100
   log_smooth_window: 20
-  print_batch_step: 10
+  print_batch_step: 100
   save_model_dir: ./output/PP-OCRv5_mobile_rec
   save_epoch_step: 10
   eval_batch_step: [0, 2000]
@@ -22,18 +22,25 @@ Global:
   save_res_path: ./output/rec/predicts_ppocrv5.txt
   d2s_train_image_shape: [3, 48, 320]
 
+Export:
+  export_dir:
+  export_shape: [ 1, 3, 48, 320 ]
+  dynamic_axes: [ 0, 2, 3 ]
 
 Optimizer:
   name: Adam
-  beta1: 0.9
-  beta2: 0.999
-  lr:
-    name: Cosine
-    learning_rate: 0.0005
-    warmup_epoch: 5
-  regularizer:
-    name: L2
-    factor: 3.0e-05
+  # beta1: 0.9
+  # beta2: 0.999
+  betas: [0.9, 0.999]  # PyTorch使用betas参数
+  # lr:
+  #   name: Cosine
+  #   learning_rate: 0.0005
+  #   warmup_epoch: 5
+  lr: 0.0005
+  # regularizer:
+  #   name: L2
+  #   factor: 3.0e-05
+  weight_decay: 0.0001  # L2正则化对应weight_decay
 
 
 Architecture:
@@ -67,6 +74,11 @@ Loss:
     - CTCLoss:
     - NRTRLoss:
 
+LRScheduler:
+  name: CosineAnnealingLR
+  warmup_epoch: 2
+
+
 PostProcess:  
   name: CTCLabelDecode
   character_dict_path: *character_dict_path
@@ -88,6 +100,9 @@ Train:
     - DecodeImage:
         img_mode: BGR
         channel_first: false
+#    - CTCLabelEncode:
+#        character_dict_path: *character_dict_path
+#        use_space_char: *use_space_char
     - RecConAug:
         prob: 0.5
         ext_data_num: 2
@@ -106,7 +121,7 @@ Train:
   sampler:
     name: MultiScaleSampler
     scales: [[320, 32], [320, 48], [320, 64]]
-    first_bs: &bs 128
+    first_bs: &bs 32
     fix_bs: false
     divided_factor: [8, 16] # w, h
     is_training: True
@@ -114,7 +129,7 @@ Train:
     shuffle: true
     batch_size_per_card: *bs
     drop_last: true
-    num_workers: 8
+    num_workers: 4
 Eval:
   dataset:
     name: SimpleDataSet
@@ -127,6 +142,9 @@ Eval:
         channel_first: false
     - MultiLabelEncode:
         gtc_encode: NRTRLabelEncode
+#    - CTCLabelEncode:
+#        character_dict_path: *character_dict_path
+#        use_space_char: *use_space_char
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
@@ -139,5 +157,5 @@ Eval:
   loader:
     shuffle: false
     drop_last: false
-    batch_size_per_card: 128
+    batch_size_per_card: 32
     num_workers: 4

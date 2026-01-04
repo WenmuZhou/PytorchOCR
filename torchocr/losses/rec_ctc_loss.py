@@ -12,7 +12,7 @@ class CTCLoss(nn.Module):
         predicts = predicts['res']
 
         batch_size = predicts.size(0)
-        label, label_length = batch[1], batch[2]
+        label, label_length = batch[1], batch[2].long()
         predicts = predicts.log_softmax(2)
         predicts = predicts.permute(1, 0, 2)
         preds_lengths = torch.tensor([predicts.size(0)] * batch_size, dtype=torch.long)
