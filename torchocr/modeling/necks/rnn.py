@@ -17,6 +17,7 @@ class Im2Seq(nn.Module):
         '''
         if len(x.shape) == 4:
             n, c, h, w = x.shape
+            assert h == 1, f"SVTR output H must be 1, got {h}"
             x = x.reshape(n, c * h, w)
         x = x.permute(0, 2, 1)
         return x
@@ -146,7 +147,8 @@ class EncoderWithSVTR(nn.Module):
             z = blk(z)
         z = self.norm(z)
         # last stage
-        z = z.reshape([-1, H, W, C]).permute([0, 3, 1, 2])
+        B = z.shape[0]
+        z = z.reshape(B, H, W, C).permute(0, 3, 1, 2)
         z = self.conv3(z)
         z = torch.cat((h, z), dim=1)
         z = self.conv1x1(self.conv4(z))
