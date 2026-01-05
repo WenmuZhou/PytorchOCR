@@ -9,10 +9,15 @@ class Im2Seq(nn.Module):
         self.out_channels = in_channels
 
     def forward(self, x):
+        '''
         if x.dim() == 4:
             B, C, H, W = x.shape
             assert H == 1, f"Expected H=1, got H={H}"
             x = x.squeeze(2)  # (B, C, W)
+        '''
+        if len(x.shape) == 4:
+            n, c, h, w = x.shape
+            x = x.reshape(n, c * h, w)
         x = x.permute(0, 2, 1)
         return x
 
