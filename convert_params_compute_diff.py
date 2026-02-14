@@ -20,7 +20,7 @@ from ppocr.postprocess import build_post_process
 def load_config(file_path):
     _, ext = os.path.splitext(file_path)
     assert ext in [".yml", ".yaml"], "only support yaml files for now"
-    config = yaml.load(open(file_path, "rb"), Loader=yaml.Loader)
+    config = yaml.load(open(file_path, "rb"), Loader=yaml.SafeLoader)
     return config
 
 
